@@ -31,8 +31,6 @@
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-        .success-check { animation: successPop 0.5s ease; }
-        @keyframes successPop { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -40,16 +38,11 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        // Bangladesh Time - Fixed calculation
         const getBDDateString = () => {
             const now = new Date();
-            // Convert to Bangladesh time (UTC+6)
             const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
             const bdTime = new Date(utc + (6 * 3600000));
-            const year = bdTime.getFullYear();
-            const month = String(bdTime.getMonth() + 1).padStart(2, '0');
-            const day = String(bdTime.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return `${bdTime.getFullYear()}-${String(bdTime.getMonth() + 1).padStart(2, '0')}-${String(bdTime.getDate()).padStart(2, '0')}`;
         };
         
         const getBDTimeString = () => {
@@ -62,13 +55,14 @@
         const formatDateBD = (dateStr) => {
             if (!dateStr) return '';
             const [year, month, day] = dateStr.split('-');
-            const date = new Date(year, month - 1, day);
-            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            return new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         };
 
         const API_CONFIG = {
             baseUrl: 'https://api.beds24.com/v2',
             propertyId: 279646,
+            // Access token valid for 24 hours (generated: 2026-01-04 22:30 UTC)
+            accessToken: 'E3iId8xY7knUSrDvcfWwPkI39SIpCKQuuPxdzrLjalAK5ztPH7TkhW8vTyWkNNvLba0BKgRF6mChjCdZ4DTuLgJ3a7YG4eg/LH/5i955fi+IIfUHxLLPWT5FgOOYIeg+L/G4XzjE+4TjTn7B890Kww6aRZKJmYRqymf74bLEH9U=',
             refreshToken: '3xurjR5RLGGQJ/lOIS7HMhv0vGHSPcZQa3elCR1RfQaclxOvhZBi7L2qO91XrfWVvhztlNZ42q6Piyk5ZOmNDkLaup4UAd0GEGhS600+gi975YVCoaxX13Mlm7mFHGMXbjFTUE9/fK5XQqrUc3Ruy1vkeQ/thG1mryCu0YPJBJ8='
         };
 
@@ -107,12 +101,7 @@
         const getFloor = (n) => Math.floor(parseInt(n) / 100);
         const getFloorName = (f) => ['Ground', '1st', '2nd', '3rd', '4th', '5th', '6th'][f] + ' Floor';
         const getCategory = (m) => m <= 2 ? 'Couple Unit' : 'Family Unit';
-
-        // Fixed date comparison
-        const isDateInRange = (checkDate, arrival, departure) => {
-            if (!checkDate || !arrival || !departure) return false;
-            return checkDate >= arrival && checkDate < departure;
-        };
+        const isDateInRange = (checkDate, arrival, departure) => checkDate >= arrival && checkDate < departure;
 
         const BookingModal = ({ selectedRooms, onClose, onSuccess, token }) => {
             const tomorrow = () => {
@@ -122,12 +111,7 @@
                 bd.setDate(bd.getDate() + 1);
                 return `${bd.getFullYear()}-${String(bd.getMonth()+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
             };
-            
-            const [form, setForm] = useState({ 
-                fullName: '', phone: '', email: '', nid: '', 
-                checkIn: getBDDateString(), 
-                checkOut: tomorrow()
-            });
+            const [form, setForm] = useState({ fullName: '', phone: '', email: '', nid: '', checkIn: getBDDateString(), checkOut: tomorrow() });
             const [submitting, setSubmitting] = useState(false);
             const [success, setSuccess] = useState(false);
             const [error, setError] = useState('');
@@ -155,7 +139,7 @@
             if (success) return (
                 <div className="modal-overlay" onClick={onClose}>
                     <div className="glass rounded-2xl p-8 text-center" onClick={e => e.stopPropagation()}>
-                        <div className="success-check text-6xl mb-4">✅</div>
+                        <div className="text-6xl mb-4">✅</div>
                         <h3 className="text-2xl font-bold text-white mb-2">Booking Created!</h3>
                         <p className="text-white text-opacity-70">Request submitted to Beds24</p>
                     </div>
@@ -167,51 +151,29 @@
                     <div className="glass rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xl font-bold text-white">Create Booking</h3>
-                            <button onClick={onClose} className="text-white text-opacity-60 hover:text-opacity-100 text-2xl">&times;</button>
+                            <button onClick={onClose} className="text-white text-2xl">&times;</button>
                         </div>
                         <div className="mb-4">
-                            <p className="text-white text-opacity-60 text-sm mb-2">Selected Rooms ({selectedRooms.length}):</p>
-                            <div className="flex flex-wrap gap-2">
-                                {selectedRooms.map(r => <span key={`${r.roomType.id}-${r.unit.id}`} className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm">{r.unit.unitNumber}</span>)}
-                            </div>
+                            <p className="text-white text-opacity-60 text-sm mb-2">Selected: {selectedRooms.map(r => r.unit.unitNumber).join(', ')}</p>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-white text-opacity-70 text-sm mb-1">Check-in *</label>
-                                    <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})}
-                                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" />
-                                </div>
-                                <div>
-                                    <label className="block text-white text-opacity-70 text-sm mb-1">Check-out *</label>
-                                    <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})}
-                                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" />
-                                </div>
+                                <div><label className="block text-white text-opacity-70 text-sm mb-1">Check-in</label>
+                                    <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
+                                <div><label className="block text-white text-opacity-70 text-sm mb-1">Check-out</label>
+                                    <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
                             </div>
-                            <div>
-                                <label className="block text-white text-opacity-70 text-sm mb-1">Full Name *</label>
-                                <input type="text" required placeholder="Guest name" value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
-                            </div>
-                            <div>
-                                <label className="block text-white text-opacity-70 text-sm mb-1">Phone *</label>
-                                <input type="tel" required placeholder="Phone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
-                            </div>
-                            <div>
-                                <label className="block text-white text-opacity-70 text-sm mb-1">Email</label>
-                                <input type="email" placeholder="Email (optional)" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
-                            </div>
-                            <div>
-                                <label className="block text-white text-opacity-70 text-sm mb-1">NID *</label>
-                                <input type="text" required placeholder="NID number" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
-                            </div>
-                            {error && <div className="p-3 rounded-lg bg-red-500 bg-opacity-20 border border-red-500 text-red-300 text-sm">{error}</div>}
-                            <button type="submit" disabled={submitting}
-                                className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold disabled:opacity-50">
-                                {submitting ? '⏳ Creating...' : '➕ Create Request Booking'}
+                            <div><label className="block text-white text-opacity-70 text-sm mb-1">Full Name *</label>
+                                <input type="text" required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
+                            <div><label className="block text-white text-opacity-70 text-sm mb-1">Phone *</label>
+                                <input type="tel" required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
+                            <div><label className="block text-white text-opacity-70 text-sm mb-1">Email</label>
+                                <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
+                            <div><label className="block text-white text-opacity-70 text-sm mb-1">NID *</label>
+                                <input type="text" required value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
+                            {error && <div className="p-3 rounded-lg bg-red-500 bg-opacity-20 text-red-300 text-sm">{error}</div>}
+                            <button type="submit" disabled={submitting} className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold disabled:opacity-50">
+                                {submitting ? '⏳ Creating...' : '➕ Create Booking'}
                             </button>
                         </form>
                     </div>
@@ -234,7 +196,7 @@
 
             return (
                 <div onClick={() => !isBooked && onSelect({ unit, roomType })}
-                    className={`room-card ${statusClass} rounded-xl p-3 text-white relative ${isSelected ? 'room-selected' : ''} ${isBooked ? 'cursor-not-allowed' : ''}`}>
+                    className={`room-card ${statusClass} rounded-xl p-3 text-white relative ${isSelected ? 'room-selected' : ''}`}>
                     {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">✓</div>}
                     <div className="flex justify-between items-start mb-1">
                         <span className="text-xl font-bold">{unit.unitNumber}</span>
@@ -245,12 +207,7 @@
                     <div className="pt-2 border-t border-white border-opacity-20">
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white bg-opacity-20">{statusText}</span>
                     </div>
-                    {booking && (
-                        <div className="mt-2 text-xs opacity-90">
-                            <div className="font-semibold truncate">{booking.firstName}</div>
-                            <div className="opacity-70">→ {formatDateBD(booking.departure)}</div>
-                        </div>
-                    )}
+                    {booking && <div className="mt-2 text-xs"><div className="font-semibold truncate">{booking.firstName}</div><div className="opacity-70">→ {formatDateBD(booking.departure)}</div></div>}
                     {unit.note && <div className="mt-1 text-xs opacity-60">ℹ️ {unit.note}</div>}
                 </div>
             );
@@ -261,21 +218,18 @@
             const [selectedDate, setSelectedDate] = useState(getBDDateString());
             const [checkInDate, setCheckInDate] = useState(getBDDateString());
             const [checkOutDate, setCheckOutDate] = useState(() => {
-                const t = new Date();
-                const utc = t.getTime() + (t.getTimezoneOffset() * 60000);
-                const bd = new Date(utc + (6 * 3600000));
+                const t = new Date(); const utc = t.getTime() + (t.getTimezoneOffset() * 60000); const bd = new Date(utc + (6 * 3600000));
                 bd.setDate(bd.getDate() + 1);
                 return `${bd.getFullYear()}-${String(bd.getMonth()+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
             });
             const [bookings, setBookings] = useState([]);
             const [loading, setLoading] = useState(true);
             const [lastUpdate, setLastUpdate] = useState(new Date());
-            const [token, setToken] = useState('');
+            const [token, setToken] = useState(API_CONFIG.accessToken);
             const [selectedRooms, setSelectedRooms] = useState([]);
             const [showBookingModal, setShowBookingModal] = useState(false);
             const [currentTime, setCurrentTime] = useState(getBDTimeString());
             const [error, setError] = useState('');
-            const [bookingCount, setBookingCount] = useState(0);
 
             useEffect(() => { const t = setInterval(() => setCurrentTime(getBDTimeString()), 60000); return () => clearInterval(t); }, []);
 
@@ -287,75 +241,51 @@
 
             const floors = useMemo(() => Array.from(new Set(allRooms.map(r => getFloor(r.unit.unitNumber)))).sort((a,b) => a-b), [allRooms]);
 
-            const refreshToken = async () => {
-                try {
-                    const res = await fetch(`${API_CONFIG.baseUrl}/authentication/token`, { 
-                        method: 'GET',
-                        headers: { 'refreshToken': API_CONFIG.refreshToken } 
-                    });
-                    const data = await res.json();
-                    if (data.token) { 
-                        setToken(data.token); 
-                        console.log('Token refreshed successfully');
-                        return data.token; 
-                    }
-                    console.error('No token in response:', data);
-                } catch (e) { 
-                    console.error('Token refresh failed:', e); 
-                    setError('Token refresh failed: ' + e.message);
-                }
-                return null;
-            };
-
             const fetchBookings = useCallback(async () => {
-                setLoading(true);
-                setError('');
+                setLoading(true); setError('');
                 try {
-                    // Always get fresh token
-                    const freshToken = await refreshToken();
-                    if (!freshToken) {
-                        setError('Failed to get authentication token');
-                        setLoading(false);
-                        return;
+                    // Try direct API call first
+                    let res = await fetch(`${API_CONFIG.baseUrl}/bookings?propertyId=${API_CONFIG.propertyId}`, { 
+                        headers: { 'token': token }
+                    });
+                    
+                    // If CORS fails, try with proxy
+                    if (!res.ok) {
+                        res = await fetch(`https://corsproxy.io/?${encodeURIComponent(API_CONFIG.baseUrl + '/bookings?propertyId=' + API_CONFIG.propertyId)}`, {
+                            headers: { 'token': token }
+                        });
                     }
                     
-                    const res = await fetch(`${API_CONFIG.baseUrl}/bookings?propertyId=${API_CONFIG.propertyId}`, { 
-                        headers: { 'token': freshToken } 
-                    });
                     const data = await res.json();
-                    
-                    console.log('API Response:', data.success, 'Count:', data.count);
-                    
                     if (data.success && data.data) {
-                        const activeBookings = data.data.filter(b => b.status !== 'cancelled');
-                        setBookings(activeBookings);
-                        setBookingCount(activeBookings.length);
-                        console.log('Loaded', activeBookings.length, 'bookings');
+                        setBookings(data.data.filter(b => b.status !== 'cancelled'));
+                        console.log('Loaded', data.data.length, 'bookings');
                     } else {
-                        setError('API Error: ' + (data.error || 'Unknown error'));
+                        setError('API Error: ' + (data.error || JSON.stringify(data)));
                     }
                 } catch (e) { 
-                    console.error('Fetch failed:', e);
-                    setError('Fetch failed: ' + e.message);
+                    console.error('Fetch error:', e);
+                    setError('Connection failed. Trying backup...');
+                    // Try backup proxy
+                    try {
+                        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(API_CONFIG.baseUrl + '/bookings?propertyId=' + API_CONFIG.propertyId + '&token=' + token)}`);
+                        const data = await res.json();
+                        if (data.success && data.data) {
+                            setBookings(data.data.filter(b => b.status !== 'cancelled'));
+                            setError('');
+                        }
+                    } catch (e2) {
+                        setError('All connections failed: ' + e.message);
+                    }
                 }
                 setLoading(false);
                 setLastUpdate(new Date());
-            }, []);
+            }, [token]);
 
-            useEffect(() => { 
-                fetchBookings(); 
-                const i = setInterval(fetchBookings, 120000); 
-                return () => clearInterval(i); 
-            }, []);
+            useEffect(() => { fetchBookings(); const i = setInterval(fetchBookings, 120000); return () => clearInterval(i); }, []);
 
             const getBooking = useCallback((rtId, uId, date) => {
-                const found = bookings.find(b => 
-                    b.roomId === rtId && 
-                    b.unitId === uId && 
-                    isDateInRange(date, b.arrival, b.departure) &&
-                    (b.status === 'confirmed' || b.status === 'request')
-                );
-                return found;
+                return bookings.find(b => b.roomId === rtId && b.unitId === uId && isDateInRange(date, b.arrival, b.departure) && (b.status === 'confirmed' || b.status === 'request'));
             }, [bookings]);
 
             const stats = useMemo(() => {
@@ -363,29 +293,14 @@
                 let occupied = 0, available = 0, pending = 0, checkouts = 0, checkins = 0;
                 allRooms.forEach(({ unit, roomType }) => {
                     const b = getBooking(roomType.id, unit.id, today);
-                    if (b) { 
-                        if (b.status === 'request') pending++; 
-                        else occupied++; 
-                    } else {
-                        available++;
-                    }
+                    if (b) { b.status === 'request' ? pending++ : occupied++; } else available++;
                 });
-                bookings.forEach(b => { 
-                    if (b.status !== 'cancelled') { 
-                        if (b.departure === today) checkouts++; 
-                        if (b.arrival === today) checkins++; 
-                    } 
-                });
+                bookings.forEach(b => { if (b.status !== 'cancelled') { if (b.departure === today) checkouts++; if (b.arrival === today) checkins++; } });
                 return { total: allRooms.length, occupied, available, pending, checkouts, checkins };
             }, [allRooms, bookings, getBooking]);
 
             const availableForRange = useMemo(() => allRooms.filter(({ unit, roomType }) => {
-                return !bookings.find(b => 
-                    b.roomId === roomType.id && 
-                    b.unitId === unit.id && 
-                    b.status !== 'cancelled' &&
-                    checkInDate < b.departure && checkOutDate > b.arrival
-                );
+                return !bookings.find(b => b.roomId === roomType.id && b.unitId === unit.id && b.status !== 'cancelled' && checkInDate < b.departure && checkOutDate > b.arrival);
             }), [allRooms, bookings, checkInDate, checkOutDate]);
 
             const todayArrivals = useMemo(() => bookings.filter(b => b.arrival === getBDDateString() && b.status !== 'cancelled'), [bookings]);
@@ -396,7 +311,6 @@
                 return exists ? prev.filter(r => !(r.roomType.id === room.roomType.id && r.unit.id === room.unit.id)) : [...prev, room];
             });
             const isSelected = (rtId, uId) => selectedRooms.some(r => r.roomType.id === rtId && r.unit.id === uId);
-            const handleBookingSuccess = () => { setShowBookingModal(false); setSelectedRooms([]); fetchBookings(); };
 
             const tabs = [
                 { id: 'floor', label: 'By Floor', icon: '🏢' },
@@ -408,7 +322,6 @@
 
             const renderFloor = (floor, date) => {
                 const rooms = allRooms.filter(r => getFloor(r.unit.unitNumber) === floor);
-                if (!rooms.length) return null;
                 return (
                     <div key={floor} className="mb-6">
                         <div className="flex items-center gap-3 mb-3">
@@ -428,7 +341,6 @@
 
             const renderCategory = (cat, date) => {
                 const rooms = allRooms.filter(r => getCategory(r.roomType.maxAdult) === cat);
-                if (!rooms.length) return null;
                 return (
                     <div key={cat} className="mb-6">
                         <div className="flex items-center gap-3 mb-3">
@@ -450,26 +362,19 @@
                 <div className="min-h-screen p-3 md:p-4 pb-24">
                     <div className="glass rounded-xl p-3 mb-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
+                            <div>
                                 <h1 className="text-lg md:text-xl font-bold text-white">🏨 Miami Beach Resort</h1>
-                                <span className="text-white text-opacity-50 text-xs hidden md:inline">
-                                    Cox's Bazar • {formatDateBD(getBDDateString())} • {currentTime} • {bookingCount} bookings
-                                </span>
+                                <span className="text-white text-opacity-50 text-xs">Cox's Bazar • {formatDateBD(getBDDateString())} • {currentTime} • {bookings.length} bookings loaded</span>
                             </div>
-                            <button onClick={fetchBookings} disabled={loading}
-                                className="flex items-center gap-2 px-4 py-2 glass rounded-lg text-white hover:bg-white hover:bg-opacity-10 text-sm">
+                            <button onClick={fetchBookings} disabled={loading} className="flex items-center gap-2 px-4 py-2 glass rounded-lg text-white text-sm">
                                 <span className={loading ? 'animate-spin' : ''}>🔄</span> {loading ? 'Syncing...' : 'Refresh'}
                             </button>
                         </div>
-                        
                         {error && <div className="mt-2 p-2 rounded bg-red-500 bg-opacity-20 text-red-300 text-xs">{error}</div>}
-                        
                         <div className="flex gap-1 mt-3 overflow-x-auto pb-1">
                             {tabs.map(tab => (
                                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all whitespace-nowrap text-sm ${
-                                        activeTab === tab.id ? 'tab-active text-white' : 'text-white text-opacity-60 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5'
-                                    }`}>
+                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm ${activeTab === tab.id ? 'tab-active text-white' : 'text-white text-opacity-60 hover:bg-white hover:bg-opacity-5'}`}>
                                     {tab.icon} <span className="hidden sm:inline">{tab.label}</span>
                                 </button>
                             ))}
@@ -499,9 +404,8 @@
                     {(activeTab === 'floor' || activeTab === 'category') && (
                         <div className="glass rounded-lg p-3 mb-4">
                             <div className="flex flex-wrap items-center gap-3">
-                                <label className="text-white text-sm">📅 Date:</label>
-                                <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-                                    className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
+                                <label className="text-white text-sm">📅</label>
+                                <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
                                 <button onClick={() => setSelectedDate(getBDDateString())} className="px-3 py-1.5 glass rounded-lg text-white text-sm">Today</button>
                                 <span className="text-white text-opacity-60 text-sm">{formatDateBD(selectedDate)}</span>
                             </div>
@@ -511,17 +415,10 @@
                     {activeTab === 'search' && (
                         <div className="glass rounded-lg p-3 mb-4">
                             <div className="flex flex-wrap items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                    <label className="text-white text-sm">Check-in:</label>
-                                    <input type="date" value={checkInDate} onChange={e => setCheckInDate(e.target.value)}
-                                        className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <label className="text-white text-sm">Check-out:</label>
-                                    <input type="date" value={checkOutDate} min={checkInDate} onChange={e => setCheckOutDate(e.target.value)}
-                                        className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
-                                </div>
-                                <span className="text-green-400 font-medium text-sm">{availableForRange.length} available</span>
+                                <input type="date" value={checkInDate} onChange={e => setCheckInDate(e.target.value)} className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
+                                <span className="text-white">→</span>
+                                <input type="date" value={checkOutDate} min={checkInDate} onChange={e => setCheckOutDate(e.target.value)} className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
+                                <span className="text-green-400 font-medium">{availableForRange.length} available</span>
                             </div>
                         </div>
                     )}
@@ -533,101 +430,59 @@
                             {activeTab === 'floor' && floors.map(f => renderFloor(f, selectedDate))}
                             {activeTab === 'category' && ['Couple Unit', 'Family Unit'].map(c => renderCategory(c, selectedDate))}
                             
-                            {activeTab === 'search' && (
-                                <div>
-                                    <h2 className="text-lg font-bold text-white mb-4">Available: {formatDateBD(checkInDate)} → {formatDateBD(checkOutDate)}</h2>
-                                    {availableForRange.length === 0 ? (
-                                        <div className="text-center py-12 text-white text-opacity-60"><div className="text-5xl mb-4">🏨</div><p>No rooms available</p></div>
-                                    ) : floors.map(floor => {
-                                        const rooms = availableForRange.filter(r => getFloor(r.unit.unitNumber) === floor);
-                                        if (!rooms.length) return null;
-                                        return (
-                                            <div key={floor} className="mb-6">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="px-3 py-1.5 glass rounded-lg text-white font-semibold text-sm">{getFloorName(floor)}</div>
-                                                    <div className="flex-1 h-px bg-white bg-opacity-10"></div>
-                                                    <span className="text-green-400 text-sm">{rooms.length} available</span>
-                                                </div>
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                                                    {rooms.map(({ unit, roomType }) => (
-                                                        <RoomCard key={`${roomType.id}-${unit.id}`} unit={unit} roomType={roomType} booking={null}
-                                                            isSelected={isSelected(roomType.id, unit.id)} onSelect={toggleRoom} />
-                                                    ))}
-                                                </div>
+                            {activeTab === 'search' && (availableForRange.length === 0 ? 
+                                <div className="text-center py-12 text-white text-opacity-60"><div className="text-5xl mb-4">🏨</div><p>No rooms available</p></div> :
+                                floors.map(floor => {
+                                    const rooms = availableForRange.filter(r => getFloor(r.unit.unitNumber) === floor);
+                                    if (!rooms.length) return null;
+                                    return (
+                                        <div key={floor} className="mb-6">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <span className="px-3 py-1.5 glass rounded-lg text-white font-semibold text-sm">{getFloorName(floor)}</span>
+                                                <div className="flex-1 h-px bg-white bg-opacity-10"></div>
+                                                <span className="text-green-400 text-sm">{rooms.length}</span>
                                             </div>
-                                        );
-                                    })}
-                                </div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                                                {rooms.map(({ unit, roomType }) => <RoomCard key={`${roomType.id}-${unit.id}`} unit={unit} roomType={roomType} booking={null} isSelected={isSelected(roomType.id, unit.id)} onSelect={toggleRoom} />)}
+                                            </div>
+                                        </div>
+                                    );
+                                })
                             )}
 
                             {activeTab === 'movements' && (
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <h2 className="text-lg font-bold text-white mb-3">⬇️ Check-ins ({todayArrivals.length})</h2>
-                                        {todayArrivals.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">No check-ins today</div> : (
+                                        {todayArrivals.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">None today</div> :
                                             <div className="space-y-2">{todayArrivals.map(b => {
-                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId);
-                                                const u = rt?.units.find(x => x.id === b.unitId);
-                                                return (
-                                                    <div key={b.id} className="glass-dark rounded-lg p-3">
-                                                        <div className="flex justify-between">
-                                                            <div>
-                                                                <div className="text-white font-medium">{b.firstName} {b.lastName}</div>
-                                                                <div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber} • {rt?.name}</div>
-                                                            </div>
-                                                            <span className={`text-xs px-2 py-0.5 rounded-full h-fit ${b.status === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500'} text-white`}>{b.status}</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}</div>
-                                        )}
+                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId); const u = rt?.units.find(x => x.id === b.unitId);
+                                                return <div key={b.id} className="glass-dark rounded-lg p-3"><div className="text-white font-medium">{b.firstName}</div><div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber}</div></div>;
+                                            })}</div>}
                                     </div>
                                     <div>
                                         <h2 className="text-lg font-bold text-white mb-3">⬆️ Check-outs ({todayDepartures.length})</h2>
-                                        {todayDepartures.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">No check-outs today</div> : (
+                                        {todayDepartures.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">None today</div> :
                                             <div className="space-y-2">{todayDepartures.map(b => {
-                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId);
-                                                const u = rt?.units.find(x => x.id === b.unitId);
-                                                return (
-                                                    <div key={b.id} className="glass-dark rounded-lg p-3">
-                                                        <div className="flex justify-between">
-                                                            <div>
-                                                                <div className="text-white font-medium">{b.firstName} {b.lastName}</div>
-                                                                <div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber} • {rt?.name}</div>
-                                                            </div>
-                                                            <span className="text-purple-400 text-sm">11:00 AM</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}</div>
-                                        )}
+                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId); const u = rt?.units.find(x => x.id === b.unitId);
+                                                return <div key={b.id} className="glass-dark rounded-lg p-3"><div className="text-white font-medium">{b.firstName}</div><div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber}</div></div>;
+                                            })}</div>}
                                     </div>
                                 </div>
                             )}
 
                             {activeTab === 'dashboard' && (
                                 <div>
-                                    <h2 className="text-lg font-bold text-white mb-4">📊 Overview</h2>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                                         <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-white">{stats.total}</div><div className="text-sm text-white text-opacity-60">Total</div></div>
                                         <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-green-400">{stats.available}</div><div className="text-sm text-white text-opacity-60">Available</div></div>
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-red-400">{stats.occupied}</div><div className="text-sm text-white text-opacity-60">Occupied</div></div>
+                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-red-400">{stats.occupied + stats.pending}</div><div className="text-sm text-white text-opacity-60">Booked</div></div>
                                         <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-blue-400">{Math.round(((stats.occupied + stats.pending) / stats.total) * 100)}%</div><div className="text-sm text-white text-opacity-60">Occupancy</div></div>
                                     </div>
-                                    <h3 className="text-white font-semibold mb-3">Room Types</h3>
                                     <div className="space-y-2">
                                         {ROOM_TYPES.map(rt => {
                                             const booked = rt.units.filter(u => getBooking(rt.id, u.id, getBDDateString())).length;
-                                            const avail = rt.units.length - booked;
-                                            return (
-                                                <div key={rt.id} className="glass-dark rounded-lg p-3 flex justify-between items-center">
-                                                    <span className="text-white text-sm">{rt.name}</span>
-                                                    <div className="flex gap-3">
-                                                        <span className="text-green-400 text-sm">{avail} free</span>
-                                                        <span className="text-red-400 text-sm">{booked} booked</span>
-                                                    </div>
-                                                </div>
-                                            );
+                                            return <div key={rt.id} className="glass-dark rounded-lg p-3 flex justify-between"><span className="text-white text-sm">{rt.name}</span><span className="text-sm"><span className="text-green-400">{rt.units.length - booked}</span> / <span className="text-red-400">{booked}</span></span></div>;
                                         })}
                                     </div>
                                 </div>
@@ -637,19 +492,16 @@
 
                     {selectedRooms.length > 0 && (
                         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-auto z-50">
-                            <button onClick={() => setShowBookingModal(true)}
-                                className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-lg">
+                            <button onClick={() => setShowBookingModal(true)} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-lg">
                                 ➕ Book {selectedRooms.length} Room{selectedRooms.length > 1 ? 's' : ''}
-                                <button onClick={e => { e.stopPropagation(); setSelectedRooms([]); }} className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full">✕</button>
+                                <span onClick={e => { e.stopPropagation(); setSelectedRooms([]); }} className="ml-2 cursor-pointer">✕</span>
                             </button>
                         </div>
                     )}
 
-                    {showBookingModal && <BookingModal selectedRooms={selectedRooms} onClose={() => setShowBookingModal(false)} onSuccess={handleBookingSuccess} token={token} />}
+                    {showBookingModal && <BookingModal selectedRooms={selectedRooms} onClose={() => setShowBookingModal(false)} onSuccess={() => { setShowBookingModal(false); setSelectedRooms([]); fetchBookings(); }} token={token} />}
 
-                    <div className="text-center py-4 text-white text-opacity-40 text-xs">
-                        Last sync: {lastUpdate.toLocaleTimeString()} • Powered by Holidayzer
-                    </div>
+                    <div className="text-center py-4 text-white text-opacity-40 text-xs">Powered by Holidayzer</div>
                 </div>
             );
         };
