@@ -40,14 +40,31 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        const BD_TIMEZONE = 'Asia/Dhaka';
-        const getBDDate = () => new Date(new Date().toLocaleString('en-US', { timeZone: BD_TIMEZONE }));
+        // Bangladesh Time - Fixed calculation
         const getBDDateString = () => {
-            const bd = getBDDate();
-            return `${bd.getFullYear()}-${String(bd.getMonth() + 1).padStart(2, '0')}-${String(bd.getDate()).padStart(2, '0')}`;
+            const now = new Date();
+            // Convert to Bangladesh time (UTC+6)
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const bdTime = new Date(utc + (6 * 3600000));
+            const year = bdTime.getFullYear();
+            const month = String(bdTime.getMonth() + 1).padStart(2, '0');
+            const day = String(bdTime.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         };
-        const getBDTimeString = () => getBDDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        const formatDateBD = (dateStr) => new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        
+        const getBDTimeString = () => {
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const bdTime = new Date(utc + (6 * 3600000));
+            return bdTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        };
+
+        const formatDateBD = (dateStr) => {
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        };
 
         const API_CONFIG = {
             baseUrl: 'https://api.beds24.com/v2',
@@ -56,33 +73,33 @@
         };
 
         const ROOM_TYPES = [
-            { id: 583459, name: "Royal Sea View Couple Room", maxAdult: 2, maxChild: 1, units: [
+            { id: 583459, name: "Royal Sea View Couple", maxAdult: 2, maxChild: 1, units: [
                 { id: 1, unitNumber: "601" }, { id: 2, unitNumber: "602" }, { id: 3, unitNumber: "603" }, { id: 4, unitNumber: "604" }
             ]},
-            { id: 583466, name: "Premium Sea View Couple Room", maxAdult: 2, maxChild: 1, units: [
+            { id: 583466, name: "Premium Sea View Couple", maxAdult: 2, maxChild: 1, units: [
                 { id: 1, unitNumber: "401" }, { id: 2, unitNumber: "404" }, { id: 3, unitNumber: "501" }, { id: 4, unitNumber: "504" }
             ]},
-            { id: 583467, name: "Deluxe Bay View Couple Room", maxAdult: 2, maxChild: 1, units: [
+            { id: 583467, name: "Deluxe Bay View Couple", maxAdult: 2, maxChild: 1, units: [
                 { id: 1, unitNumber: "402" }, { id: 2, unitNumber: "403" }, { id: 3, unitNumber: "502" }, { id: 4, unitNumber: "503" }
             ]},
-            { id: 583468, name: "Deluxe Hill View Couple Room", maxAdult: 2, maxChild: 1, units: [
+            { id: 583468, name: "Deluxe Hill View Couple", maxAdult: 2, maxChild: 1, units: [
                 { id: 1, unitNumber: "201" }, { id: 2, unitNumber: "204" }, { id: 3, unitNumber: "207" }, { id: 4, unitNumber: "301" },
                 { id: 5, unitNumber: "304" }, { id: 6, unitNumber: "307" }, { id: 7, unitNumber: "407" }, { id: 8, unitNumber: "507" }
             ]},
-            { id: 583469, name: "Deluxe Urban View Couple Room", maxAdult: 2, maxChild: 1, units: [
+            { id: 583469, name: "Deluxe Urban View Couple", maxAdult: 2, maxChild: 1, units: [
                 { id: 1, unitNumber: "101" }, { id: 2, unitNumber: "102", note: "No Balcony" }, { id: 3, unitNumber: "103", note: "No Balcony" },
                 { id: 4, unitNumber: "104" }, { id: 5, unitNumber: "107" }, { id: 6, unitNumber: "202", note: "No Balcony" },
                 { id: 7, unitNumber: "203", note: "No Balcony" }, { id: 8, unitNumber: "302", note: "No Balcony" }, { id: 9, unitNumber: "303", note: "No Balcony" }
             ]},
-            { id: 583470, name: "Premium Sea View Family Room", maxAdult: 4, maxChild: 2, units: [
+            { id: 583470, name: "Premium Sea View Family", maxAdult: 4, maxChild: 2, units: [
                 { id: 1, unitNumber: "405" }, { id: 2, unitNumber: "406" }, { id: 3, unitNumber: "408" },
                 { id: 4, unitNumber: "505" }, { id: 5, unitNumber: "506" }, { id: 6, unitNumber: "508" }, { id: 7, unitNumber: "606", note: "Connecting" }
             ]},
-            { id: 583471, name: "Deluxe Hill View Family Room", maxAdult: 4, maxChild: 2, units: [
+            { id: 583471, name: "Deluxe Hill View Family", maxAdult: 4, maxChild: 2, units: [
                 { id: 1, unitNumber: "205" }, { id: 2, unitNumber: "206" }, { id: 3, unitNumber: "208" },
                 { id: 4, unitNumber: "305" }, { id: 5, unitNumber: "306" }, { id: 6, unitNumber: "308" }
             ]},
-            { id: 583472, name: "Deluxe Urban View Family Room", maxAdult: 4, maxChild: 2, units: [
+            { id: 583472, name: "Deluxe Urban View Family", maxAdult: 4, maxChild: 2, units: [
                 { id: 1, unitNumber: "105" }, { id: 2, unitNumber: "106" }, { id: 3, unitNumber: "108" }
             ]}
         ];
@@ -90,14 +107,27 @@
         const getFloor = (n) => Math.floor(parseInt(n) / 100);
         const getFloorName = (f) => ['Ground', '1st', '2nd', '3rd', '4th', '5th', '6th'][f] + ' Floor';
         const getCategory = (m) => m <= 2 ? 'Couple Unit' : 'Family Unit';
-        const isDateInRange = (check, arr, dep) => {
-            const c = new Date(check + 'T00:00:00'), a = new Date(arr + 'T00:00:00'), d = new Date(dep + 'T00:00:00');
-            return c >= a && c < d;
+
+        // Fixed date comparison
+        const isDateInRange = (checkDate, arrival, departure) => {
+            if (!checkDate || !arrival || !departure) return false;
+            return checkDate >= arrival && checkDate < departure;
         };
 
         const BookingModal = ({ selectedRooms, onClose, onSuccess, token }) => {
-            const [form, setForm] = useState({ fullName: '', phone: '', email: '', nid: '', 
-                checkIn: getBDDateString(), checkOut: (() => { const t = getBDDate(); t.setDate(t.getDate() + 1); return t.toISOString().split('T')[0]; })() });
+            const tomorrow = () => {
+                const t = new Date();
+                const utc = t.getTime() + (t.getTimezoneOffset() * 60000);
+                const bd = new Date(utc + (6 * 3600000));
+                bd.setDate(bd.getDate() + 1);
+                return `${bd.getFullYear()}-${String(bd.getMonth()+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
+            };
+            
+            const [form, setForm] = useState({ 
+                fullName: '', phone: '', email: '', nid: '', 
+                checkIn: getBDDateString(), 
+                checkOut: tomorrow()
+            });
             const [submitting, setSubmitting] = useState(false);
             const [success, setSuccess] = useState(false);
             const [error, setError] = useState('');
@@ -110,15 +140,15 @@
                         propertyId: API_CONFIG.propertyId, roomId: r.roomType.id, unitId: r.unit.id,
                         arrival: form.checkIn, departure: form.checkOut, numAdult: r.roomType.maxAdult, numChild: 0,
                         status: 'request', firstName: form.fullName, lastName: '', email: form.email || 'default',
-                        mobile: form.phone, custom4: form.nid, custom5: 'Dashboard Booking', referer: 'holidayzer_dashboard'
+                        mobile: form.phone, custom4: form.nid, custom5: 'Dashboard', referer: 'holidayzer_dashboard'
                     }));
                     const res = await fetch(`${API_CONFIG.baseUrl}/bookings`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json', 'token': token }, body: JSON.stringify(bookings)
                     });
                     const data = await res.json();
                     if (data.success) { setSuccess(true); setTimeout(onSuccess, 2000); }
-                    else setError(data.error || 'Failed to create booking');
-                } catch (err) { setError('Network error'); }
+                    else setError(data.error || 'Booking failed');
+                } catch (err) { setError('Network error: ' + err.message); }
                 setSubmitting(false);
             };
 
@@ -142,50 +172,46 @@
                         <div className="mb-4">
                             <p className="text-white text-opacity-60 text-sm mb-2">Selected Rooms ({selectedRooms.length}):</p>
                             <div className="flex flex-wrap gap-2">
-                                {selectedRooms.map(r => (
-                                    <span key={`${r.roomType.id}-${r.unit.id}`} className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm">
-                                        {r.unit.unitNumber}
-                                    </span>
-                                ))}
+                                {selectedRooms.map(r => <span key={`${r.roomType.id}-${r.unit.id}`} className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm">{r.unit.unitNumber}</span>)}
                             </div>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-white text-opacity-70 text-sm mb-1">Check-in *</label>
-                                    <input type="date" required value={form.checkIn} onChange={e => { setForm({...form, checkIn: e.target.value}); if (new Date(e.target.value) >= new Date(form.checkOut)) { const n = new Date(e.target.value); n.setDate(n.getDate()+1); setForm(f => ({...f, checkOut: n.toISOString().split('T')[0]})); }}}
-                                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:outline-none focus:border-blue-500" />
+                                    <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})}
+                                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" />
                                 </div>
                                 <div>
                                     <label className="block text-white text-opacity-70 text-sm mb-1">Check-out *</label>
                                     <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})}
-                                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:outline-none focus:border-blue-500" />
+                                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-white text-opacity-70 text-sm mb-1">Full Name *</label>
-                                <input type="text" required placeholder="Guest full name" value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:outline-none focus:border-blue-500 placeholder-white placeholder-opacity-40" />
+                                <input type="text" required placeholder="Guest name" value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})}
+                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
                             </div>
                             <div>
                                 <label className="block text-white text-opacity-70 text-sm mb-1">Phone *</label>
-                                <input type="tel" required placeholder="Phone number" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:outline-none focus:border-blue-500 placeholder-white placeholder-opacity-40" />
+                                <input type="tel" required placeholder="Phone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
+                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
                             </div>
                             <div>
                                 <label className="block text-white text-opacity-70 text-sm mb-1">Email</label>
                                 <input type="email" placeholder="Email (optional)" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:outline-none focus:border-blue-500 placeholder-white placeholder-opacity-40" />
+                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
                             </div>
                             <div>
-                                <label className="block text-white text-opacity-70 text-sm mb-1">NID Number *</label>
+                                <label className="block text-white text-opacity-70 text-sm mb-1">NID *</label>
                                 <input type="text" required placeholder="NID number" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})}
-                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:outline-none focus:border-blue-500 placeholder-white placeholder-opacity-40" />
+                                    className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40" />
                             </div>
                             {error && <div className="p-3 rounded-lg bg-red-500 bg-opacity-20 border border-red-500 text-red-300 text-sm">{error}</div>}
                             <button type="submit" disabled={submitting}
-                                className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
-                                {submitting ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Creating...</> : '➕ Create Request Booking'}
+                                className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold disabled:opacity-50">
+                                {submitting ? '⏳ Creating...' : '➕ Create Request Booking'}
                             </button>
                         </form>
                     </div>
@@ -208,18 +234,23 @@
 
             return (
                 <div onClick={() => !isBooked && onSelect({ unit, roomType })}
-                    className={`room-card ${statusClass} rounded-xl p-3 text-white relative ${isSelected ? 'room-selected' : ''} ${isBooked ? 'cursor-default' : ''}`}>
-                    {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-blue-600 text-xs">✓</div>}
+                    className={`room-card ${statusClass} rounded-xl p-3 text-white relative ${isSelected ? 'room-selected' : ''} ${isBooked ? 'cursor-not-allowed' : ''}`}>
+                    {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">✓</div>}
                     <div className="flex justify-between items-start mb-1">
                         <span className="text-xl font-bold">{unit.unitNumber}</span>
                         <span className={`w-2 h-2 rounded-full bg-white ${!isBooked ? 'pulse-dot' : ''}`}></span>
                     </div>
-                    <div className="text-xs opacity-90 truncate mb-1">{roomType.name.replace(' Room', '').substring(0, 16)}</div>
-                    <div className="text-xs opacity-80 mb-2">👥 {roomType.maxAdult}A{roomType.maxChild > 0 ? ` +${roomType.maxChild}C` : ''}</div>
+                    <div className="text-xs opacity-90 truncate mb-1">{roomType.name}</div>
+                    <div className="text-xs opacity-80 mb-2">👥 {roomType.maxAdult}A{roomType.maxChild > 0 ? `+${roomType.maxChild}C` : ''}</div>
                     <div className="pt-2 border-t border-white border-opacity-20">
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white bg-opacity-20">{statusText}</span>
                     </div>
-                    {booking && <div className="mt-2 text-xs opacity-80"><div className="truncate font-medium">{booking.firstName}</div><div className="opacity-70">{formatDateBD(booking.departure)}</div></div>}
+                    {booking && (
+                        <div className="mt-2 text-xs opacity-90">
+                            <div className="font-semibold truncate">{booking.firstName}</div>
+                            <div className="opacity-70">→ {formatDateBD(booking.departure)}</div>
+                        </div>
+                    )}
                     {unit.note && <div className="mt-1 text-xs opacity-60">ℹ️ {unit.note}</div>}
                 </div>
             );
@@ -229,14 +260,22 @@
             const [activeTab, setActiveTab] = useState('floor');
             const [selectedDate, setSelectedDate] = useState(getBDDateString());
             const [checkInDate, setCheckInDate] = useState(getBDDateString());
-            const [checkOutDate, setCheckOutDate] = useState(() => { const t = getBDDate(); t.setDate(t.getDate() + 1); return t.toISOString().split('T')[0]; });
+            const [checkOutDate, setCheckOutDate] = useState(() => {
+                const t = new Date();
+                const utc = t.getTime() + (t.getTimezoneOffset() * 60000);
+                const bd = new Date(utc + (6 * 3600000));
+                bd.setDate(bd.getDate() + 1);
+                return `${bd.getFullYear()}-${String(bd.getMonth()+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
+            });
             const [bookings, setBookings] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [lastUpdate, setLastUpdate] = useState(getBDDate());
+            const [lastUpdate, setLastUpdate] = useState(new Date());
             const [token, setToken] = useState('');
             const [selectedRooms, setSelectedRooms] = useState([]);
             const [showBookingModal, setShowBookingModal] = useState(false);
             const [currentTime, setCurrentTime] = useState(getBDTimeString());
+            const [error, setError] = useState('');
+            const [bookingCount, setBookingCount] = useState(0);
 
             useEffect(() => { const t = setInterval(() => setCurrentTime(getBDTimeString()), 60000); return () => clearInterval(t); }, []);
 
@@ -247,48 +286,106 @@
             }, []);
 
             const floors = useMemo(() => Array.from(new Set(allRooms.map(r => getFloor(r.unit.unitNumber)))).sort((a,b) => a-b), [allRooms]);
-            const categories = ['Couple Unit', 'Family Unit'];
 
             const refreshToken = async () => {
                 try {
-                    const res = await fetch(`${API_CONFIG.baseUrl}/authentication/token`, { headers: { 'refreshToken': API_CONFIG.refreshToken } });
+                    const res = await fetch(`${API_CONFIG.baseUrl}/authentication/token`, { 
+                        method: 'GET',
+                        headers: { 'refreshToken': API_CONFIG.refreshToken } 
+                    });
                     const data = await res.json();
-                    if (data.token) { setToken(data.token); return data.token; }
-                } catch (e) { console.error('Token refresh failed:', e); }
-                return token;
+                    if (data.token) { 
+                        setToken(data.token); 
+                        console.log('Token refreshed successfully');
+                        return data.token; 
+                    }
+                    console.error('No token in response:', data);
+                } catch (e) { 
+                    console.error('Token refresh failed:', e); 
+                    setError('Token refresh failed: ' + e.message);
+                }
+                return null;
             };
 
             const fetchBookings = useCallback(async () => {
                 setLoading(true);
+                setError('');
                 try {
-                    let t = token || await refreshToken();
-                    let res = await fetch(`${API_CONFIG.baseUrl}/bookings?propertyId=${API_CONFIG.propertyId}`, { headers: { 'token': t } });
-                    if (res.status === 401) { t = await refreshToken(); res = await fetch(`${API_CONFIG.baseUrl}/bookings?propertyId=${API_CONFIG.propertyId}`, { headers: { 'token': t } }); }
+                    // Always get fresh token
+                    const freshToken = await refreshToken();
+                    if (!freshToken) {
+                        setError('Failed to get authentication token');
+                        setLoading(false);
+                        return;
+                    }
+                    
+                    const res = await fetch(`${API_CONFIG.baseUrl}/bookings?propertyId=${API_CONFIG.propertyId}`, { 
+                        headers: { 'token': freshToken } 
+                    });
                     const data = await res.json();
-                    if (data.success && data.data) setBookings(data.data.filter(b => b.status !== 'cancelled'));
-                } catch (e) { console.error('Fetch failed:', e); }
+                    
+                    console.log('API Response:', data.success, 'Count:', data.count);
+                    
+                    if (data.success && data.data) {
+                        const activeBookings = data.data.filter(b => b.status !== 'cancelled');
+                        setBookings(activeBookings);
+                        setBookingCount(activeBookings.length);
+                        console.log('Loaded', activeBookings.length, 'bookings');
+                    } else {
+                        setError('API Error: ' + (data.error || 'Unknown error'));
+                    }
+                } catch (e) { 
+                    console.error('Fetch failed:', e);
+                    setError('Fetch failed: ' + e.message);
+                }
                 setLoading(false);
-                setLastUpdate(getBDDate());
-            }, [token]);
+                setLastUpdate(new Date());
+            }, []);
 
-            useEffect(() => { fetchBookings(); const i = setInterval(fetchBookings, 120000); return () => clearInterval(i); }, []);
+            useEffect(() => { 
+                fetchBookings(); 
+                const i = setInterval(fetchBookings, 120000); 
+                return () => clearInterval(i); 
+            }, []);
 
-            const getBooking = useCallback((rtId, uId, date) => bookings.find(b => b.roomId === rtId && b.unitId === uId && isDateInRange(date, b.arrival, b.departure) && (b.status === 'confirmed' || b.status === 'request')), [bookings]);
+            const getBooking = useCallback((rtId, uId, date) => {
+                const found = bookings.find(b => 
+                    b.roomId === rtId && 
+                    b.unitId === uId && 
+                    isDateInRange(date, b.arrival, b.departure) &&
+                    (b.status === 'confirmed' || b.status === 'request')
+                );
+                return found;
+            }, [bookings]);
 
             const stats = useMemo(() => {
                 const today = getBDDateString();
                 let occupied = 0, available = 0, pending = 0, checkouts = 0, checkins = 0;
                 allRooms.forEach(({ unit, roomType }) => {
                     const b = getBooking(roomType.id, unit.id, today);
-                    if (b) { b.status === 'request' ? pending++ : occupied++; } else available++;
+                    if (b) { 
+                        if (b.status === 'request') pending++; 
+                        else occupied++; 
+                    } else {
+                        available++;
+                    }
                 });
-                bookings.forEach(b => { if (b.status !== 'cancelled') { if (b.departure === today) checkouts++; if (b.arrival === today) checkins++; } });
+                bookings.forEach(b => { 
+                    if (b.status !== 'cancelled') { 
+                        if (b.departure === today) checkouts++; 
+                        if (b.arrival === today) checkins++; 
+                    } 
+                });
                 return { total: allRooms.length, occupied, available, pending, checkouts, checkins };
             }, [allRooms, bookings, getBooking]);
 
             const availableForRange = useMemo(() => allRooms.filter(({ unit, roomType }) => {
-                return !bookings.find(b => b.roomId === roomType.id && b.unitId === unit.id && b.status !== 'cancelled' &&
-                    new Date(checkInDate + 'T00:00:00') < new Date(b.departure + 'T00:00:00') && new Date(checkOutDate + 'T00:00:00') > new Date(b.arrival + 'T00:00:00'));
+                return !bookings.find(b => 
+                    b.roomId === roomType.id && 
+                    b.unitId === unit.id && 
+                    b.status !== 'cancelled' &&
+                    checkInDate < b.departure && checkOutDate > b.arrival
+                );
             }), [allRooms, bookings, checkInDate, checkOutDate]);
 
             const todayArrivals = useMemo(() => bookings.filter(b => b.arrival === getBDDateString() && b.status !== 'cancelled'), [bookings]);
@@ -351,18 +448,22 @@
 
             return (
                 <div className="min-h-screen p-3 md:p-4 pb-24">
-                    {/* Header */}
                     <div className="glass rounded-xl p-3 mb-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
                                 <h1 className="text-lg md:text-xl font-bold text-white">🏨 Miami Beach Resort</h1>
-                                <span className="text-white text-opacity-50 text-xs hidden md:inline">Cox's Bazar • {formatDateBD(getBDDateString())} • {currentTime}</span>
+                                <span className="text-white text-opacity-50 text-xs hidden md:inline">
+                                    Cox's Bazar • {formatDateBD(getBDDateString())} • {currentTime} • {bookingCount} bookings
+                                </span>
                             </div>
                             <button onClick={fetchBookings} disabled={loading}
                                 className="flex items-center gap-2 px-4 py-2 glass rounded-lg text-white hover:bg-white hover:bg-opacity-10 text-sm">
                                 <span className={loading ? 'animate-spin' : ''}>🔄</span> {loading ? 'Syncing...' : 'Refresh'}
                             </button>
                         </div>
+                        
+                        {error && <div className="mt-2 p-2 rounded bg-red-500 bg-opacity-20 text-red-300 text-xs">{error}</div>}
+                        
                         <div className="flex gap-1 mt-3 overflow-x-auto pb-1">
                             {tabs.map(tab => (
                                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -375,7 +476,6 @@
                         </div>
                     </div>
 
-                    {/* Stats - Only on floor tab */}
                     {activeTab === 'floor' && (
                         <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
                             <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-white">{stats.total}</div><div className="text-xs text-white text-opacity-60">Total</div></div>
@@ -387,7 +487,6 @@
                         </div>
                     )}
 
-                    {/* Legend */}
                     <div className="glass rounded-lg p-2 mb-4">
                         <div className="flex flex-wrap items-center gap-3 justify-center text-white text-xs">
                             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded room-available"></div>Available</div>
@@ -397,7 +496,6 @@
                         </div>
                     </div>
 
-                    {/* Date Selector */}
                     {(activeTab === 'floor' || activeTab === 'category') && (
                         <div className="glass rounded-lg p-3 mb-4">
                             <div className="flex flex-wrap items-center gap-3">
@@ -415,7 +513,7 @@
                             <div className="flex flex-wrap items-center gap-3">
                                 <div className="flex items-center gap-2">
                                     <label className="text-white text-sm">Check-in:</label>
-                                    <input type="date" value={checkInDate} onChange={e => { setCheckInDate(e.target.value); if (new Date(e.target.value) >= new Date(checkOutDate)) { const n = new Date(e.target.value); n.setDate(n.getDate()+1); setCheckOutDate(n.toISOString().split('T')[0]); }}}
+                                    <input type="date" value={checkInDate} onChange={e => setCheckInDate(e.target.value)}
                                         className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -433,81 +531,75 @@
                     {!loading && (
                         <div className="glass rounded-xl p-3 md:p-4">
                             {activeTab === 'floor' && floors.map(f => renderFloor(f, selectedDate))}
-                            {activeTab === 'category' && categories.map(c => renderCategory(c, selectedDate))}
+                            {activeTab === 'category' && ['Couple Unit', 'Family Unit'].map(c => renderCategory(c, selectedDate))}
                             
                             {activeTab === 'search' && (
                                 <div>
                                     <h2 className="text-lg font-bold text-white mb-4">Available: {formatDateBD(checkInDate)} → {formatDateBD(checkOutDate)}</h2>
                                     {availableForRange.length === 0 ? (
                                         <div className="text-center py-12 text-white text-opacity-60"><div className="text-5xl mb-4">🏨</div><p>No rooms available</p></div>
-                                    ) : (
-                                        floors.map(floor => {
-                                            const rooms = availableForRange.filter(r => getFloor(r.unit.unitNumber) === floor);
-                                            if (!rooms.length) return null;
-                                            return (
-                                                <div key={floor} className="mb-6">
-                                                    <div className="flex items-center gap-3 mb-3">
-                                                        <div className="px-3 py-1.5 glass rounded-lg text-white font-semibold text-sm">{getFloorName(floor)}</div>
-                                                        <div className="flex-1 h-px bg-white bg-opacity-10"></div>
-                                                        <span className="text-green-400 text-sm">{rooms.length} available</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                                                        {rooms.map(({ unit, roomType }) => (
-                                                            <RoomCard key={`${roomType.id}-${unit.id}`} unit={unit} roomType={roomType} booking={null}
-                                                                isSelected={isSelected(roomType.id, unit.id)} onSelect={toggleRoom} />
-                                                        ))}
-                                                    </div>
+                                    ) : floors.map(floor => {
+                                        const rooms = availableForRange.filter(r => getFloor(r.unit.unitNumber) === floor);
+                                        if (!rooms.length) return null;
+                                        return (
+                                            <div key={floor} className="mb-6">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="px-3 py-1.5 glass rounded-lg text-white font-semibold text-sm">{getFloorName(floor)}</div>
+                                                    <div className="flex-1 h-px bg-white bg-opacity-10"></div>
+                                                    <span className="text-green-400 text-sm">{rooms.length} available</span>
                                                 </div>
-                                            );
-                                        })
-                                    )}
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                                                    {rooms.map(({ unit, roomType }) => (
+                                                        <RoomCard key={`${roomType.id}-${unit.id}`} unit={unit} roomType={roomType} booking={null}
+                                                            isSelected={isSelected(roomType.id, unit.id)} onSelect={toggleRoom} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
 
                             {activeTab === 'movements' && (
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
-                                        <h2 className="text-lg font-bold text-white mb-3">⬇️ Check-ins Today ({todayArrivals.length})</h2>
+                                        <h2 className="text-lg font-bold text-white mb-3">⬇️ Check-ins ({todayArrivals.length})</h2>
                                         {todayArrivals.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">No check-ins today</div> : (
-                                            <div className="space-y-2">
-                                                {todayArrivals.map(b => {
-                                                    const rt = ROOM_TYPES.find(r => r.id === b.roomId);
-                                                    const u = rt?.units.find(x => x.id === b.unitId);
-                                                    return (
-                                                        <div key={b.id} className="glass-dark rounded-lg p-3">
-                                                            <div className="flex justify-between">
-                                                                <div>
-                                                                    <div className="text-white font-medium">{b.firstName} {b.lastName}</div>
-                                                                    <div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber} • {rt?.name.split(' ').slice(0, 3).join(' ')}</div>
-                                                                </div>
-                                                                <span className={`text-xs px-2 py-0.5 rounded-full h-fit ${b.status === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500'} text-white`}>{b.status}</span>
+                                            <div className="space-y-2">{todayArrivals.map(b => {
+                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId);
+                                                const u = rt?.units.find(x => x.id === b.unitId);
+                                                return (
+                                                    <div key={b.id} className="glass-dark rounded-lg p-3">
+                                                        <div className="flex justify-between">
+                                                            <div>
+                                                                <div className="text-white font-medium">{b.firstName} {b.lastName}</div>
+                                                                <div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber} • {rt?.name}</div>
                                                             </div>
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full h-fit ${b.status === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500'} text-white`}>{b.status}</span>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                    </div>
+                                                );
+                                            })}</div>
                                         )}
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-bold text-white mb-3">⬆️ Check-outs Today ({todayDepartures.length})</h2>
+                                        <h2 className="text-lg font-bold text-white mb-3">⬆️ Check-outs ({todayDepartures.length})</h2>
                                         {todayDepartures.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">No check-outs today</div> : (
-                                            <div className="space-y-2">
-                                                {todayDepartures.map(b => {
-                                                    const rt = ROOM_TYPES.find(r => r.id === b.roomId);
-                                                    const u = rt?.units.find(x => x.id === b.unitId);
-                                                    return (
-                                                        <div key={b.id} className="glass-dark rounded-lg p-3">
-                                                            <div className="flex justify-between">
-                                                                <div>
-                                                                    <div className="text-white font-medium">{b.firstName} {b.lastName}</div>
-                                                                    <div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber} • {rt?.name.split(' ').slice(0, 3).join(' ')}</div>
-                                                                </div>
-                                                                <span className="text-purple-400 text-sm">11:00 AM</span>
+                                            <div className="space-y-2">{todayDepartures.map(b => {
+                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId);
+                                                const u = rt?.units.find(x => x.id === b.unitId);
+                                                return (
+                                                    <div key={b.id} className="glass-dark rounded-lg p-3">
+                                                        <div className="flex justify-between">
+                                                            <div>
+                                                                <div className="text-white font-medium">{b.firstName} {b.lastName}</div>
+                                                                <div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber} • {rt?.name}</div>
                                                             </div>
+                                                            <span className="text-purple-400 text-sm">11:00 AM</span>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                    </div>
+                                                );
+                                            })}</div>
                                         )}
                                     </div>
                                 </div>
@@ -515,46 +607,25 @@
 
                             {activeTab === 'dashboard' && (
                                 <div>
-                                    <h2 className="text-lg font-bold text-white mb-4">📊 Property Overview</h2>
+                                    <h2 className="text-lg font-bold text-white mb-4">📊 Overview</h2>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-white">{stats.total}</div><div className="text-white text-opacity-60 text-sm">Total</div></div>
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-green-400">{stats.available}</div><div className="text-white text-opacity-60 text-sm">Available</div></div>
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-red-400">{stats.occupied}</div><div className="text-white text-opacity-60 text-sm">Occupied</div></div>
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-blue-400">{Math.round((stats.occupied / stats.total) * 100)}%</div><div className="text-white text-opacity-60 text-sm">Occupancy</div></div>
+                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-white">{stats.total}</div><div className="text-sm text-white text-opacity-60">Total</div></div>
+                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-green-400">{stats.available}</div><div className="text-sm text-white text-opacity-60">Available</div></div>
+                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-red-400">{stats.occupied}</div><div className="text-sm text-white text-opacity-60">Occupied</div></div>
+                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-blue-400">{Math.round(((stats.occupied + stats.pending) / stats.total) * 100)}%</div><div className="text-sm text-white text-opacity-60">Occupancy</div></div>
                                     </div>
                                     <h3 className="text-white font-semibold mb-3">Room Types</h3>
-                                    <div className="space-y-2 mb-6">
+                                    <div className="space-y-2">
                                         {ROOM_TYPES.map(rt => {
                                             const booked = rt.units.filter(u => getBooking(rt.id, u.id, getBDDateString())).length;
                                             const avail = rt.units.length - booked;
-                                            const occ = Math.round((booked / rt.units.length) * 100);
                                             return (
-                                                <div key={rt.id} className="glass-dark rounded-lg p-3">
-                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                                                        <div><div className="text-white text-sm font-medium">{rt.name}</div><div className="text-white text-opacity-50 text-xs">{rt.maxAdult}A + {rt.maxChild}C</div></div>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-green-400 text-sm">{avail} free</span>
-                                                            <span className="text-red-400 text-sm">{booked} booked</span>
-                                                            <div className="w-20 h-2 bg-white bg-opacity-10 rounded-full overflow-hidden">
-                                                                <div className="h-full bg-gradient-to-r from-green-500 to-red-500 rounded-full" style={{ width: `${occ}%` }}></div>
-                                                            </div>
-                                                            <span className="text-white text-opacity-60 text-xs w-10">{occ}%</span>
-                                                        </div>
+                                                <div key={rt.id} className="glass-dark rounded-lg p-3 flex justify-between items-center">
+                                                    <span className="text-white text-sm">{rt.name}</span>
+                                                    <div className="flex gap-3">
+                                                        <span className="text-green-400 text-sm">{avail} free</span>
+                                                        <span className="text-red-400 text-sm">{booked} booked</span>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <h3 className="text-white font-semibold mb-3">Floor Status</h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                                        {floors.map(f => {
-                                            const fRooms = allRooms.filter(r => getFloor(r.unit.unitNumber) === f);
-                                            const booked = fRooms.filter(({ unit, roomType }) => getBooking(roomType.id, unit.id, getBDDateString())).length;
-                                            return (
-                                                <div key={f} className="glass-dark rounded-lg p-3 text-center">
-                                                    <div className="text-white font-medium text-sm">{getFloorName(f)}</div>
-                                                    <div className="text-2xl font-bold text-green-400 mt-1">{fRooms.length - booked}</div>
-                                                    <div className="text-white text-opacity-50 text-xs">of {fRooms.length} free</div>
                                                 </div>
                                             );
                                         })}
@@ -577,7 +648,7 @@
                     {showBookingModal && <BookingModal selectedRooms={selectedRooms} onClose={() => setShowBookingModal(false)} onSuccess={handleBookingSuccess} token={token} />}
 
                     <div className="text-center py-4 text-white text-opacity-40 text-xs">
-                        Last sync: {lastUpdate.toLocaleTimeString('en-US')} (GMT+6) • Powered by Holidayzer
+                        Last sync: {lastUpdate.toLocaleTimeString()} • Powered by Holidayzer
                     </div>
                 </div>
             );
