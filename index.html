@@ -3,510 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort - Front Desk Dashboard</title>
+    <title>Miami Beach Resort Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; }
-        body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .glass-dark { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .room-available { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-        .room-booked { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
-        .room-request { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
-        .room-checkout { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
-        .room-selected { outline: 3px solid #fff; outline-offset: 2px; transform: scale(1.05); }
-        .tab-active { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
-        .room-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-        .room-card:hover { transform: translateY(-3px) scale(1.02); }
-        .pulse-dot { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .room-available { background: linear-gradient(135deg, #10b981, #059669); }
+        .room-booked { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .room-request { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .room-checkout { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .room-card { transition: all 0.2s; cursor: pointer; }
+        .room-card:hover { transform: translateY(-2px); }
+        .tab-active { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback } = React;
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useMemo, useCallback} = React;
 
-        const getBDDateString = () => {
-            const now = new Date();
-            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const bdTime = new Date(utc + (6 * 3600000));
-            return `${bdTime.getFullYear()}-${String(bdTime.getMonth() + 1).padStart(2, '0')}-${String(bdTime.getDate()).padStart(2, '0')}`;
-        };
-        
-        const getBDTimeString = () => {
-            const now = new Date();
-            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const bdTime = new Date(utc + (6 * 3600000));
-            return bdTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        };
+const TOKEN = "eVW7+lNu24FRBvbO6F9l0eqUGlYwfIH52O7AwRRWAbDhiOIpJD4GP7YjdOg76p8xTdD5FeYV3zfWCg5HnPlHmz4pOp6Ebf2wyQLkQCjFFXnx3GzSvBiDVBhyf2wIfUtDpYlrNvc+RXfOK23xl/MWsDVu/r8niD4uoTnvQ4gQvD0=";
+const PROPERTY_ID = 279646;
+const API_URL = "https://api.beds24.com/v2";
 
-        const formatDateBD = (dateStr) => {
-            if (!dateStr) return '';
-            const [year, month, day] = dateStr.split('-');
-            return new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        };
+const getBDDate = () => {
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const bd = new Date(utc + 6 * 3600000);
+    return bd.getFullYear() + "-" + String(bd.getMonth()+1).padStart(2,"0") + "-" + String(bd.getDate()).padStart(2,"0");
+};
 
-        const API_CONFIG = {
-            baseUrl: 'https://api.beds24.com/v2',
-            propertyId: 279646,
-            // Access token valid for 24 hours (generated: 2026-01-04 22:30 UTC)
-            accessToken: 'E3iId8xY7knUSrDvcfWwPkI39SIpCKQuuPxdzrLjalAK5ztPH7TkhW8vTyWkNNvLba0BKgRF6mChjCdZ4DTuLgJ3a7YG4eg/LH/5i955fi+IIfUHxLLPWT5FgOOYIeg+L/G4XzjE+4TjTn7B890Kww6aRZKJmYRqymf74bLEH9U=',
-            refreshToken: '3xurjR5RLGGQJ/lOIS7HMhv0vGHSPcZQa3elCR1RfQaclxOvhZBi7L2qO91XrfWVvhztlNZ42q6Piyk5ZOmNDkLaup4UAd0GEGhS600+gi975YVCoaxX13Mlm7mFHGMXbjFTUE9/fK5XQqrUc3Ruy1vkeQ/thG1mryCu0YPJBJ8='
-        };
+const formatDate = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}) : "";
 
-        const ROOM_TYPES = [
-            { id: 583459, name: "Royal Sea View Couple", maxAdult: 2, maxChild: 1, units: [
-                { id: 1, unitNumber: "601" }, { id: 2, unitNumber: "602" }, { id: 3, unitNumber: "603" }, { id: 4, unitNumber: "604" }
-            ]},
-            { id: 583466, name: "Premium Sea View Couple", maxAdult: 2, maxChild: 1, units: [
-                { id: 1, unitNumber: "401" }, { id: 2, unitNumber: "404" }, { id: 3, unitNumber: "501" }, { id: 4, unitNumber: "504" }
-            ]},
-            { id: 583467, name: "Deluxe Bay View Couple", maxAdult: 2, maxChild: 1, units: [
-                { id: 1, unitNumber: "402" }, { id: 2, unitNumber: "403" }, { id: 3, unitNumber: "502" }, { id: 4, unitNumber: "503" }
-            ]},
-            { id: 583468, name: "Deluxe Hill View Couple", maxAdult: 2, maxChild: 1, units: [
-                { id: 1, unitNumber: "201" }, { id: 2, unitNumber: "204" }, { id: 3, unitNumber: "207" }, { id: 4, unitNumber: "301" },
-                { id: 5, unitNumber: "304" }, { id: 6, unitNumber: "307" }, { id: 7, unitNumber: "407" }, { id: 8, unitNumber: "507" }
-            ]},
-            { id: 583469, name: "Deluxe Urban View Couple", maxAdult: 2, maxChild: 1, units: [
-                { id: 1, unitNumber: "101" }, { id: 2, unitNumber: "102", note: "No Balcony" }, { id: 3, unitNumber: "103", note: "No Balcony" },
-                { id: 4, unitNumber: "104" }, { id: 5, unitNumber: "107" }, { id: 6, unitNumber: "202", note: "No Balcony" },
-                { id: 7, unitNumber: "203", note: "No Balcony" }, { id: 8, unitNumber: "302", note: "No Balcony" }, { id: 9, unitNumber: "303", note: "No Balcony" }
-            ]},
-            { id: 583470, name: "Premium Sea View Family", maxAdult: 4, maxChild: 2, units: [
-                { id: 1, unitNumber: "405" }, { id: 2, unitNumber: "406" }, { id: 3, unitNumber: "408" },
-                { id: 4, unitNumber: "505" }, { id: 5, unitNumber: "506" }, { id: 6, unitNumber: "508" }, { id: 7, unitNumber: "606", note: "Connecting" }
-            ]},
-            { id: 583471, name: "Deluxe Hill View Family", maxAdult: 4, maxChild: 2, units: [
-                { id: 1, unitNumber: "205" }, { id: 2, unitNumber: "206" }, { id: 3, unitNumber: "208" },
-                { id: 4, unitNumber: "305" }, { id: 5, unitNumber: "306" }, { id: 6, unitNumber: "308" }
-            ]},
-            { id: 583472, name: "Deluxe Urban View Family", maxAdult: 4, maxChild: 2, units: [
-                { id: 1, unitNumber: "105" }, { id: 2, unitNumber: "106" }, { id: 3, unitNumber: "108" }
-            ]}
-        ];
+const ROOMS = [
+    {id:583459, name:"Royal Sea View Couple", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
+    {id:583466, name:"Premium Sea View Couple", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
+    {id:583467, name:"Deluxe Bay View Couple", max:2, units:[{id:1,n:"402"},{id:2,n:"403"},{id:3,n:"502"},{id:4,n:"503"}]},
+    {id:583468, name:"Deluxe Hill View Couple", max:2, units:[{id:1,n:"201"},{id:2,n:"204"},{id:3,n:"207"},{id:4,n:"301"},{id:5,n:"304"},{id:6,n:"307"},{id:7,n:"407"},{id:8,n:"507"}]},
+    {id:583469, name:"Deluxe Urban View Couple", max:2, units:[{id:1,n:"101"},{id:2,n:"102"},{id:3,n:"103"},{id:4,n:"104"},{id:5,n:"107"},{id:6,n:"202"},{id:7,n:"203"},{id:8,n:"302"},{id:9,n:"303"}]},
+    {id:583470, name:"Premium Sea View Family", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
+    {id:583471, name:"Deluxe Hill View Family", max:4, units:[{id:1,n:"205"},{id:2,n:"206"},{id:3,n:"208"},{id:4,n:"305"},{id:5,n:"306"},{id:6,n:"308"}]},
+    {id:583472, name:"Deluxe Urban View Family", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
+];
 
-        const getFloor = (n) => Math.floor(parseInt(n) / 100);
-        const getFloorName = (f) => ['Ground', '1st', '2nd', '3rd', '4th', '5th', '6th'][f] + ' Floor';
-        const getCategory = (m) => m <= 2 ? 'Couple Unit' : 'Family Unit';
-        const isDateInRange = (checkDate, arrival, departure) => checkDate >= arrival && checkDate < departure;
+const getFloor = n => Math.floor(parseInt(n)/100);
+const floorName = f => ["Ground","1st","2nd","3rd","4th","5th","6th"][f] + " Floor";
 
-        const BookingModal = ({ selectedRooms, onClose, onSuccess, token }) => {
-            const tomorrow = () => {
-                const t = new Date();
-                const utc = t.getTime() + (t.getTimezoneOffset() * 60000);
-                const bd = new Date(utc + (6 * 3600000));
-                bd.setDate(bd.getDate() + 1);
-                return `${bd.getFullYear()}-${String(bd.getMonth()+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
-            };
-            const [form, setForm] = useState({ fullName: '', phone: '', email: '', nid: '', checkIn: getBDDateString(), checkOut: tomorrow() });
-            const [submitting, setSubmitting] = useState(false);
-            const [success, setSuccess] = useState(false);
-            const [error, setError] = useState('');
+function App() {
+    const [tab, setTab] = useState("floor");
+    const [date, setDate] = useState(getBDDate());
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [selected, setSelected] = useState([]);
+    const [showModal, setShowModal] = useState(false);
 
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setSubmitting(true); setError('');
-                try {
-                    const bookings = selectedRooms.map(r => ({
-                        propertyId: API_CONFIG.propertyId, roomId: r.roomType.id, unitId: r.unit.id,
-                        arrival: form.checkIn, departure: form.checkOut, numAdult: r.roomType.maxAdult, numChild: 0,
-                        status: 'request', firstName: form.fullName, lastName: '', email: form.email || 'default',
-                        mobile: form.phone, custom4: form.nid, custom5: 'Dashboard', referer: 'holidayzer_dashboard'
-                    }));
-                    const res = await fetch(`${API_CONFIG.baseUrl}/bookings`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'token': token }, body: JSON.stringify(bookings)
-                    });
-                    const data = await res.json();
-                    if (data.success) { setSuccess(true); setTimeout(onSuccess, 2000); }
-                    else setError(data.error || 'Booking failed');
-                } catch (err) { setError('Network error: ' + err.message); }
-                setSubmitting(false);
-            };
+    const allRooms = useMemo(() => {
+        let arr = [];
+        ROOMS.forEach(r => r.units.forEach(u => arr.push({room:r, unit:u})));
+        return arr.sort((a,b) => parseInt(a.unit.n) - parseInt(b.unit.n));
+    }, []);
 
-            if (success) return (
-                <div className="modal-overlay" onClick={onClose}>
-                    <div className="glass rounded-2xl p-8 text-center" onClick={e => e.stopPropagation()}>
-                        <div className="text-6xl mb-4">✅</div>
-                        <h3 className="text-2xl font-bold text-white mb-2">Booking Created!</h3>
-                        <p className="text-white text-opacity-70">Request submitted to Beds24</p>
-                    </div>
-                </div>
-            );
+    const floors = useMemo(() => [...new Set(allRooms.map(r => getFloor(r.unit.n)))].sort(), [allRooms]);
 
-            return (
-                <div className="modal-overlay" onClick={onClose}>
-                    <div className="glass rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-white">Create Booking</h3>
-                            <button onClick={onClose} className="text-white text-2xl">&times;</button>
-                        </div>
-                        <div className="mb-4">
-                            <p className="text-white text-opacity-60 text-sm mb-2">Selected: {selectedRooms.map(r => r.unit.unitNumber).join(', ')}</p>
-                        </div>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div><label className="block text-white text-opacity-70 text-sm mb-1">Check-in</label>
-                                    <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
-                                <div><label className="block text-white text-opacity-70 text-sm mb-1">Check-out</label>
-                                    <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
-                            </div>
-                            <div><label className="block text-white text-opacity-70 text-sm mb-1">Full Name *</label>
-                                <input type="text" required value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
-                            <div><label className="block text-white text-opacity-70 text-sm mb-1">Phone *</label>
-                                <input type="tel" required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
-                            <div><label className="block text-white text-opacity-70 text-sm mb-1">Email</label>
-                                <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
-                            <div><label className="block text-white text-opacity-70 text-sm mb-1">NID *</label>
-                                <input type="text" required value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20" /></div>
-                            {error && <div className="p-3 rounded-lg bg-red-500 bg-opacity-20 text-red-300 text-sm">{error}</div>}
-                            <button type="submit" disabled={submitting} className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold disabled:opacity-50">
-                                {submitting ? '⏳ Creating...' : '➕ Create Booking'}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            );
-        };
-
-        const RoomCard = ({ unit, roomType, booking, isSelected, onSelect }) => {
-            const today = getBDDateString();
-            const isBooked = booking && (booking.status === 'confirmed' || booking.status === 'request');
-            const isRequest = booking?.status === 'request';
-            const isCheckoutToday = booking?.departure === today;
-            
-            let statusClass = 'room-available', statusText = 'Available';
-            if (isBooked) {
-                if (isRequest) { statusClass = 'room-request'; statusText = 'Pending'; }
-                else if (isCheckoutToday) { statusClass = 'room-checkout'; statusText = 'C/O Today'; }
-                else { statusClass = 'room-booked'; statusText = 'Occupied'; }
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch(API_URL + "/bookings?propertyId=" + PROPERTY_ID, {headers:{token:TOKEN}});
+            const data = await res.json();
+            if (data.success) {
+                setBookings(data.data.filter(b => b.status !== "cancelled"));
+            } else {
+                setError("API: " + (data.error || "Failed"));
             }
+        } catch(e) {
+            setError("Network: " + e.message);
+        }
+        setLoading(false);
+    }, []);
 
-            return (
-                <div onClick={() => !isBooked && onSelect({ unit, roomType })}
-                    className={`room-card ${statusClass} rounded-xl p-3 text-white relative ${isSelected ? 'room-selected' : ''}`}>
-                    {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">✓</div>}
-                    <div className="flex justify-between items-start mb-1">
-                        <span className="text-xl font-bold">{unit.unitNumber}</span>
-                        <span className={`w-2 h-2 rounded-full bg-white ${!isBooked ? 'pulse-dot' : ''}`}></span>
-                    </div>
-                    <div className="text-xs opacity-90 truncate mb-1">{roomType.name}</div>
-                    <div className="text-xs opacity-80 mb-2">👥 {roomType.maxAdult}A{roomType.maxChild > 0 ? `+${roomType.maxChild}C` : ''}</div>
-                    <div className="pt-2 border-t border-white border-opacity-20">
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white bg-opacity-20">{statusText}</span>
-                    </div>
-                    {booking && <div className="mt-2 text-xs"><div className="font-semibold truncate">{booking.firstName}</div><div className="opacity-70">→ {formatDateBD(booking.departure)}</div></div>}
-                    {unit.note && <div className="mt-1 text-xs opacity-60">ℹ️ {unit.note}</div>}
+    useEffect(() => { fetchData(); const i = setInterval(fetchData, 120000); return () => clearInterval(i); }, [fetchData]);
+
+    const getBooking = (roomId, unitId, d) => bookings.find(b => 
+        b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure
+    );
+
+    const stats = useMemo(() => {
+        const today = getBDDate();
+        let occ=0, avail=0, pend=0, cin=0, cout=0;
+        allRooms.forEach(({room,unit}) => {
+            const b = getBooking(room.id, unit.id, today);
+            if(b) b.status==="request" ? pend++ : occ++;
+            else avail++;
+        });
+        bookings.forEach(b => {
+            if(b.arrival===today) cin++;
+            if(b.departure===today) cout++;
+        });
+        return {total:allRooms.length, occ, avail, pend, cin, cout};
+    }, [allRooms, bookings]);
+
+    const toggle = (room, unit) => {
+        const key = room.id + "-" + unit.id;
+        setSelected(s => s.find(x => x.key===key) ? s.filter(x => x.key!==key) : [...s, {key, room, unit}]);
+    };
+
+    const RoomCard = ({room, unit, booking}) => {
+        const isBooked = booking && (booking.status==="confirmed" || booking.status==="request");
+        const cls = !isBooked ? "room-available" : booking.status==="request" ? "room-request" : booking.departure===getBDDate() ? "room-checkout" : "room-booked";
+        const isSel = selected.find(x => x.key === room.id+"-"+unit.id);
+        
+        return (
+            <div onClick={() => !isBooked && toggle(room, unit)}
+                className={"room-card rounded-xl p-3 text-white " + cls + (isSel ? " ring-2 ring-white" : "")}>
+                <div className="flex justify-between mb-1">
+                    <span className="text-xl font-bold">{unit.n}</span>
+                    {isSel && <span>✓</span>}
                 </div>
-            );
-        };
+                <div className="text-xs opacity-80 truncate">{room.name}</div>
+                <div className="text-xs opacity-70 mt-1">👥 {room.max}A</div>
+                <div className="mt-2 pt-2 border-t border-white border-opacity-20 text-xs">
+                    {isBooked ? (
+                        <div><span className="font-medium">{booking.firstName}</span><div className="opacity-70">→{formatDate(booking.departure)}</div></div>
+                    ) : <span className="bg-white bg-opacity-20 px-2 py-1 rounded">Available</span>}
+                </div>
+            </div>
+        );
+    };
 
-        const HotelDashboard = () => {
-            const [activeTab, setActiveTab] = useState('floor');
-            const [selectedDate, setSelectedDate] = useState(getBDDateString());
-            const [checkInDate, setCheckInDate] = useState(getBDDateString());
-            const [checkOutDate, setCheckOutDate] = useState(() => {
-                const t = new Date(); const utc = t.getTime() + (t.getTimezoneOffset() * 60000); const bd = new Date(utc + (6 * 3600000));
-                bd.setDate(bd.getDate() + 1);
-                return `${bd.getFullYear()}-${String(bd.getMonth()+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
-            });
-            const [bookings, setBookings] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [lastUpdate, setLastUpdate] = useState(new Date());
-            const [token, setToken] = useState(API_CONFIG.accessToken);
-            const [selectedRooms, setSelectedRooms] = useState([]);
-            const [showBookingModal, setShowBookingModal] = useState(false);
-            const [currentTime, setCurrentTime] = useState(getBDTimeString());
-            const [error, setError] = useState('');
+    const renderFloor = (floor) => {
+        const rooms = allRooms.filter(r => getFloor(r.unit.n) === floor);
+        return (
+            <div key={floor} className="mb-6">
+                <div className="flex items-center gap-3 mb-3">
+                    <span className="px-3 py-1 glass rounded text-white text-sm font-medium">🏢 {floorName(floor)}</span>
+                    <div className="flex-1 h-px bg-white bg-opacity-10"></div>
+                    <span className="text-white text-opacity-50 text-sm">{rooms.length} rooms</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                    {rooms.map(({room,unit}) => <RoomCard key={room.id+"-"+unit.id} room={room} unit={unit} booking={getBooking(room.id, unit.id, date)}/>)}
+                </div>
+            </div>
+        );
+    };
 
-            useEffect(() => { const t = setInterval(() => setCurrentTime(getBDTimeString()), 60000); return () => clearInterval(t); }, []);
+    const renderCategory = (cat) => {
+        const maxA = cat === "Couple" ? 2 : 4;
+        const rooms = allRooms.filter(r => r.room.max === maxA);
+        return (
+            <div key={cat} className="mb-6">
+                <div className="flex items-center gap-3 mb-3">
+                    <span className="px-3 py-1 glass rounded text-white text-sm font-medium">👥 {cat} Units</span>
+                    <div className="flex-1 h-px bg-white bg-opacity-10"></div>
+                    <span className="text-white text-opacity-50 text-sm">{rooms.length} rooms</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                    {rooms.map(({room,unit}) => <RoomCard key={room.id+"-"+unit.id} room={room} unit={unit} booking={getBooking(room.id, unit.id, date)}/>)}
+                </div>
+            </div>
+        );
+    };
 
-            const allRooms = useMemo(() => {
-                const rooms = [];
-                ROOM_TYPES.forEach(rt => rt.units.forEach(u => rooms.push({ unit: u, roomType: rt })));
-                return rooms.sort((a, b) => parseInt(a.unit.unitNumber) - parseInt(b.unit.unitNumber));
-            }, []);
-
-            const floors = useMemo(() => Array.from(new Set(allRooms.map(r => getFloor(r.unit.unitNumber)))).sort((a,b) => a-b), [allRooms]);
-
-            const fetchBookings = useCallback(async () => {
-                setLoading(true); setError('');
-                try {
-                    // Try direct API call first
-                    let res = await fetch(`${API_CONFIG.baseUrl}/bookings?propertyId=${API_CONFIG.propertyId}`, { 
-                        headers: { 'token': token }
-                    });
-                    
-                    // If CORS fails, try with proxy
-                    if (!res.ok) {
-                        res = await fetch(`https://corsproxy.io/?${encodeURIComponent(API_CONFIG.baseUrl + '/bookings?propertyId=' + API_CONFIG.propertyId)}`, {
-                            headers: { 'token': token }
-                        });
-                    }
-                    
-                    const data = await res.json();
-                    if (data.success && data.data) {
-                        setBookings(data.data.filter(b => b.status !== 'cancelled'));
-                        console.log('Loaded', data.data.length, 'bookings');
-                    } else {
-                        setError('API Error: ' + (data.error || JSON.stringify(data)));
-                    }
-                } catch (e) { 
-                    console.error('Fetch error:', e);
-                    setError('Connection failed. Trying backup...');
-                    // Try backup proxy
-                    try {
-                        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(API_CONFIG.baseUrl + '/bookings?propertyId=' + API_CONFIG.propertyId + '&token=' + token)}`);
-                        const data = await res.json();
-                        if (data.success && data.data) {
-                            setBookings(data.data.filter(b => b.status !== 'cancelled'));
-                            setError('');
-                        }
-                    } catch (e2) {
-                        setError('All connections failed: ' + e.message);
-                    }
-                }
-                setLoading(false);
-                setLastUpdate(new Date());
-            }, [token]);
-
-            useEffect(() => { fetchBookings(); const i = setInterval(fetchBookings, 120000); return () => clearInterval(i); }, []);
-
-            const getBooking = useCallback((rtId, uId, date) => {
-                return bookings.find(b => b.roomId === rtId && b.unitId === uId && isDateInRange(date, b.arrival, b.departure) && (b.status === 'confirmed' || b.status === 'request'));
-            }, [bookings]);
-
-            const stats = useMemo(() => {
-                const today = getBDDateString();
-                let occupied = 0, available = 0, pending = 0, checkouts = 0, checkins = 0;
-                allRooms.forEach(({ unit, roomType }) => {
-                    const b = getBooking(roomType.id, unit.id, today);
-                    if (b) { b.status === 'request' ? pending++ : occupied++; } else available++;
-                });
-                bookings.forEach(b => { if (b.status !== 'cancelled') { if (b.departure === today) checkouts++; if (b.arrival === today) checkins++; } });
-                return { total: allRooms.length, occupied, available, pending, checkouts, checkins };
-            }, [allRooms, bookings, getBooking]);
-
-            const availableForRange = useMemo(() => allRooms.filter(({ unit, roomType }) => {
-                return !bookings.find(b => b.roomId === roomType.id && b.unitId === unit.id && b.status !== 'cancelled' && checkInDate < b.departure && checkOutDate > b.arrival);
-            }), [allRooms, bookings, checkInDate, checkOutDate]);
-
-            const todayArrivals = useMemo(() => bookings.filter(b => b.arrival === getBDDateString() && b.status !== 'cancelled'), [bookings]);
-            const todayDepartures = useMemo(() => bookings.filter(b => b.departure === getBDDateString() && b.status !== 'cancelled'), [bookings]);
-
-            const toggleRoom = (room) => setSelectedRooms(prev => {
-                const exists = prev.find(r => r.roomType.id === room.roomType.id && r.unit.id === room.unit.id);
-                return exists ? prev.filter(r => !(r.roomType.id === room.roomType.id && r.unit.id === room.unit.id)) : [...prev, room];
-            });
-            const isSelected = (rtId, uId) => selectedRooms.some(r => r.roomType.id === rtId && r.unit.id === uId);
-
-            const tabs = [
-                { id: 'floor', label: 'By Floor', icon: '🏢' },
-                { id: 'category', label: 'By Category', icon: '👥' },
-                { id: 'search', label: 'Availability', icon: '🔍' },
-                { id: 'movements', label: 'Movements', icon: '↔️' },
-                { id: 'dashboard', label: 'Dashboard', icon: '📊' }
-            ];
-
-            const renderFloor = (floor, date) => {
-                const rooms = allRooms.filter(r => getFloor(r.unit.unitNumber) === floor);
-                return (
-                    <div key={floor} className="mb-6">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="px-3 py-1.5 glass rounded-lg text-white font-semibold text-sm">🏢 {getFloorName(floor)}</div>
-                            <div className="flex-1 h-px bg-white bg-opacity-10"></div>
-                            <span className="text-white text-opacity-50 text-sm">{rooms.length} rooms</span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                            {rooms.map(({ unit, roomType }) => (
-                                <RoomCard key={`${roomType.id}-${unit.id}`} unit={unit} roomType={roomType}
-                                    booking={getBooking(roomType.id, unit.id, date)} isSelected={isSelected(roomType.id, unit.id)} onSelect={toggleRoom} />
-                            ))}
-                        </div>
+    return (
+        <div className="min-h-screen p-4 pb-24">
+            <div className="glass rounded-xl p-4 mb-4">
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <h1 className="text-xl font-bold text-white">🏨 Miami Beach Resort</h1>
+                        <p className="text-white text-opacity-50 text-sm">Cox Bazar • {formatDate(getBDDate())} • {bookings.length} bookings</p>
                     </div>
-                );
-            };
+                    <button onClick={fetchData} className="px-4 py-2 glass rounded-lg text-white text-sm">
+                        {loading ? "⏳" : "🔄"} Refresh
+                    </button>
+                </div>
+                {error && <div className="mt-2 p-2 bg-red-500 bg-opacity-20 rounded text-red-300 text-sm">{error}</div>}
+                <div className="flex gap-2 mt-4 overflow-x-auto">
+                    {[["floor","🏢 Floor"],["category","👥 Category"],["movements","↔️ Today"],["dashboard","📊 Stats"]].map(([id,label]) => (
+                        <button key={id} onClick={() => setTab(id)} className={"px-4 py-2 rounded-lg text-sm whitespace-nowrap " + (tab===id ? "tab-active text-white" : "text-white text-opacity-60 hover:bg-white hover:bg-opacity-5")}>
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
-            const renderCategory = (cat, date) => {
-                const rooms = allRooms.filter(r => getCategory(r.roomType.maxAdult) === cat);
-                return (
-                    <div key={cat} className="mb-6">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="px-3 py-1.5 glass rounded-lg text-white font-semibold text-sm">👥 {cat}</div>
-                            <div className="flex-1 h-px bg-white bg-opacity-10"></div>
-                            <span className="text-white text-opacity-50 text-sm">{rooms.length} rooms</span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                            {rooms.map(({ unit, roomType }) => (
-                                <RoomCard key={`${roomType.id}-${unit.id}`} unit={unit} roomType={roomType}
-                                    booking={getBooking(roomType.id, unit.id, date)} isSelected={isSelected(roomType.id, unit.id)} onSelect={toggleRoom} />
-                            ))}
-                        </div>
-                    </div>
-                );
-            };
+            {tab === "floor" && (
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+                    <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-white">{stats.total}</div><div className="text-xs text-white text-opacity-60">Total</div></div>
+                    <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-green-400">{stats.avail}</div><div className="text-xs text-white text-opacity-60">Available</div></div>
+                    <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-red-400">{stats.occ}</div><div className="text-xs text-white text-opacity-60">Occupied</div></div>
+                    <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-yellow-400">{stats.pend}</div><div className="text-xs text-white text-opacity-60">Pending</div></div>
+                    <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-blue-400">{stats.cin}</div><div className="text-xs text-white text-opacity-60">Check-in</div></div>
+                    <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-purple-400">{stats.cout}</div><div className="text-xs text-white text-opacity-60">Check-out</div></div>
+                </div>
+            )}
 
-            return (
-                <div className="min-h-screen p-3 md:p-4 pb-24">
-                    <div className="glass rounded-xl p-3 mb-4">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="glass rounded-lg p-2 mb-4 flex flex-wrap justify-center gap-4 text-white text-xs">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-available"></span>Available</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-booked"></span>Occupied</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-request"></span>Pending</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-checkout"></span>C/O Today</span>
+            </div>
+
+            {(tab === "floor" || tab === "category") && (
+                <div className="glass rounded-lg p-3 mb-4 flex flex-wrap items-center gap-3">
+                    <span className="text-white text-sm">📅</span>
+                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="px-3 py-1 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20"/>
+                    <button onClick={() => setDate(getBDDate())} className="px-3 py-1 glass rounded text-white text-sm">Today</button>
+                    <span className="text-white text-opacity-60 text-sm">{formatDate(date)}</span>
+                </div>
+            )}
+
+            {loading && <div className="flex justify-center py-12"><div className="loader"></div></div>}
+
+            {!loading && (
+                <div className="glass rounded-xl p-4">
+                    {tab === "floor" && floors.map(f => renderFloor(f))}
+                    {tab === "category" && ["Couple","Family"].map(c => renderCategory(c))}
+                    {tab === "movements" && (
+                        <div className="grid md:grid-cols-2 gap-4">
                             <div>
-                                <h1 className="text-lg md:text-xl font-bold text-white">🏨 Miami Beach Resort</h1>
-                                <span className="text-white text-opacity-50 text-xs">Cox's Bazar • {formatDateBD(getBDDateString())} • {currentTime} • {bookings.length} bookings loaded</span>
+                                <h3 className="text-white font-bold mb-3">⬇️ Check-ins ({stats.cin})</h3>
+                                {bookings.filter(b => b.arrival===getBDDate()).map(b => {
+                                    const r = ROOMS.find(x => x.id===b.roomId);
+                                    const u = r ? r.units.find(x => x.id===b.unitId) : null;
+                                    return <div key={b.id} className="glass rounded p-3 mb-2 text-white"><div className="font-medium">{b.firstName}</div><div className="text-sm text-white text-opacity-60">Room {u ? u.n : "?"}</div></div>;
+                                })}
+                                {stats.cin===0 && <div className="text-white text-opacity-50 text-center py-4">None today</div>}
                             </div>
-                            <button onClick={fetchBookings} disabled={loading} className="flex items-center gap-2 px-4 py-2 glass rounded-lg text-white text-sm">
-                                <span className={loading ? 'animate-spin' : ''}>🔄</span> {loading ? 'Syncing...' : 'Refresh'}
-                            </button>
-                        </div>
-                        {error && <div className="mt-2 p-2 rounded bg-red-500 bg-opacity-20 text-red-300 text-xs">{error}</div>}
-                        <div className="flex gap-1 mt-3 overflow-x-auto pb-1">
-                            {tabs.map(tab => (
-                                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm ${activeTab === tab.id ? 'tab-active text-white' : 'text-white text-opacity-60 hover:bg-white hover:bg-opacity-5'}`}>
-                                    {tab.icon} <span className="hidden sm:inline">{tab.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {activeTab === 'floor' && (
-                        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
-                            <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-white">{stats.total}</div><div className="text-xs text-white text-opacity-60">Total</div></div>
-                            <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-green-400">{stats.available}</div><div className="text-xs text-white text-opacity-60">Available</div></div>
-                            <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-red-400">{stats.occupied}</div><div className="text-xs text-white text-opacity-60">Occupied</div></div>
-                            <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-yellow-400">{stats.pending}</div><div className="text-xs text-white text-opacity-60">Pending</div></div>
-                            <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-blue-400">{stats.checkins}</div><div className="text-xs text-white text-opacity-60">Check-ins</div></div>
-                            <div className="glass rounded-lg p-3 text-center"><div className="text-xl font-bold text-purple-400">{stats.checkouts}</div><div className="text-xs text-white text-opacity-60">Check-outs</div></div>
-                        </div>
-                    )}
-
-                    <div className="glass rounded-lg p-2 mb-4">
-                        <div className="flex flex-wrap items-center gap-3 justify-center text-white text-xs">
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded room-available"></div>Available</div>
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded room-booked"></div>Occupied</div>
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded room-request"></div>Pending</div>
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded room-checkout"></div>C/O Today</div>
-                        </div>
-                    </div>
-
-                    {(activeTab === 'floor' || activeTab === 'category') && (
-                        <div className="glass rounded-lg p-3 mb-4">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <label className="text-white text-sm">📅</label>
-                                <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
-                                <button onClick={() => setSelectedDate(getBDDateString())} className="px-3 py-1.5 glass rounded-lg text-white text-sm">Today</button>
-                                <span className="text-white text-opacity-60 text-sm">{formatDateBD(selectedDate)}</span>
+                            <div>
+                                <h3 className="text-white font-bold mb-3">⬆️ Check-outs ({stats.cout})</h3>
+                                {bookings.filter(b => b.departure===getBDDate()).map(b => {
+                                    const r = ROOMS.find(x => x.id===b.roomId);
+                                    const u = r ? r.units.find(x => x.id===b.unitId) : null;
+                                    return <div key={b.id} className="glass rounded p-3 mb-2 text-white"><div className="font-medium">{b.firstName}</div><div className="text-sm text-white text-opacity-60">Room {u ? u.n : "?"}</div></div>;
+                                })}
+                                {stats.cout===0 && <div className="text-white text-opacity-50 text-center py-4">None today</div>}
                             </div>
                         </div>
                     )}
-
-                    {activeTab === 'search' && (
-                        <div className="glass rounded-lg p-3 mb-4">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <input type="date" value={checkInDate} onChange={e => setCheckInDate(e.target.value)} className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
-                                <span className="text-white">→</span>
-                                <input type="date" value={checkOutDate} min={checkInDate} onChange={e => setCheckOutDate(e.target.value)} className="px-3 py-1.5 rounded-lg bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20" />
-                                <span className="text-green-400 font-medium">{availableForRange.length} available</span>
+                    {tab === "dashboard" && (
+                        <div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                <div className="glass rounded-lg p-4 text-center"><div className="text-3xl font-bold text-white">{stats.total}</div><div className="text-white text-opacity-60">Total</div></div>
+                                <div className="glass rounded-lg p-4 text-center"><div className="text-3xl font-bold text-green-400">{stats.avail}</div><div className="text-white text-opacity-60">Available</div></div>
+                                <div className="glass rounded-lg p-4 text-center"><div className="text-3xl font-bold text-red-400">{stats.occ+stats.pend}</div><div className="text-white text-opacity-60">Booked</div></div>
+                                <div className="glass rounded-lg p-4 text-center"><div className="text-3xl font-bold text-blue-400">{Math.round((stats.occ+stats.pend)/stats.total*100)}%</div><div className="text-white text-opacity-60">Occupancy</div></div>
                             </div>
+                            {ROOMS.map(r => {
+                                const booked = r.units.filter(u => getBooking(r.id, u.id, getBDDate())).length;
+                                return <div key={r.id} className="glass rounded p-3 mb-2 flex justify-between text-white"><span>{r.name}</span><span><span className="text-green-400">{r.units.length-booked}</span> / <span className="text-red-400">{booked}</span></span></div>;
+                            })}
                         </div>
                     )}
-
-                    {loading && <div className="flex justify-center py-12"><div className="loader"></div></div>}
-
-                    {!loading && (
-                        <div className="glass rounded-xl p-3 md:p-4">
-                            {activeTab === 'floor' && floors.map(f => renderFloor(f, selectedDate))}
-                            {activeTab === 'category' && ['Couple Unit', 'Family Unit'].map(c => renderCategory(c, selectedDate))}
-                            
-                            {activeTab === 'search' && (availableForRange.length === 0 ? 
-                                <div className="text-center py-12 text-white text-opacity-60"><div className="text-5xl mb-4">🏨</div><p>No rooms available</p></div> :
-                                floors.map(floor => {
-                                    const rooms = availableForRange.filter(r => getFloor(r.unit.unitNumber) === floor);
-                                    if (!rooms.length) return null;
-                                    return (
-                                        <div key={floor} className="mb-6">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <span className="px-3 py-1.5 glass rounded-lg text-white font-semibold text-sm">{getFloorName(floor)}</span>
-                                                <div className="flex-1 h-px bg-white bg-opacity-10"></div>
-                                                <span className="text-green-400 text-sm">{rooms.length}</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                                                {rooms.map(({ unit, roomType }) => <RoomCard key={`${roomType.id}-${unit.id}`} unit={unit} roomType={roomType} booking={null} isSelected={isSelected(roomType.id, unit.id)} onSelect={toggleRoom} />)}
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-
-                            {activeTab === 'movements' && (
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                        <h2 className="text-lg font-bold text-white mb-3">⬇️ Check-ins ({todayArrivals.length})</h2>
-                                        {todayArrivals.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">None today</div> :
-                                            <div className="space-y-2">{todayArrivals.map(b => {
-                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId); const u = rt?.units.find(x => x.id === b.unitId);
-                                                return <div key={b.id} className="glass-dark rounded-lg p-3"><div className="text-white font-medium">{b.firstName}</div><div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber}</div></div>;
-                                            })}</div>}
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-bold text-white mb-3">⬆️ Check-outs ({todayDepartures.length})</h2>
-                                        {todayDepartures.length === 0 ? <div className="glass-dark rounded-lg p-4 text-center text-white text-opacity-60">None today</div> :
-                                            <div className="space-y-2">{todayDepartures.map(b => {
-                                                const rt = ROOM_TYPES.find(r => r.id === b.roomId); const u = rt?.units.find(x => x.id === b.unitId);
-                                                return <div key={b.id} className="glass-dark rounded-lg p-3"><div className="text-white font-medium">{b.firstName}</div><div className="text-white text-opacity-60 text-sm">Room {u?.unitNumber}</div></div>;
-                                            })}</div>}
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'dashboard' && (
-                                <div>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-white">{stats.total}</div><div className="text-sm text-white text-opacity-60">Total</div></div>
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-green-400">{stats.available}</div><div className="text-sm text-white text-opacity-60">Available</div></div>
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-red-400">{stats.occupied + stats.pending}</div><div className="text-sm text-white text-opacity-60">Booked</div></div>
-                                        <div className="glass-dark rounded-lg p-4 text-center"><div className="text-3xl font-bold text-blue-400">{Math.round(((stats.occupied + stats.pending) / stats.total) * 100)}%</div><div className="text-sm text-white text-opacity-60">Occupancy</div></div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {ROOM_TYPES.map(rt => {
-                                            const booked = rt.units.filter(u => getBooking(rt.id, u.id, getBDDateString())).length;
-                                            return <div key={rt.id} className="glass-dark rounded-lg p-3 flex justify-between"><span className="text-white text-sm">{rt.name}</span><span className="text-sm"><span className="text-green-400">{rt.units.length - booked}</span> / <span className="text-red-400">{booked}</span></span></div>;
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {selectedRooms.length > 0 && (
-                        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-auto z-50">
-                            <button onClick={() => setShowBookingModal(true)} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-lg">
-                                ➕ Book {selectedRooms.length} Room{selectedRooms.length > 1 ? 's' : ''}
-                                <span onClick={e => { e.stopPropagation(); setSelectedRooms([]); }} className="ml-2 cursor-pointer">✕</span>
-                            </button>
-                        </div>
-                    )}
-
-                    {showBookingModal && <BookingModal selectedRooms={selectedRooms} onClose={() => setShowBookingModal(false)} onSuccess={() => { setShowBookingModal(false); setSelectedRooms([]); fetchBookings(); }} token={token} />}
-
-                    <div className="text-center py-4 text-white text-opacity-40 text-xs">Powered by Holidayzer</div>
                 </div>
-            );
-        };
+            )}
 
-        ReactDOM.render(<HotelDashboard />, document.getElementById('root'));
-    </script>
+            {selected.length > 0 && (
+                <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50">
+                    <button onClick={() => setShowModal(true)} className="w-full md:w-auto px-6 py-3 bg-blue-500 rounded-xl text-white font-bold shadow-lg flex items-center justify-center gap-2">
+                        Book {selected.length} Room{selected.length>1?"s":""}
+                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} className="ml-3 cursor-pointer">✕</span>
+                    </button>
+                </div>
+            )}
+
+            {showModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+                    <div className="glass rounded-xl p-6 w-full max-w-md">
+                        <h3 className="text-xl font-bold text-white mb-4">Book Rooms: {selected.map(s => s.unit.n).join(", ")}</h3>
+                        <BookingForm rooms={selected} token={TOKEN} onClose={() => {setShowModal(false); setSelected([]); fetchData();}}/>
+                    </div>
+                </div>
+            )}
+
+            <div className="text-center py-4 text-white text-opacity-40 text-xs">Powered by Holidayzer</div>
+        </div>
+    );
+}
+
+function BookingForm({rooms, token, onClose}) {
+    const [form, setForm] = useState({name:"", phone:"", email:"", nid:"", checkIn:getBDDate(), checkOut:""});
+    const [status, setStatus] = useState("");
+    
+    const submit = async (e) => {
+        e.preventDefault();
+        setStatus("loading");
+        try {
+            const bookings = rooms.map(r => ({
+                propertyId: PROPERTY_ID, roomId: r.room.id, unitId: r.unit.id,
+                arrival: form.checkIn, departure: form.checkOut, numAdult: r.room.max, numChild: 0,
+                status: "request", firstName: form.name, email: form.email || "default", mobile: form.phone, custom4: form.nid, referer: "holidayzer"
+            }));
+            const res = await fetch(API_URL + "/bookings", {method:"POST", headers:{"Content-Type":"application/json", token:token}, body: JSON.stringify(bookings)});
+            const data = await res.json();
+            if (data.success) { setStatus("success"); setTimeout(onClose, 1500); }
+            else setStatus("error: " + (data.error || "Failed"));
+        } catch(e) { setStatus("error: " + e.message); }
+    };
+
+    if (status === "success") return <div className="text-center text-green-400 text-xl py-8">✅ Booking Created!</div>;
+
+    return (
+        <form onSubmit={submit} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+                <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn:e.target.value})} className="px-3 py-2 rounded bg-white bg-opacity-10 text-white border border-white border-opacity-20"/>
+                <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut:e.target.value})} className="px-3 py-2 rounded bg-white bg-opacity-10 text-white border border-white border-opacity-20"/>
+            </div>
+            <input type="text" required value={form.name} onChange={e => setForm({...form, name:e.target.value})} className="w-full px-3 py-2 rounded bg-white bg-opacity-10 text-white border border-white border-opacity-20" placeholder="Full Name *"/>
+            <input type="tel" required value={form.phone} onChange={e => setForm({...form, phone:e.target.value})} className="w-full px-3 py-2 rounded bg-white bg-opacity-10 text-white border border-white border-opacity-20" placeholder="Phone *"/>
+            <input type="email" value={form.email} onChange={e => setForm({...form, email:e.target.value})} className="w-full px-3 py-2 rounded bg-white bg-opacity-10 text-white border border-white border-opacity-20" placeholder="Email"/>
+            <input type="text" required value={form.nid} onChange={e => setForm({...form, nid:e.target.value})} className="w-full px-3 py-2 rounded bg-white bg-opacity-10 text-white border border-white border-opacity-20" placeholder="NID *"/>
+            {status.startsWith("error") && <div className="text-red-400 text-sm">{status}</div>}
+            <div className="flex gap-3">
+                <button type="button" onClick={onClose} className="flex-1 py-2 glass rounded text-white">Cancel</button>
+                <button type="submit" disabled={status==="loading"} className="flex-1 py-2 bg-blue-500 rounded text-white font-bold disabled:opacity-50">
+                    {status==="loading" ? "Creating..." : "Create Booking"}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+ReactDOM.render(<App/>, document.getElementById("root"));
+</script>
 </body>
 </html>
