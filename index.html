@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort - Front Desk v18</title>
+    <title>Miami Beach Resort v18.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -43,7 +43,7 @@
         .cal-container { padding: 0 16px 100px; overflow-x: auto; }
         
         /* Sticky Date Header */
-        .date-header-sticky { position: sticky; top: 200px; z-index: 50; background: #1a1f2e; padding: 10px 0; margin-left: 140px; }
+        .date-header-sticky { position: sticky; top: 0; z-index: 50; background: #1a1f2e; padding: 10px 0; margin-left: 140px; }
         .date-row { display: flex; gap: 6px; }
         .date-cell { flex: 1; min-width: 100px; text-align: center; padding: 10px 6px; background: rgba(255,255,255,0.03); border-radius: 10px; }
         .date-cell.today { background: #10b981; }
@@ -137,6 +137,8 @@
         .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
+        .version-tag { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 4px; font-size: 10px; color: rgba(255,255,255,0.5); z-index: 9999; }
+        
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
@@ -167,12 +169,14 @@
 </head>
 <body>
 <div id="root"></div>
+<div class="version-tag">v18.1</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
 const PROXY = "https://beds24-proxy-1006186358018.us-central1.run.app";
 const PROPERTY = 279646;
 
+// Bangladesh Date - GMT+6
 const getBDDate = (offset = 0) => {
     const now = new Date();
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -180,11 +184,13 @@ const getBDDate = (offset = 0) => {
     bd.setDate(bd.getDate() + offset);
     return bd.toISOString().split('T')[0];
 };
+
 const getBDTime = () => {
     const now = new Date();
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
     return new Date(utc + 6 * 3600000).toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: true});
 };
+
 const formatDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const shortDay = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
 const dayNum = (d) => new Date(d+"T00:00:00").getDate();
@@ -222,7 +228,7 @@ const REQUEST_TYPES = ["Room Service", "Water Bottle", "Room Clean", "Towel Requ
 function App() {
     const [tab, setTab] = useState("floor");
     const [calDays, setCalDays] = useState(7);
-    const [startDate, setStartDate] = useState(getBDDate()); // Always starts today
+    const [startDate, setStartDate] = useState(getBDDate());
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -239,6 +245,8 @@ function App() {
     const [searchCheckOut, setSearchCheckOut] = useState(getBDDate(1));
     const [searchGroupBy, setSearchGroupBy] = useState("floor");
     const [todayViewBy, setTodayViewBy] = useState("floor");
+
+    const today = getBDDate();
 
     useEffect(() => {
         const h = () => setIsMobile(window.innerWidth < 768);
@@ -291,7 +299,6 @@ function App() {
     }, [startDate]);
 
     const days = useMemo(() => getDays(calDays), [getDays, calDays]);
-    const today = getBDDate();
 
     const toggleSelect = (room, unit, date) => {
         const key = `${room.id}-${unit.id}-${date}`;
@@ -320,14 +327,9 @@ function App() {
         saveRequests(updated);
     };
 
-    // Get request counts for a booking
     const getRequestCounts = (bookingId) => {
         const bookingRequests = requests.filter(r => r.bookingId === bookingId);
-        return {
-            total: bookingRequests.length,
-            pending: bookingRequests.filter(r => !r.done).length,
-            done: bookingRequests.filter(r => r.done).length
-        };
+        return { total: bookingRequests.length, pending: bookingRequests.filter(r => !r.done).length, done: bookingRequests.filter(r => r.done).length };
     };
 
     const stats = useMemo(() => {
@@ -406,68 +408,43 @@ function App() {
         {id: "dashboard", label: "📊 Dashboard"}
     ];
 
-    // Simple Status Card - Only Green/Red
     const StatusCard = ({room, unit, date, showGuestName = true}) => {
         const booking = getBooking(room.id, unit.id, date);
         const checkout = getCheckout(room.id, unit.id, date);
         const checkin = getCheckin(room.id, unit.id, date);
         const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}-${date}`);
-        
         const isBooked = booking || checkout || checkin;
         const cardClass = isBooked ? "card-booked" : "card-available";
         const displayBooking = checkin || booking || checkout;
-        
         const canSelect = !isBooked;
-        
         return (
-            <div 
-                className={`status-card ${cardClass} ${isSelected ? 'card-selected' : ''}`}
-                onClick={() => canSelect && toggleSelect(room, unit, date)}
-            >
-                {isBooked && displayBooking && (
-                    <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>
-                )}
+            <div className={`status-card ${cardClass} ${isSelected ? 'card-selected' : ''}`} onClick={() => canSelect && toggleSelect(room, unit, date)}>
+                {isBooked && displayBooking && <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>}
                 <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
-                {showGuestName && isBooked && displayBooking && (
-                    <div className="guest-name">{displayBooking.firstName}</div>
-                )}
+                {showGuestName && isBooked && displayBooking && <div className="guest-name">{displayBooking.firstName}</div>}
             </div>
         );
     };
 
-    // Calendar View
     const CalendarView = ({groupBy}) => {
         const groups = groupBy === "floor" 
             ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || [], count: (roomsByFloor[f] || []).length}))
             : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u})), count: r.units.length}));
-
         return (
             <div className="cal-container">
                 <div className="date-header-sticky">
                     <div className="date-row">
-                        {days.map(d => (
-                            <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}>
-                                <div className="date-day">{shortDay(d)}</div>
-                                <div className="date-num">{dayNum(d)}</div>
-                            </div>
-                        ))}
+                        {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
                     </div>
                 </div>
                 {groups.map(group => {
                     if (!group.rooms.length) return null;
                     return (
                         <div key={group.key}>
-                            <div className="floor-header">
-                                <span style={{fontWeight: 600}}>{group.title}</span>
-                                <span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.count} rooms</span>
-                            </div>
+                            <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.count} rooms</span></div>
                             {group.rooms.map(({room, unit}) => (
                                 <div key={`${room.id}-${unit.id}`} className="room-row">
-                                    <div className="room-label">
-                                        <div className="room-num">{unit.n}</div>
-                                        <div className="room-type">{room.short}</div>
-                                        <div className="room-cap">👤 {room.max}A</div>
-                                    </div>
+                                    <div className="room-label"><div className="room-num">{unit.n}</div><div className="room-type">{room.short}</div><div className="room-cap">👤 {room.max}A</div></div>
                                     {days.map(d => <StatusCard key={d} room={room} unit={unit} date={d}/>)}
                                 </div>
                             ))}
@@ -478,12 +455,10 @@ function App() {
         );
     };
 
-    // Today View
     const TodayView = () => {
         const groups = todayViewBy === "floor" 
             ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || []}))
             : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u}))}));
-
         return (
             <div style={{padding: '16px'}}>
                 <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>📅 Today's Status - {formatDate(today)}</h2>
@@ -495,26 +470,13 @@ function App() {
                     if (!group.rooms.length) return null;
                     return (
                         <div key={group.key} style={{marginBottom: '20px'}}>
-                            <div className="floor-header">
-                                <span style={{fontWeight: 600}}>{group.title}</span>
-                                <span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span>
-                            </div>
+                            <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div>
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px'}}>
                                 {group.rooms.map(({room, unit}) => {
                                     const booking = getBooking(room.id, unit.id, today);
                                     const isBooked = !!booking;
                                     return (
-                                        <div 
-                                            key={`${room.id}-${unit.id}`}
-                                            onClick={() => booking && setShowInfoModal(booking)}
-                                            style={{
-                                                background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #22c55e, #16a34a)',
-                                                borderRadius: '10px',
-                                                padding: '14px',
-                                                cursor: isBooked ? 'pointer' : 'default',
-                                                textAlign: 'center'
-                                            }}
-                                        >
+                                        <div key={`${room.id}-${unit.id}`} onClick={() => booking && setShowInfoModal(booking)} style={{background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #22c55e, #16a34a)', borderRadius: '10px', padding: '14px', cursor: isBooked ? 'pointer' : 'default', textAlign: 'center'}}>
                                             <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
                                             <div style={{fontSize: '11px', fontWeight: '600', marginTop: '4px'}}>{isBooked ? 'BOOKED' : 'AVAILABLE'}</div>
                                             {isBooked && <div style={{fontSize: '10px', marginTop: '4px', opacity: 0.9}}>{booking.firstName}</div>}
@@ -540,13 +502,9 @@ function App() {
                         </div>
                         <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
                             <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
-                            <button onClick={fetchData} disabled={loading} style={{padding: '15px 24px', background: '#10b981', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>
-                                {loading ? '⏳' : '🔄'}
-                            </button>
+                            <button onClick={fetchData} disabled={loading} style={{padding: '15px 24px', background: '#10b981', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>{loading ? '⏳' : '🔄'}</button>
                         </div>
                     </div>
-                    
-                    {/* Stats - 5 columns */}
                     <div className="stats-row">
                         <div className="stat-card"><div className="stat-num">{stats.total}</div><div className="stat-label">Total</div></div>
                         <div className="stat-card"><div className="stat-num" style={{color: '#22c55e'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
@@ -554,19 +512,13 @@ function App() {
                         <div className="stat-card"><div className="stat-num" style={{color: '#3b82f6'}}>{stats.cin}</div><div className="stat-label">Check-in</div></div>
                         <div className="stat-card"><div className="stat-num" style={{color: '#a855f7'}}>{stats.cout}</div><div className="stat-label">Check-out</div></div>
                     </div>
-                    
-                    {/* Tabs - Full width */}
                     {isMobile ? (
                         <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '12px'}}>
                             {tabs.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                         </select>
                     ) : (
-                        <div className="tabs-row">
-                            {tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>{t.label}</button>)}
-                        </div>
+                        <div className="tabs-row">{tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
                     )}
-                    
-                    {/* Date Controls - Centered */}
                     {(tab === "floor" || tab === "category") && (
                         <div className="date-controls">
                             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
@@ -591,21 +543,9 @@ function App() {
                         <div style={{padding: '16px'}}>
                             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>🔍 Search & Book</h2>
                             <div className="date-search-row">
-                                <div className="date-field">
-                                    <label>Check-in</label>
-                                    <input type="date" value={searchCheckIn} onChange={e => setSearchCheckIn(e.target.value)} className="date-input"/>
-                                </div>
-                                <div className="date-field">
-                                    <label>Check-out</label>
-                                    <input type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input"/>
-                                </div>
-                                <div className="date-field">
-                                    <label>Group By</label>
-                                    <select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector">
-                                        <option value="floor">By Floor</option>
-                                        <option value="category">By Category</option>
-                                    </select>
-                                </div>
+                                <div className="date-field"><label>Check-in</label><input type="date" value={searchCheckIn} onChange={e => setSearchCheckIn(e.target.value)} className="date-input"/></div>
+                                <div className="date-field"><label>Check-out</label><input type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input"/></div>
+                                <div className="date-field"><label>Group By</label><select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector"><option value="floor">By Floor</option><option value="category">By Category</option></select></div>
                             </div>
                             <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#22c55e', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
                             {(() => {
@@ -654,22 +594,14 @@ function App() {
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px'}}>
                                 <div>
                                     <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>📋 Current Guests ({currentGuests.length})</h3>
-                                    {currentGuests.map(guest => {
-                                        const counts = getRequestCounts(guest.id);
-                                        return <GuestRequestCard key={guest.id} guest={guest} onAddRequest={addRequest} requestCounts={counts}/>;
-                                    })}
+                                    {currentGuests.map(guest => <GuestRequestCard key={guest.id} guest={guest} onAddRequest={addRequest} requestCounts={getRequestCounts(guest.id)}/>)}
                                     {!currentGuests.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No guests</div>}
                                 </div>
                                 <div>
                                     <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#f59e0b'}}>⏳ Pending ({requests.filter(r => !r.done).length})</h3>
                                     {requests.filter(r => !r.done).map(req => (
                                         <div key={req.id} className="request-item request-pending">
-                                            <div>
-                                                <div style={{fontWeight: '600'}}>{req.roomNum} - {req.guestName}</div>
-                                                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)'}}>{req.requestType}</div>
-                                                {req.note && <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Note: {req.note}</div>}
-                                                <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px'}}>{new Date(req.timestamp).toLocaleTimeString()}</div>
-                                            </div>
+                                            <div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.guestName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)'}}>{req.requestType}</div>{req.note && <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Note: {req.note}</div>}<div style={{fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px'}}>{new Date(req.timestamp).toLocaleTimeString()}</div></div>
                                             <button className="done-btn" onClick={() => markRequestDone(req.id)}>✓ Done</button>
                                         </div>
                                     ))}
@@ -678,13 +610,7 @@ function App() {
                                 <div>
                                     <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>✅ Completed</h3>
                                     {requests.filter(r => r.done).slice(0, 15).map(req => (
-                                        <div key={req.id} className="request-item request-done">
-                                            <div>
-                                                <div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div>
-                                                <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Done: {new Date(req.doneAt).toLocaleString()}</div>
-                                            </div>
-                                            <span style={{color: '#22c55e'}}>✓</span>
-                                        </div>
+                                        <div key={req.id} className="request-item request-done"><div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div><div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Done: {new Date(req.doneAt).toLocaleString()}</div></div><span style={{color: '#22c55e'}}>✓</span></div>
                                     ))}
                                 </div>
                             </div>
@@ -697,32 +623,17 @@ function App() {
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
                                 <div className="hk-section">
                                     <h3 style={{color: '#0ea5e9', marginBottom: '12px', fontSize: '14px'}}>🛏️ Make-up ({housekeeping.makeup.length})</h3>
-                                    {housekeeping.makeup.map(({room, unit, booking}) => (
-                                        <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup">
-                                            <div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div>
-                                            <div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div>
-                                        </div>
-                                    ))}
+                                    {housekeeping.makeup.map(({room, unit, booking}) => <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup"><div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div><div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div></div>)}
                                     {!housekeeping.makeup.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#f97316', marginBottom: '12px', fontSize: '14px'}}>🧽 Dirty ({housekeeping.dirty.length})</h3>
-                                    {housekeeping.dirty.map(({room, unit, booking}) => (
-                                        <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty">
-                                            <div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div>
-                                            <div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div>
-                                        </div>
-                                    ))}
+                                    {housekeeping.dirty.map(({room, unit, booking}) => <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty"><div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div><div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div></div>)}
                                     {!housekeeping.dirty.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#a855f7', marginBottom: '12px', fontSize: '14px'}}>🔄 Turnover ({housekeeping.turnover.length})</h3>
-                                    {housekeeping.turnover.map(({room, unit, out, in: ci}) => (
-                                        <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover">
-                                            <div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div>
-                                            <div><div style={{fontSize: '11px'}}>⬆ {out.firstName}</div><div style={{fontWeight: '600'}}>⬇ {ci.firstName}</div></div>
-                                        </div>
-                                    ))}
+                                    {housekeeping.turnover.map(({room, unit, out, in: ci}) => <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover"><div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div><div><div style={{fontSize: '11px'}}>⬆ {out.firstName}</div><div style={{fontWeight: '600'}}>⬇ {ci.firstName}</div></div></div>)}
                                     {!housekeeping.turnover.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                             </div>
@@ -736,52 +647,28 @@ function App() {
                                 <div className="hk-section">
                                     <h3 style={{color: '#3b82f6', marginBottom: '10px', fontSize: '13px'}}>⬇️ Pending In ({movements.pendingIn.length})</h3>
                                     {movements.pendingIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
-                                        <div key={b.id} className="mv-card">
-                                            <div>
-                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
-                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
-                                            </div>
-                                            <button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "in")}>✓</button>
-                                        </div>
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "in")}>✓</button></div>
                                     ); })}
                                     {!movements.pendingIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#22c55e', marginBottom: '10px', fontSize: '13px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
                                     {movements.doneIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
-                                        <div key={b.id} className="mv-card">
-                                            <div>
-                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
-                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
-                                            </div>
-                                            <button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "in")}>↩</button>
-                                        </div>
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "in")}>↩</button></div>
                                     ); })}
                                     {!movements.doneIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#a855f7', marginBottom: '10px', fontSize: '13px'}}>⬆️ Pending Out ({movements.pendingOut.length})</h3>
                                     {movements.pendingOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
-                                        <div key={b.id} className="mv-card">
-                                            <div>
-                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
-                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
-                                            </div>
-                                            <button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "out")}>✓</button>
-                                        </div>
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "out")}>✓</button></div>
                                     ); })}
                                     {!movements.pendingOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#f59e0b', marginBottom: '10px', fontSize: '13px'}}>👋 Checked-out ({movements.doneOut.length})</h3>
                                     {movements.doneOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
-                                        <div key={b.id} className="mv-card">
-                                            <div>
-                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
-                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
-                                            </div>
-                                            <button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "out")}>↩</button>
-                                        </div>
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "out")}>↩</button></div>
                                     ); })}
                                     {!movements.doneOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
@@ -795,21 +682,12 @@ function App() {
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'}}>
                                 <div className="hk-section">
                                     <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Room Type</h3>
-                                    {ROOMS.map(r => {
-                                        const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
-                                        const pct = Math.round(booked / r.units.length * 100);
-                                        return (<div key={r.id} style={{marginBottom: '12px'}}><div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px'}}><span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length}</span></div><div style={{height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden'}}><div style={{height: '100%', width: pct+'%', background: pct > 70 ? '#ef4444' : '#22c55e', borderRadius: '4px'}}></div></div></div>);
-                                    })}
+                                    {ROOMS.map(r => { const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length; const pct = Math.round(booked / r.units.length * 100); return (<div key={r.id} style={{marginBottom: '12px'}}><div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px'}}><span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length}</span></div><div style={{height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden'}}><div style={{height: '100%', width: pct+'%', background: pct > 70 ? '#ef4444' : '#22c55e', borderRadius: '4px'}}></div></div></div>); })}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Floor</h3>
                                     <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px'}}>
-                                        {FLOORS.map(f => {
-                                            const rooms = roomsByFloor[f] || [];
-                                            const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
-                                            const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0;
-                                            return (<div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px', textAlign: 'center'}}><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '11px'}}>Floor {f}</div><div style={{fontSize: '26px', fontWeight: '700', color: pct > 70 ? '#ef4444' : '#22c55e'}}>{pct}%</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{booked}/{rooms.length}</div></div>);
-                                        })}
+                                        {FLOORS.map(f => { const rooms = roomsByFloor[f] || []; const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length; const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0; return (<div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px', textAlign: 'center'}}><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '11px'}}>Floor {f}</div><div style={{fontSize: '26px', fontWeight: '700', color: pct > 70 ? '#ef4444' : '#22c55e'}}>{pct}%</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{booked}/{rooms.length}</div></div>); })}
                                     </div>
                                 </div>
                             </div>
@@ -820,9 +698,7 @@ function App() {
 
             {selected.length > 0 && tab !== "searchbook" && (
                 <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '500px', margin: '0 auto'}}>
-                    <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '16px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 25px rgba(34,197,94,0.4)'}}>
-                        ➕ Book {selected.length} Room(s): {selected.map(s => s.unit.n).join(', ')}
-                    </button>
+                    <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '16px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 25px rgba(34,197,94,0.4)'}}>➕ Book {selected.length} Room(s): {selected.map(s => s.unit.n).join(', ')}</button>
                 </div>
             )}
 
@@ -832,10 +708,7 @@ function App() {
                         <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>🔍 Search Guest</h3><button className="modal-close" onClick={() => setShowSearchModal(false)}>×</button></div>
                         <input type="text" placeholder="Search by ID, phone, email, or name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="search-input" autoFocus/>
                         <div style={{marginTop: '16px', maxHeight: '400px', overflowY: 'auto'}}>
-                            {globalSearchResults.map(b => {
-                                const {num, room} = getRoomInfo(b.roomId, b.unitId);
-                                return (<div key={b.id} className="search-result" onClick={() => {setShowInfoModal(b); setShowSearchModal(false);}}><div style={{display: 'flex', justifyContent: 'space-between'}}><div><div style={{fontWeight: '600'}}>{b.firstName} {b.lastName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.name}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>📞 {b.mobile || 'N/A'} • ID: {b.id}</div></div><div style={{textAlign: 'right'}}><div style={{fontWeight: '700', color: '#22c55e', fontSize: '18px'}}>{num}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{formatDate(b.arrival)}</div></div></div></div>);
-                            })}
+                            {globalSearchResults.map(b => { const {num, room} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="search-result" onClick={() => {setShowInfoModal(b); setShowSearchModal(false);}}><div style={{display: 'flex', justifyContent: 'space-between'}}><div><div style={{fontWeight: '600'}}>{b.firstName} {b.lastName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.name}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>📞 {b.mobile || 'N/A'} • ID: {b.id}</div></div><div style={{textAlign: 'right'}}><div style={{fontWeight: '700', color: '#22c55e', fontSize: '18px'}}>{num}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{formatDate(b.arrival)}</div></div></div></div>); })}
                             {searchQuery && !globalSearchResults.length && <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '30px'}}>No results</div>}
                             {!searchQuery && <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '30px'}}>Type to search...</div>}
                         </div>
@@ -860,12 +733,7 @@ function GuestRequestCard({guest, onAddRequest, requestCounts}) {
                 <div>
                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                         <span style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>{guest.num}</span>
-                        {requestCounts.total > 0 && (
-                            <span style={{fontSize: '11px'}}>
-                                {requestCounts.pending > 0 && <span className="request-count pending">⏳ {requestCounts.pending}</span>}
-                                {requestCounts.done > 0 && <span className="request-count done" style={{marginLeft: '4px'}}>✓ {requestCounts.done}</span>}
-                            </span>
-                        )}
+                        {requestCounts.total > 0 && <span style={{fontSize: '11px'}}>{requestCounts.pending > 0 && <span className="request-count pending">⏳ {requestCounts.pending}</span>}{requestCounts.done > 0 && <span className="request-count done" style={{marginLeft: '4px'}}>✓ {requestCounts.done}</span>}</span>}
                     </div>
                     <div style={{fontWeight: '600', marginTop: '2px'}}>{guest.firstName}</div>
                 </div>
@@ -882,7 +750,6 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
     const price = parseFloat(booking.price) || 0, paid = parseFloat(booking.paid) || 0, due = price - paid;
     const counts = getRequestCounts(booking.id);
     const bookingRequests = requests.filter(r => r.bookingId === booking.id);
-    
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
@@ -897,18 +764,9 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                 {counts.total > 0 && (
                     <div className="info-section">
                         <div className="info-label">Requests ({counts.total})</div>
-                        <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
-                            {counts.pending > 0 && <span className="request-count pending" style={{padding: '4px 10px'}}>⏳ {counts.pending} Pending</span>}
-                            {counts.done > 0 && <span className="request-count done" style={{padding: '4px 10px'}}>✓ {counts.done} Done</span>}
-                        </div>
+                        <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>{counts.pending > 0 && <span className="request-count pending" style={{padding: '4px 10px'}}>⏳ {counts.pending} Pending</span>}{counts.done > 0 && <span className="request-count done" style={{padding: '4px 10px'}}>✓ {counts.done} Done</span>}</div>
                         <div style={{marginTop: '10px', maxHeight: '150px', overflowY: 'auto'}}>
-                            {bookingRequests.map(r => (
-                                <div key={r.id} style={{padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '6px', fontSize: '12px', borderLeft: r.done ? '3px solid #22c55e' : '3px solid #f59e0b'}}>
-                                    <div style={{fontWeight: '600'}}>{r.requestType}</div>
-                                    {r.note && <div style={{color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>{r.note}</div>}
-                                    <div style={{color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{r.done ? `✓ Done ${new Date(r.doneAt).toLocaleTimeString()}` : `⏳ ${new Date(r.timestamp).toLocaleTimeString()}`}</div>
-                                </div>
-                            ))}
+                            {bookingRequests.map(r => (<div key={r.id} style={{padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '6px', fontSize: '12px', borderLeft: r.done ? '3px solid #22c55e' : '3px solid #f59e0b'}}><div style={{fontWeight: '600'}}>{r.requestType}</div>{r.note && <div style={{color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>{r.note}</div>}<div style={{color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{r.done ? `✓ Done ${new Date(r.doneAt).toLocaleTimeString()}` : `⏳ ${new Date(r.timestamp).toLocaleTimeString()}`}</div></div>))}
                         </div>
                     </div>
                 )}
@@ -933,8 +791,7 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
             const data = selected.map(s => ({propertyId: PROPERTY, roomId: s.room.id, unitId: s.unit.id, arrival: form.checkIn, departure: form.checkOut, numAdult: s.room.max, numChild: 0, status: "confirmed", firstName: names, email: form.email || "default", mobile: phones, custom4: form.nid || "default", custom5: form.dob || "default", referer: "miami_frontdesk"}));
             const res = await fetch(PROXY + "?endpoint=bookings&action=write", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
             const result = await res.json();
-            if (result.success) { setStatus("success"); setTimeout(onClose, 1500); }
-            else setStatus("error: " + (result.error || "Failed"));
+            if (result.success) { setStatus("success"); setTimeout(onClose, 1500); } else setStatus("error: " + (result.error || "Failed"));
         } catch(e) { setStatus("error: " + e.message); }
     };
     if (status === "success") return (<div className="modal-overlay"><div className="modal" style={{textAlign: 'center', padding: '50px'}}><div style={{fontSize: '56px', marginBottom: '16px'}}>✅</div><div style={{fontSize: '20px', fontWeight: '700'}}>Booking Created!</div></div></div>);
