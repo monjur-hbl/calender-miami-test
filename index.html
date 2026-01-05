@@ -182,19 +182,17 @@ const PROPERTY = 279646;
 
 const getBDDate = (offset = 0) => {
     const now = new Date();
-    const bdDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
-    const bdDate = new Date(bdDateStr + 'T00:00:00');
-    bdDate.setDate(bdDate.getDate() + offset);
-    return bdDate.toISOString().split('T')[0];
+    now.setDate(now.getDate() + offset);
+    return now.toLocaleDateString('en-CA');
 };
 
 const getBDTime = () => {
-    return new Date().toLocaleTimeString("en-US", { timeZone: 'Asia/Dhaka', hour: "2-digit", minute: "2-digit", hour12: true });
+    return new Date().toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: true});
 };
 
-const formatDate = (d) => new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{timeZone:"Asia/Dhaka",weekday:"short",month:"short",day:"numeric"});
-const shortDay = (d) => new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{timeZone:"Asia/Dhaka",weekday:"short"});
-const dayNum = (d) => parseInt(new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{timeZone:"Asia/Dhaka",day:"numeric"}));
+const formatDate = (d) => new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+const shortDay = (d) => new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"});
+const dayNum = (d) => new Date(d+"T12:00:00").getDate();
 
 const ROOMS = [
     {id:583459, name:"Royal Sea View Couple", short:"Royal Sea View", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
@@ -502,7 +500,7 @@ function App() {
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
                     <div>
                         <h1 style={{fontSize: '18px', fontWeight: '700'}}>🏨 Miami Beach Resort</h1>
-                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)}, {time} <span style={{background: 'rgba(34,197,94,0.3)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontSize: '10px', color: '#22c55e'}}>GMT+6</span></p>
+                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)}, {time} <span style={{background: 'rgba(34,197,94,0.3)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontSize: '10px', color: '#22c55e'}}>Local Time</span></p>
                     </div>
                     <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
                         <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
