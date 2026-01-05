@@ -7,122 +7,127 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); min-height: 100vh; color: white; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; min-height: 100vh; color: #e6edf3; }
         
-        /* Glass morphism */
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
-        .glass-dark { background: rgba(0,0,0,0.3); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
-        
-        /* Sticky header */
-        .sticky-header { position: sticky; top: 0; z-index: 100; background: linear-gradient(180deg, #0f172a 0%, rgba(15,23,42,0.95) 100%); }
-        .sticky-calendar { position: sticky; top: 140px; z-index: 90; background: rgba(15,23,42,0.98); backdrop-filter: blur(20px); }
+        /* Header */
+        .header { background: #161b22; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 100; }
         
         /* Navigation */
-        .nav-item { padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; white-space: nowrap; }
-        .nav-item:hover { background: rgba(255,255,255,0.1); }
-        .nav-item.active { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+        .nav-btn { padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: transparent; color: #8b949e; }
+        .nav-btn:hover { background: #21262d; color: #e6edf3; }
+        .nav-btn.active { background: #238636; color: white; }
         
-        /* Day selector buttons */
-        .day-btn { padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-        .day-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
-        .day-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); border-color: transparent; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+        /* Day buttons */
+        .day-btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; border: 1px solid #30363d; cursor: pointer; transition: all 0.2s; background: #21262d; color: #8b949e; }
+        .day-btn:hover { border-color: #8b949e; color: #e6edf3; }
+        .day-btn.active { background: #238636; border-color: #238636; color: white; }
         
         /* Date input */
-        .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; color: white; font-size: 14px; transition: all 0.3s ease; }
-        .date-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        .date-input { background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 14px; }
+        .date-input:focus { outline: none; border-color: #58a6ff; }
         
-        /* Calendar header cells */
-        .cal-header { padding: 12px 8px; text-align: center; min-width: 80px; }
-        .cal-header.today { background: rgba(251,191,36,0.15); border-radius: 12px; }
-        .cal-header .day-name { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
-        .cal-header .day-num { font-size: 18px; font-weight: 700; margin-top: 2px; }
-        .cal-header.today .day-num { color: #fbbf24; }
+        /* Stats */
+        .stat-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 14px; text-align: center; }
+        .stat-num { font-size: 26px; font-weight: 700; }
+        .stat-label { font-size: 11px; color: #8b949e; margin-top: 2px; text-transform: uppercase; }
         
-        /* Floor header */
-        .floor-header { background: linear-gradient(90deg, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0) 100%); border-left: 4px solid #3b82f6; padding: 12px 20px; margin: 20px 0 12px 0; border-radius: 0 12px 12px 0; }
-        .category-header { background: linear-gradient(90deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0) 100%); border-left: 4px solid #8b5cf6; }
+        /* Calendar Grid */
+        .calendar-grid { display: flex; flex-direction: column; }
         
-        /* Room row */
-        .room-row { display: flex; align-items: stretch; margin-bottom: 8px; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; }
-        .room-row:hover { transform: translateX(4px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        /* Calendar Header Row */
+        .cal-header-row { display: flex; background: #161b22; border-bottom: 1px solid #30363d; position: sticky; top: 165px; z-index: 90; }
         
-        /* Room number cell */
-        .room-num { min-width: 100px; padding: 16px; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center; border-right: 1px solid rgba(255,255,255,0.05); }
-        .room-num .num { font-size: 22px; font-weight: 700; }
-        .room-num .type { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        /* Room Label Column - Fixed Width */
+        .room-label { width: 120px; min-width: 120px; max-width: 120px; padding: 12px 10px; display: flex; flex-direction: column; justify-content: center; background: #161b22; border-right: 1px solid #30363d; }
+        .room-label .room-num { font-size: 20px; font-weight: 700; color: #e6edf3; }
+        .room-label .room-type { font-size: 10px; color: #8b949e; line-height: 1.3; margin-top: 2px; word-wrap: break-word; }
         
-        /* Status cells */
-        .status-cell { flex: 1; min-width: 80px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; border-right: 1px solid rgba(255,255,255,0.03); position: relative; overflow: hidden; }
-        .status-cell::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s ease; }
-        .status-cell:hover::before { opacity: 1; background: rgba(255,255,255,0.05); }
-        .status-cell:hover { transform: scale(1.02); }
+        /* Calendar Date Headers */
+        .cal-date-header { flex: 1; min-width: 70px; padding: 10px 4px; text-align: center; border-right: 1px solid #30363d; }
+        .cal-date-header:last-child { border-right: none; }
+        .cal-date-header .day-name { font-size: 11px; color: #8b949e; text-transform: uppercase; }
+        .cal-date-header .day-num { font-size: 18px; font-weight: 600; color: #e6edf3; }
+        .cal-date-header.today { background: rgba(56, 139, 253, 0.15); }
+        .cal-date-header.today .day-num { color: #58a6ff; }
         
-        /* Status colors with gradients */
-        .status-available { background: linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.1) 100%); }
-        .status-available:hover { background: linear-gradient(135deg, rgba(16,185,129,0.4) 0%, rgba(5,150,105,0.2) 100%); }
-        .status-booked { background: linear-gradient(135deg, rgba(239,68,68,0.25) 0%, rgba(220,38,38,0.15) 100%); }
-        .status-checkin { background: linear-gradient(135deg, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.2) 100%); }
-        .status-checkout { background: linear-gradient(135deg, rgba(139,92,246,0.3) 0%, rgba(124,58,237,0.2) 100%); }
-        .status-turnover { background: linear-gradient(135deg, rgba(236,72,153,0.3) 0%, rgba(219,39,119,0.2) 100%); }
+        /* Room Row */
+        .room-row { display: flex; border-bottom: 1px solid #21262d; transition: background 0.2s; }
+        .room-row:hover { background: #161b22; }
         
-        .status-cell.today-col { box-shadow: inset 0 0 0 2px rgba(251,191,36,0.4); }
-        .status-cell.selected { box-shadow: inset 0 0 0 3px #3b82f6; background: rgba(59,130,246,0.3) !important; }
+        /* Status Cell - All Same Size */
+        .status-cell { flex: 1; min-width: 70px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #21262d; cursor: pointer; transition: all 0.15s; position: relative; }
+        .status-cell:last-child { border-right: none; }
+        .status-cell:hover { filter: brightness(1.1); transform: scale(1.02); z-index: 5; }
+        .status-cell.today-col { box-shadow: inset 0 0 0 2px rgba(56, 139, 253, 0.4); }
+        .status-cell.selected { box-shadow: inset 0 0 0 3px #58a6ff !important; }
         
-        .status-icon { font-size: 16px; margin-bottom: 2px; }
-        .status-text { font-size: 10px; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.2; }
-        .guest-name { font-size: 11px; font-weight: 600; color: white; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* Status Colors - Clean & Professional */
+        .st-available { background: #238636; }
+        .st-available-checkout { background: #238636; }
+        .st-occupied { background: #6e7681; }
+        .st-checkin { background: #1f6feb; }
+        .st-checkout { background: #8957e5; }
+        .st-turnover { background: linear-gradient(135deg, #8957e5 50%, #1f6feb 50%); }
+        
+        .status-icon { font-size: 14px; }
+        .status-text { font-size: 9px; color: rgba(255,255,255,0.8); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .guest-name { font-size: 11px; font-weight: 600; color: white; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* Floor Header */
+        .floor-header { background: #21262d; padding: 10px 16px; font-weight: 600; color: #e6edf3; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #30363d; }
+        .floor-header .floor-icon { font-size: 16px; }
+        .floor-header .floor-count { color: #8b949e; font-weight: 400; font-size: 13px; }
         
         /* Legend */
-        .legend-item { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border-radius: 20px; font-size: 12px; }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend { display: flex; gap: 12px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8b949e; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
         
-        /* Stats cards */
-        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px 20px; text-align: center; transition: all 0.3s ease; }
-        .stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.05); }
-        .stat-num { font-size: 28px; font-weight: 700; }
-        .stat-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+        /* Mobile Select */
+        .mobile-select { width: 100%; padding: 12px; background: #21262d; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; }
         
-        /* Housekeeping cards */
-        .hk-card { border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; }
-        .hk-card:hover { transform: translateX(4px); }
-        .hk-makeup { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
-        .hk-dirty { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
-        .hk-turnover { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+        /* Housekeeping Cards */
+        .hk-section { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; }
+        .hk-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
+        .hk-makeup { background: #0d419d; }
+        .hk-dirty { background: #9a6700; }
+        .hk-turnover { background: #8957e5; }
+        .hk-room { font-size: 20px; font-weight: 700; min-width: 50px; }
+        .hk-info { flex: 1; }
+        .hk-guest { font-weight: 500; }
+        .hk-type { font-size: 12px; color: rgba(255,255,255,0.7); }
         
-        /* Movement cards */
-        .movement-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 10px; transition: all 0.3s ease; }
-        .movement-card:hover { background: rgba(255,255,255,0.08); transform: translateX(4px); }
+        /* Movement Cards */
+        .mv-card { background: #21262d; border: 1px solid #30363d; border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .mv-card:hover { border-color: #8b949e; }
+        .mv-guest { font-weight: 600; }
+        .mv-room { font-size: 13px; color: #8b949e; }
+        .mv-btn { width: 44px; height: 44px; border-radius: 8px; border: none; cursor: pointer; font-size: 18px; transition: all 0.2s; }
+        .mv-btn-pending { background: #21262d; border: 1px solid #30363d; color: #8b949e; }
+        .mv-btn-pending:hover { background: #238636; border-color: #238636; color: white; }
+        .mv-btn-done { background: #238636; color: white; }
         
-        /* Mobile dropdown */
-        .mobile-select { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; font-size: 14px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px; }
+        /* Loader */
+        .loader { width: 40px; height: 40px; border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
         /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
-        
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .animate-fade { animation: fadeIn 0.4s ease-out; }
-        .animate-slide { animation: slideIn 0.3s ease-out; }
-        .pulse { animation: pulse 2s infinite; }
-        
-        /* Loader */
-        .loader { width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8b949e; }
         
         /* Responsive */
         @media (max-width: 768px) {
-            .room-num { min-width: 70px; padding: 10px; }
-            .room-num .num { font-size: 18px; }
-            .status-cell { min-width: 60px; padding: 8px 4px; }
-            .cal-header { min-width: 60px; padding: 8px 4px; }
+            .room-label { width: 90px; min-width: 90px; max-width: 90px; padding: 8px 6px; }
+            .room-label .room-num { font-size: 16px; }
+            .room-label .room-type { font-size: 9px; }
+            .status-cell { min-width: 55px; height: 55px; }
+            .cal-date-header { min-width: 55px; }
+            .stat-box { padding: 10px 8px; }
+            .stat-num { font-size: 20px; }
         }
     </style>
 </head>
@@ -146,10 +151,9 @@ const getBDTime = () => {
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
     return new Date(utc + 6 * 3600000).toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: true});
 };
-const formatDateFull = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+const formatDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
 const dayName = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
 const dayNum = (d) => new Date(d+"T00:00:00").getDate();
-const shortMonth = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"short"});
 
 const ROOMS = [
     {id:583459, name:"Royal Sea View Couple", short:"Royal SV", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
@@ -157,7 +161,7 @@ const ROOMS = [
     {id:583467, name:"Deluxe Bay View Couple", short:"Deluxe Bay", max:2, units:[{id:1,n:"402"},{id:2,n:"403"},{id:3,n:"502"},{id:4,n:"503"}]},
     {id:583468, name:"Deluxe Hill View Couple", short:"Deluxe Hill", max:2, units:[{id:1,n:"201"},{id:2,n:"204"},{id:3,n:"207"},{id:4,n:"301"},{id:5,n:"304"},{id:6,n:"307"},{id:7,n:"407"},{id:8,n:"507"}]},
     {id:583469, name:"Deluxe Urban View Couple", short:"Deluxe Urban", max:2, units:[{id:1,n:"101"},{id:2,n:"102"},{id:3,n:"103"},{id:4,n:"104"},{id:5,n:"107"},{id:6,n:"202"},{id:7,n:"203"},{id:8,n:"302"},{id:9,n:"303"}]},
-    {id:583470, name:"Premium Sea View Family", short:"Premium Fam", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
+    {id:583470, name:"Premium Sea View Family", short:"Premium SV Fam", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
     {id:583471, name:"Deluxe Hill View Family", short:"Deluxe Hill Fam", max:4, units:[{id:1,n:"205"},{id:2,n:"206"},{id:3,n:"208"},{id:4,n:"305"},{id:5,n:"306"},{id:6,n:"308"}]},
     {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban Fam", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
 ];
@@ -172,9 +176,9 @@ const getRoomInfo = (roomId, unitId) => {
     return {room: r, unit: u, num: u?.n || "?"};
 };
 
-const STORAGE_KEY = "miami_checkin_status";
-const loadCheckStatus = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
-const saveCheckStatus = (data) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); };
+const STORAGE_KEY = "miami_checkin_v2";
+const loadStatus = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
+const saveStatus = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
 
 function App() {
     const [tab, setTab] = useState("floor");
@@ -186,13 +190,13 @@ function App() {
     const [selected, setSelected] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [time, setTime] = useState(getBDTime());
-    const [checkStatus, setCheckStatus] = useState(loadCheckStatus());
+    const [checkStatus, setCheckStatus] = useState(loadStatus());
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        const h = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', h);
+        return () => window.removeEventListener('resize', h);
     }, []);
 
     useEffect(() => { const t = setInterval(() => setTime(getBDTime()), 60000); return () => clearInterval(t); }, []);
@@ -204,10 +208,10 @@ function App() {
     }, []);
 
     const roomsByFloor = useMemo(() => {
-        const grouped = {};
-        FLOORS.forEach(f => grouped[f] = []);
-        allRooms.forEach(r => { if (grouped[r.floor]) grouped[r.floor].push(r); });
-        return grouped;
+        const g = {};
+        FLOORS.forEach(f => g[f] = []);
+        allRooms.forEach(r => g[r.floor]?.push(r));
+        return g;
     }, [allRooms]);
 
     const fetchData = useCallback(async () => {
@@ -217,24 +221,16 @@ function App() {
             const res = await fetch(`${PROXY}?endpoint=bookings&propertyId=${PROPERTY}&departureFrom=${getBDDate(-7)}`);
             const data = await res.json();
             if (data.success) setBookings(data.data.filter(b => b.status !== "cancelled"));
-            else setError("API: " + (data.error || "Error"));
-        } catch(e) { setError("Network: " + e.message); }
+            else setError(data.error || "Error");
+        } catch(e) { setError(e.message); }
         setLoading(false);
     }, []);
 
     useEffect(() => { fetchData(); const i = setInterval(fetchData, 120000); return () => clearInterval(i); }, [fetchData]);
 
-    const getBooking = useCallback((roomId, unitId, d) => {
-        return bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure);
-    }, [bookings]);
-
-    const getCheckout = useCallback((roomId, unitId, d) => {
-        return bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.departure === d);
-    }, [bookings]);
-
-    const getCheckin = useCallback((roomId, unitId, d) => {
-        return bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.arrival === d);
-    }, [bookings]);
+    const getBooking = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure), [bookings]);
+    const getCheckout = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.departure === d), [bookings]);
+    const getCheckin = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.arrival === d), [bookings]);
 
     const getDays = useCallback((count) => {
         const days = [];
@@ -252,32 +248,21 @@ function App() {
 
     const toggleSelect = (room, unit, date) => {
         const key = `${room.id}-${unit.id}-${date}`;
-        setSelected(s => {
-            const exists = s.find(x => x.key === key);
-            if (exists) return s.filter(x => x.key !== key);
-            return [...s, {key, room, unit, date}];
-        });
+        setSelected(s => s.find(x => x.key === key) ? s.filter(x => x.key !== key) : [...s, {key, room, unit, date}]);
     };
 
-    const toggleCheckIn = (id) => {
+    const toggle = (id, type) => {
         const ns = {...checkStatus};
-        ns[id] = ns[id] === "checkedin" ? null : "checkedin";
+        const key = type === "in" ? "checkedin" : "checkedout";
+        ns[id] = ns[id] === key ? null : key;
         if (!ns[id]) delete ns[id];
         setCheckStatus(ns);
-        saveCheckStatus(ns);
-    };
-
-    const toggleCheckOut = (id) => {
-        const ns = {...checkStatus};
-        ns[id] = ns[id] === "checkedout" ? null : "checkedout";
-        if (!ns[id]) delete ns[id];
-        setCheckStatus(ns);
-        saveCheckStatus(ns);
+        saveStatus(ns);
     };
 
     const stats = useMemo(() => {
         let occ=0, avail=0, cin=0, cout=0;
-        allRooms.forEach(({room, unit}) => { if(getBooking(room.id, unit.id, today)) occ++; else avail++; });
+        allRooms.forEach(({room, unit}) => getBooking(room.id, unit.id, today) ? occ++ : avail++);
         bookings.forEach(b => { if(b.arrival === today) cin++; if(b.departure === today) cout++; });
         return {total: allRooms.length, occ, avail, cin, cout};
     }, [allRooms, bookings, getBooking, today]);
@@ -285,15 +270,15 @@ function App() {
     const housekeeping = useMemo(() => {
         const makeup = [], dirty = [], turnover = [];
         allRooms.forEach(({room, unit}) => {
-            const co = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === today);
-            const ci = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival === today);
+            const co = getCheckout(room.id, unit.id, today);
+            const ci = getCheckin(room.id, unit.id, today);
             const stay = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < today && b.departure > today);
             if (co && ci) turnover.push({room, unit, out: co, in: ci});
-            else if (co && !ci) dirty.push({room, unit, booking: co});
+            else if (co) dirty.push({room, unit, booking: co});
             else if (stay) makeup.push({room, unit, booking: stay});
         });
         return {makeup, dirty, turnover};
-    }, [allRooms, bookings, today]);
+    }, [allRooms, bookings, getCheckout, getCheckin, today]);
 
     const movements = useMemo(() => {
         const todayIn = bookings.filter(b => b.arrival === today);
@@ -309,11 +294,11 @@ function App() {
     }, [bookings, checkStatus, today]);
 
     const tabs = [
-        {id: "floor", label: "🏢 By Floor", icon: "🏢"},
-        {id: "category", label: "📁 By Category", icon: "📁"},
-        {id: "housekeeping", label: "🧹 Housekeeping", icon: "🧹"},
-        {id: "movements", label: "↔️ Movements", icon: "↔️"},
-        {id: "dashboard", label: "📊 Dashboard", icon: "📊"}
+        {id: "floor", label: "🏢 By Floor"},
+        {id: "category", label: "📁 By Category"},
+        {id: "housekeeping", label: "🧹 Housekeeping"},
+        {id: "movements", label: "↔️ Movements"},
+        {id: "dashboard", label: "📊 Dashboard"}
     ];
 
     const StatusCell = ({room, unit, date}) => {
@@ -322,247 +307,201 @@ function App() {
         const checkin = getCheckin(room.id, unit.id, date);
         const isToday = date === today;
         const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}-${date}`);
-        const isTurnover = checkout && checkin;
-
-        let cls = "status-available";
-        let icon = "✓";
-        let text = "";
-        let guestName = "";
-
-        if (isTurnover) {
-            cls = "status-turnover";
-            icon = "🔄";
-            text = "Turnover";
-            guestName = checkin.firstName?.substring(0,8);
+        
+        // Determine status
+        let cls = "st-available", icon = "✓", text = "", guest = "";
+        
+        if (checkout && checkin) {
+            // TURNOVER: Check-out AND Check-in same day
+            cls = "st-turnover";
+            icon = "⬆️⬇️";
+            text = "";
+            guest = checkin.firstName?.substring(0,7);
         } else if (booking) {
+            // OCCUPIED or CHECK-IN
             if (booking.arrival === date) {
-                cls = "status-checkin";
+                cls = "st-checkin";
                 icon = "⬇️";
-                text = "Check-in";
+                text = "IN";
             } else {
-                cls = "status-booked";
+                cls = "st-occupied";
                 icon = "";
             }
-            guestName = booking.firstName?.substring(0,8);
+            guest = booking.firstName?.substring(0,7);
         } else if (checkout) {
-            cls = "status-checkout";
+            // CHECK-OUT only (room becomes available)
+            cls = "st-available-checkout";
             icon = "⬆️";
-            text = "C/O";
+            text = "OUT";
         }
-
+        
         const canSelect = !booking && !checkout;
 
         return (
             <div className={`status-cell ${cls} ${isToday ? 'today-col' : ''} ${isSelected ? 'selected' : ''}`}
                  onClick={() => canSelect && toggleSelect(room, unit, date)}>
                 {icon && <span className="status-icon">{icon}</span>}
-                {guestName && <span className="guest-name">{guestName}</span>}
-                {text && !guestName && <span className="status-text">{text}</span>}
+                {guest && <span className="guest-name">{guest}</span>}
+                {text && !guest && <span className="status-text">{text}</span>}
             </div>
         );
     };
 
+    const CalendarHeader = () => (
+        <div className="cal-header-row">
+            <div className="room-label" style={{background: '#161b22'}}>
+                <span className="room-num" style={{color: '#8b949e', fontSize: '12px'}}>ROOM</span>
+            </div>
+            {days.map(d => (
+                <div key={d} className={`cal-date-header ${d === today ? 'today' : ''}`}>
+                    <div className="day-name">{dayName(d)}</div>
+                    <div className="day-num">{dayNum(d)}</div>
+                </div>
+            ))}
+        </div>
+    );
+
     const RoomRow = ({room, unit}) => (
-        <div className="room-row glass animate-slide">
-            <div className="room-num">
-                <span className="num">{unit.n}</span>
-                <span className="type">{room.short}</span>
+        <div className="room-row">
+            <div className="room-label">
+                <span className="room-num">{unit.n}</span>
+                <span className="room-type">{room.short}</span>
             </div>
             {days.map(d => <StatusCell key={d} room={room} unit={unit} date={d}/>)}
         </div>
     );
 
-    const CalendarHeader = () => (
-        <div className="sticky-calendar py-3 px-4 border-b border-white border-opacity-5">
-            <div className="flex items-center">
-                <div className="room-num opacity-0 pointer-events-none">
-                    <span className="num">000</span>
-                    <span className="type">Type</span>
-                </div>
-                {days.map(d => (
-                    <div key={d} className={`cal-header flex-1 ${d === today ? 'today' : ''}`}>
-                        <div className="day-name">{dayName(d)}</div>
-                        <div className="day-num">{dayNum(d)}</div>
-                        <div className="day-name">{shortMonth(d)}</div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const MovementCard = ({booking, type, onToggle}) => {
-        const {num, room} = getRoomInfo(booking.roomId, booking.unitId);
-        return (
-            <div className="movement-card flex justify-between items-center">
-                <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{booking.firstName} {booking.lastName}</div>
-                    <div className="text-sm text-gray-400">Room {num} • {room?.short}</div>
-                    {booking.mobile && <div className="text-xs text-gray-500 mt-1">📞 {booking.mobile}</div>}
-                </div>
-                <button onClick={() => onToggle(booking.id)} 
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all ${type === "done" ? 'bg-green-500 text-white' : 'bg-white bg-opacity-10 hover:bg-opacity-20'}`}>
-                    {type === "done" ? "↩" : "✓"}
-                </button>
-            </div>
-        );
-    };
-
     return (
-        <div className="min-h-screen pb-24">
+        <div style={{minHeight: '100vh', paddingBottom: '80px'}}>
             {/* Header */}
-            <div className="sticky-header border-b border-white border-opacity-5">
-                <div className="max-w-full px-4 py-4">
-                    <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+            <div className="header">
+                <div style={{maxWidth: '100%', padding: '16px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px'}}>
                         <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-2">🏨 Miami Beach Resort</h1>
-                            <p className="text-gray-400 text-sm mt-1">Cox's Bazar • {formatDateFull(today)} • {time}</p>
+                            <h1 style={{fontSize: '20px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px'}}>🏨 Miami Beach Resort</h1>
+                            <p style={{fontSize: '13px', color: '#8b949e', marginTop: '4px'}}>{formatDate(today)} • {time} • {bookings.length} bookings</p>
                         </div>
-                        <button onClick={fetchData} disabled={loading} 
-                            className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20">
-                            {loading ? <span className="animate-spin">⏳</span> : "🔄"} Refresh
+                        <button onClick={fetchData} disabled={loading} style={{padding: '10px 20px', background: '#238636', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                            {loading ? '⏳' : '🔄'} Refresh
                         </button>
                     </div>
 
                     {/* Navigation */}
                     {isMobile ? (
-                        <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select mb-4">
-                            {tabs.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label.replace(t.icon, '').trim()}</option>)}
+                        <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '12px'}}>
+                            {tabs.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                         </select>
                     ) : (
-                        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-                            {tabs.map(t => (
-                                <div key={t.id} onClick={() => setTab(t.id)} className={`nav-item ${tab === t.id ? 'active' : ''}`}>
-                                    {t.label}
-                                </div>
-                            ))}
+                        <div style={{display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto'}}>
+                            {tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>{t.label}</button>)}
                         </div>
                     )}
 
-                    {/* Stats Bar */}
-                    <div className="grid grid-cols-5 gap-3 mb-4">
-                        <div className="stat-card"><div className="stat-num text-white">{stats.total}</div><div className="stat-label">Total</div></div>
-                        <div className="stat-card"><div className="stat-num text-green-400">{stats.avail}</div><div className="stat-label">Available</div></div>
-                        <div className="stat-card"><div className="stat-num text-red-400">{stats.occ}</div><div className="stat-label">Occupied</div></div>
-                        <div className="stat-card"><div className="stat-num text-blue-400">{stats.cin}</div><div className="stat-label">Check-ins</div></div>
-                        <div className="stat-card"><div className="stat-num text-purple-400">{stats.cout}</div><div className="stat-label">Check-outs</div></div>
+                    {/* Stats */}
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '12px'}}>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#e6edf3'}}>{stats.total}</div><div className="stat-label">Total</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#3fb950'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#f85149'}}>{stats.occ}</div><div className="stat-label">Occupied</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#58a6ff'}}>{stats.cin}</div><div className="stat-label">Check-in</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#a371f7'}}>{stats.cout}</div><div className="stat-label">Check-out</div></div>
                     </div>
 
-                    {/* Calendar Controls - only for floor/category tabs */}
+                    {/* Calendar Controls */}
                     {(tab === "floor" || tab === "category") && (
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-400">📅</span>
-                                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
-                            </div>
+                        <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px'}}>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
                             <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
-                            <div className="h-6 w-px bg-white bg-opacity-20"></div>
-                            <span className="text-gray-400 text-sm">Days:</span>
-                            {[1, 3, 7, 15].map(d => (
-                                <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}</button>
-                            ))}
-                            <div className="flex-1"></div>
-                            <div className="flex gap-2 flex-wrap">
-                                <span className="legend-item"><span className="legend-dot bg-green-500"></span>Available</span>
-                                <span className="legend-item"><span className="legend-dot bg-red-500"></span>Occupied</span>
-                                <span className="legend-item"><span className="legend-dot bg-blue-500"></span>Check-in</span>
-                                <span className="legend-item"><span className="legend-dot bg-purple-500"></span>Check-out</span>
+                            <div style={{width: '1px', height: '24px', background: '#30363d'}}></div>
+                            {[1, 3, 7, 15].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}D</button>)}
+                            <div style={{flex: 1}}></div>
+                            <div className="legend">
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#238636'}}></span>Available</span>
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#6e7681'}}></span>Occupied</span>
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#1f6feb'}}></span>Check-in</span>
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#8957e5'}}></span>Check-out</span>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {error && <div className="mx-4 mt-4 p-4 bg-red-500 bg-opacity-20 rounded-xl text-red-300">{error}</div>}
-            {loading && <div className="flex justify-center py-16"><div className="loader"></div></div>}
+            {error && <div style={{margin: '16px', padding: '12px', background: 'rgba(248,81,73,0.1)', border: '1px solid #f85149', borderRadius: '8px', color: '#f85149'}}>{error}</div>}
+            {loading && <div style={{display: 'flex', justifyContent: 'center', padding: '60px'}}><div className="loader"></div></div>}
 
             {!loading && (
-                <div className="max-w-full">
+                <>
                     {/* BY FLOOR */}
                     {tab === "floor" && (
-                        <>
+                        <div className="calendar-grid">
                             <CalendarHeader/>
-                            <div className="px-4">
-                                {FLOORS.map(floor => {
-                                    const rooms = roomsByFloor[floor];
-                                    if (!rooms?.length) return null;
-                                    return (
-                                        <div key={floor} className="animate-fade">
-                                            <div className="floor-header">
-                                                <span className="text-lg font-bold">🏢 {floorName(floor)} Floor</span>
-                                                <span className="text-gray-400 text-sm ml-3">{rooms.length} rooms</span>
-                                            </div>
-                                            {rooms.map(({room, unit}) => <RoomRow key={`${room.id}-${unit.id}`} room={room} unit={unit}/>)}
+                            {FLOORS.map(floor => {
+                                const rooms = roomsByFloor[floor];
+                                if (!rooms?.length) return null;
+                                return (
+                                    <div key={floor}>
+                                        <div className="floor-header">
+                                            <span className="floor-icon">🏢</span>
+                                            <span>{floorName(floor)} Floor</span>
+                                            <span className="floor-count">{rooms.length} rooms</span>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </>
+                                        {rooms.map(({room, unit}) => <RoomRow key={`${room.id}-${unit.id}`} room={room} unit={unit}/>)}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
 
                     {/* BY CATEGORY */}
                     {tab === "category" && (
-                        <>
+                        <div className="calendar-grid">
                             <CalendarHeader/>
-                            <div className="px-4">
-                                {ROOMS.map(roomType => (
-                                    <div key={roomType.id} className="animate-fade">
-                                        <div className="floor-header category-header">
-                                            <span className="text-lg font-bold">📁 {roomType.name}</span>
-                                            <span className="text-gray-400 text-sm ml-3">{roomType.units.length} rooms • 👤{roomType.max}A</span>
-                                        </div>
-                                        {roomType.units.map(unit => <RoomRow key={`${roomType.id}-${unit.id}`} room={roomType} unit={unit}/>)}
+                            {ROOMS.map(roomType => (
+                                <div key={roomType.id}>
+                                    <div className="floor-header" style={{borderLeft: '4px solid #8957e5'}}>
+                                        <span className="floor-icon">📁</span>
+                                        <span>{roomType.name}</span>
+                                        <span className="floor-count">{roomType.units.length} rooms • {roomType.max}A</span>
                                     </div>
-                                ))}
-                            </div>
-                        </>
+                                    {roomType.units.map(unit => <RoomRow key={`${roomType.id}-${unit.id}`} room={roomType} unit={unit}/>)}
+                                </div>
+                            ))}
+                        </div>
                     )}
 
                     {/* HOUSEKEEPING */}
                     {tab === "housekeeping" && (
-                        <div className="px-4 py-6">
-                            <h2 className="text-xl font-bold mb-6">🧹 Housekeeping - {formatDateFull(today)}</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="text-lg font-bold text-cyan-400 mb-4 flex items-center gap-2">
-                                        🛏️ Make-up <span className="text-sm font-normal text-gray-400">({housekeeping.makeup.length})</span>
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {housekeeping.makeup.map(({room, unit, booking}) => (
-                                            <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup">
-                                                <div className="text-2xl font-bold">{unit.n}</div>
-                                                <div className="flex-1"><div className="font-medium">{booking.firstName}</div><div className="text-sm opacity-80">{room.short}</div></div>
-                                            </div>
-                                        ))}
-                                        {!housekeeping.makeup.length && <div className="text-gray-500 text-center py-8">No rooms</div>}
-                                    </div>
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>🧹 Housekeeping - {formatDate(today)}</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#58a6ff', marginBottom: '12px'}}>🛏️ Make-up ({housekeeping.makeup.length})</h3>
+                                    {housekeeping.makeup.map(({room, unit, booking}) => (
+                                        <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup">
+                                            <div className="hk-room">{unit.n}</div>
+                                            <div className="hk-info"><div className="hk-guest">{booking.firstName}</div><div className="hk-type">{room.short}</div></div>
+                                        </div>
+                                    ))}
+                                    {!housekeeping.makeup.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>No rooms</div>}
                                 </div>
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="text-lg font-bold text-orange-400 mb-4 flex items-center gap-2">
-                                        🧽 Dirty <span className="text-sm font-normal text-gray-400">({housekeeping.dirty.length})</span>
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {housekeeping.dirty.map(({room, unit, booking}) => (
-                                            <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty">
-                                                <div className="text-2xl font-bold">{unit.n}</div>
-                                                <div className="flex-1"><div className="font-medium">{booking.firstName}</div><div className="text-sm opacity-80">{room.short}</div></div>
-                                            </div>
-                                        ))}
-                                        {!housekeeping.dirty.length && <div className="text-gray-500 text-center py-8">No rooms</div>}
-                                    </div>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#d29922', marginBottom: '12px'}}>🧽 Dirty ({housekeeping.dirty.length})</h3>
+                                    {housekeeping.dirty.map(({room, unit, booking}) => (
+                                        <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty">
+                                            <div className="hk-room">{unit.n}</div>
+                                            <div className="hk-info"><div className="hk-guest">{booking.firstName}</div><div className="hk-type">{room.short}</div></div>
+                                        </div>
+                                    ))}
+                                    {!housekeeping.dirty.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>No rooms</div>}
                                 </div>
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="text-lg font-bold text-pink-400 mb-4 flex items-center gap-2">
-                                        🔄 Turnover <span className="text-sm font-normal text-gray-400">({housekeeping.turnover.length})</span>
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {housekeeping.turnover.map(({room, unit, out, in: ci}) => (
-                                            <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover">
-                                                <div className="text-2xl font-bold">{unit.n}</div>
-                                                <div className="flex-1"><div className="font-medium">{out.firstName} → {ci.firstName}</div><div className="text-sm opacity-80">{room.short}</div></div>
-                                            </div>
-                                        ))}
-                                        {!housekeeping.turnover.length && <div className="text-gray-500 text-center py-8">No rooms</div>}
-                                    </div>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#a371f7', marginBottom: '12px'}}>🔄 Turnover ({housekeeping.turnover.length})</h3>
+                                    {housekeeping.turnover.map(({room, unit, out, in: ci}) => (
+                                        <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover">
+                                            <div className="hk-room">{unit.n}</div>
+                                            <div className="hk-info"><div className="hk-guest">{out.firstName} → {ci.firstName}</div><div className="hk-type">{room.short}</div></div>
+                                        </div>
+                                    ))}
+                                    {!housekeeping.turnover.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>No rooms</div>}
                                 </div>
                             </div>
                         </div>
@@ -570,42 +509,71 @@ function App() {
 
                     {/* MOVEMENTS */}
                     {tab === "movements" && (
-                        <div className="px-4 py-6">
-                            <h2 className="text-xl font-bold mb-6">↔️ Movements - {formatDateFull(today)}</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="font-bold text-blue-400 mb-4">⬇️ Today's Check-in ({movements.pendingIn.length})</h3>
-                                    <div className="max-h-80 overflow-y-auto">{movements.pendingIn.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckIn}/>)}</div>
-                                    {!movements.pendingIn.length && <div className="text-gray-500 text-center py-6">None</div>}
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>↔️ Movements - {formatDate(today)}</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#58a6ff', marginBottom: '12px'}}>⬇️ Pending Check-in ({movements.pendingIn.length})</h3>
+                                    {movements.pendingIn.map(b => {
+                                        const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                                        return (
+                                            <div key={b.id} className="mv-card">
+                                                <div><div className="mv-guest">{b.firstName}</div><div className="mv-room">Room {num} • {room?.short}</div></div>
+                                                <button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "in")}>✓</button>
+                                            </div>
+                                        );
+                                    })}
+                                    {!movements.pendingIn.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
                                 </div>
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="font-bold text-green-400 mb-4">✅ Checked-in ({movements.doneIn.length})</h3>
-                                    <div className="max-h-80 overflow-y-auto">{movements.doneIn.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckIn}/>)}</div>
-                                    {!movements.doneIn.length && <div className="text-gray-500 text-center py-6">None</div>}
+                                <div className="hk-section">
+                                    <h3 style={{color: '#3fb950', marginBottom: '12px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
+                                    {movements.doneIn.map(b => {
+                                        const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                                        return (
+                                            <div key={b.id} className="mv-card">
+                                                <div><div className="mv-guest">{b.firstName}</div><div className="mv-room">Room {num} • {room?.short}</div></div>
+                                                <button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "in")}>↩</button>
+                                            </div>
+                                        );
+                                    })}
+                                    {!movements.doneIn.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
                                 </div>
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="font-bold text-purple-400 mb-4">⬆️ Today's Check-out ({movements.pendingOut.length})</h3>
-                                    <div className="max-h-80 overflow-y-auto">{movements.pendingOut.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckOut}/>)}</div>
-                                    {!movements.pendingOut.length && <div className="text-gray-500 text-center py-6">None</div>}
+                                <div className="hk-section">
+                                    <h3 style={{color: '#a371f7', marginBottom: '12px'}}>⬆️ Pending Check-out ({movements.pendingOut.length})</h3>
+                                    {movements.pendingOut.map(b => {
+                                        const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                                        return (
+                                            <div key={b.id} className="mv-card">
+                                                <div><div className="mv-guest">{b.firstName}</div><div className="mv-room">Room {num} • {room?.short}</div></div>
+                                                <button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "out")}>✓</button>
+                                            </div>
+                                        );
+                                    })}
+                                    {!movements.pendingOut.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
                                 </div>
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="font-bold text-orange-400 mb-4">👋 Checked-out ({movements.doneOut.length})</h3>
-                                    <div className="max-h-80 overflow-y-auto">{movements.doneOut.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckOut}/>)}</div>
-                                    {!movements.doneOut.length && <div className="text-gray-500 text-center py-6">None</div>}
+                                <div className="hk-section">
+                                    <h3 style={{color: '#d29922', marginBottom: '12px'}}>👋 Checked-out ({movements.doneOut.length})</h3>
+                                    {movements.doneOut.map(b => {
+                                        const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                                        return (
+                                            <div key={b.id} className="mv-card">
+                                                <div><div className="mv-guest">{b.firstName}</div><div className="mv-room">Room {num} • {room?.short}</div></div>
+                                                <button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "out")}>↩</button>
+                                            </div>
+                                        );
+                                    })}
+                                    {!movements.doneOut.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
                                 </div>
                             </div>
-                            <div className="glass rounded-2xl p-5">
-                                <h3 className="font-bold text-lg mb-4">🏠 Current Guests ({movements.guests.length})</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                            <div className="hk-section">
+                                <h3 style={{marginBottom: '12px'}}>🏠 Current Guests ({movements.guests.length})</h3>
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px'}}>
                                     {movements.guests.map(b => {
                                         const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                         return (
-                                            <div key={b.id} className="glass rounded-xl p-4">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="font-bold truncate flex-1">{b.firstName}</div>
-                                                    <div className="text-2xl font-bold text-blue-400 ml-2">{num}</div>
-                                                </div>
-                                                <div className="text-xs text-gray-400 mt-1">{room?.short}</div>
+                                            <div key={b.id} style={{background: '#21262d', borderRadius: '8px', padding: '12px'}}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between'}}><span style={{fontWeight: '600'}}>{b.firstName}</span><span style={{color: '#58a6ff', fontWeight: '700'}}>{num}</span></div>
+                                                <div style={{fontSize: '12px', color: '#8b949e'}}>{room?.short}</div>
                                             </div>
                                         );
                                     })}
@@ -616,39 +584,38 @@ function App() {
 
                     {/* DASHBOARD */}
                     {tab === "dashboard" && (
-                        <div className="px-4 py-6">
-                            <h2 className="text-xl font-bold mb-6">📊 Dashboard</h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="font-bold mb-4">Occupancy by Room Type</h3>
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>📊 Dashboard</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'}}>
+                                <div className="hk-section">
+                                    <h3 style={{marginBottom: '16px'}}>Occupancy by Room Type</h3>
                                     {ROOMS.map(r => {
                                         const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
                                         const pct = Math.round(booked / r.units.length * 100);
                                         return (
-                                            <div key={r.id} className="mb-4">
-                                                <div className="flex justify-between text-sm mb-1">
-                                                    <span>{r.name}</span>
-                                                    <span className="text-gray-400">{booked}/{r.units.length} ({pct}%)</span>
+                                            <div key={r.id} style={{marginBottom: '12px'}}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px'}}>
+                                                    <span>{r.short}</span><span style={{color: '#8b949e'}}>{booked}/{r.units.length} ({pct}%)</span>
                                                 </div>
-                                                <div className="h-3 bg-white bg-opacity-10 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500" style={{width: pct+"%"}}></div>
+                                                <div style={{height: '8px', background: '#21262d', borderRadius: '4px', overflow: 'hidden'}}>
+                                                    <div style={{height: '100%', width: pct+'%', background: 'linear-gradient(90deg, #238636, #3fb950)', borderRadius: '4px', transition: 'width 0.5s'}}></div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className="glass rounded-2xl p-5">
-                                    <h3 className="font-bold mb-4">Occupancy by Floor</h3>
-                                    <div className="grid grid-cols-3 gap-4">
+                                <div className="hk-section">
+                                    <h3 style={{marginBottom: '16px'}}>Occupancy by Floor</h3>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px'}}>
                                         {FLOORS.map(f => {
                                             const rooms = roomsByFloor[f] || [];
                                             const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
                                             const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0;
                                             return (
-                                                <div key={f} className="text-center p-4 glass rounded-xl">
-                                                    <div className="text-gray-400 text-sm">Floor {f}</div>
-                                                    <div className="text-3xl font-bold mt-1">{pct}%</div>
-                                                    <div className="text-xs text-gray-400">{booked}/{rooms.length}</div>
+                                                <div key={f} style={{background: '#21262d', borderRadius: '10px', padding: '16px', textAlign: 'center'}}>
+                                                    <div style={{color: '#8b949e', fontSize: '12px'}}>Floor {f}</div>
+                                                    <div style={{fontSize: '28px', fontWeight: '700', color: pct > 70 ? '#f85149' : pct > 40 ? '#d29922' : '#3fb950'}}>{pct}%</div>
+                                                    <div style={{fontSize: '12px', color: '#8b949e'}}>{booked}/{rooms.length}</div>
                                                 </div>
                                             );
                                         })}
@@ -657,16 +624,15 @@ function App() {
                             </div>
                         </div>
                     )}
-                </div>
+                </>
             )}
 
             {/* Floating Book Button */}
             {selected.length > 0 && (
-                <div className="fixed bottom-6 left-4 right-4 z-50 max-w-lg mx-auto">
-                    <button onClick={() => setShowModal(true)} 
-                        className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl text-white font-bold shadow-2xl shadow-blue-500/30 flex items-center justify-center gap-3 hover:shadow-blue-500/50 transition-all">
+                <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '500px', margin: '0 auto'}}>
+                    <button onClick={() => setShowModal(true)} style={{width: '100%', padding: '16px', background: '#238636', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 4px 20px rgba(35,134,54,0.4)'}}>
                         ➕ Book {selected.length} Room{selected.length > 1 ? 's' : ''}
-                        <span className="absolute right-4" onClick={e => {e.stopPropagation(); setSelected([]);}}>✕</span>
+                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} style={{marginLeft: 'auto', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>✕</span>
                     </button>
                 </div>
             )}
@@ -677,19 +643,12 @@ function App() {
 }
 
 function BookingModal({selected, onClose}) {
-    const [form, setForm] = useState({
-        guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "",
-        checkIn: selected[0]?.date || getBDDate(),
-        checkOut: getBDDate(1)
-    });
+    const [form, setForm] = useState({guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "", checkIn: selected[0]?.date || getBDDate(), checkOut: getBDDate(1)});
     const [status, setStatus] = useState("");
 
-    const addGuest = () => form.guests.length < 3 && setForm({...form, guests: [...form.guests, {name: ""}]});
-    const addPhone = () => form.phones.length < 3 && setForm({...form, phones: [...form.phones, ""]});
-    const updateGuest = (i, v) => { const g = [...form.guests]; g[i].name = v; setForm({...form, guests: g}); };
-    const updatePhone = (i, v) => { const p = [...form.phones]; p[i] = v; setForm({...form, phones: p}); };
-    const removeGuest = (i) => form.guests.length > 1 && setForm({...form, guests: form.guests.filter((_,idx) => idx !== i)});
-    const removePhone = (i) => form.phones.length > 1 && setForm({...form, phones: form.phones.filter((_,idx) => idx !== i)});
+    const add = (f) => form[f].length < 3 && setForm({...form, [f]: [...form[f], f === 'guests' ? {name: ""} : ""]});
+    const upd = (f, i, v) => { const a = [...form[f]]; f === 'guests' ? a[i].name = v : a[i] = v; setForm({...form, [f]: a}); };
+    const rem = (f, i) => form[f].length > 1 && setForm({...form, [f]: form[f].filter((_, idx) => idx !== i)});
 
     const submit = async (e) => {
         e.preventDefault();
@@ -705,9 +664,7 @@ function BookingModal({selected, onClose}) {
                 mobile: phones, custom4: form.nid || "default", custom5: form.dob || "default",
                 referer: "miami_frontdesk"
             }));
-            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
-                method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)
-            });
+            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
             const result = await res.json();
             if (result.success) { setStatus("success"); setTimeout(onClose, 1500); }
             else setStatus("error: " + (result.error || "Failed"));
@@ -715,62 +672,58 @@ function BookingModal({selected, onClose}) {
     };
 
     if (status === "success") return (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-            <div className="glass rounded-3xl p-10 text-center animate-fade">
-                <div className="text-6xl mb-4">✅</div>
-                <div className="text-2xl font-bold">Booking Created!</div>
+        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000}}>
+            <div style={{background: '#161b22', border: '1px solid #30363d', borderRadius: '16px', padding: '40px', textAlign: 'center'}}>
+                <div style={{fontSize: '48px', marginBottom: '16px'}}>✅</div>
+                <div style={{fontSize: '20px', fontWeight: '700'}}>Booking Created!</div>
             </div>
         </div>
     );
 
+    const inputStyle = {width: '100%', padding: '10px 12px', background: '#21262d', border: '1px solid #30363d', borderRadius: '8px', color: '#e6edf3', fontSize: '14px'};
+
     return (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-            <div className="glass rounded-3xl p-6 w-full max-w-md animate-fade">
-                <div className="flex justify-between items-center mb-5">
-                    <h3 className="text-xl font-bold">➕ New Booking</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">×</button>
+        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 1000, overflowY: 'auto'}}>
+            <div style={{background: '#161b22', border: '1px solid #30363d', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                    <h3 style={{fontSize: '18px', fontWeight: '700'}}>➕ New Booking</h3>
+                    <button onClick={onClose} style={{background: 'none', border: 'none', color: '#8b949e', fontSize: '24px', cursor: 'pointer'}}>×</button>
                 </div>
-                <div className="flex flex-wrap gap-2 mb-5">
-                    {selected.map(s => <span key={s.key} className="px-3 py-1.5 bg-blue-500/30 rounded-lg text-sm font-medium">{s.unit.n}</span>)}
+                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px'}}>
+                    {selected.map(s => <span key={s.key} style={{padding: '6px 12px', background: '#238636', borderRadius: '6px', fontSize: '13px', fontWeight: '600'}}>{s.unit.n}</span>)}
                 </div>
-                <form onSubmit={submit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div><label className="text-gray-400 text-xs mb-1 block">Check-in</label>
-                            <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} className="date-input w-full"/></div>
-                        <div><label className="text-gray-400 text-xs mb-1 block">Check-out</label>
-                            <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} className="date-input w-full"/></div>
+                <form onSubmit={submit}>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
+                        <div><label style={{fontSize: '12px', color: '#8b949e', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} style={inputStyle}/></div>
+                        <div><label style={{fontSize: '12px', color: '#8b949e', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} style={inputStyle}/></div>
                     </div>
-                    <div>
-                        <div className="flex justify-between mb-2"><label className="text-gray-400 text-xs">Guests</label>
-                            {form.guests.length < 3 && <button type="button" onClick={addGuest} className="text-blue-400 text-xs">+ Add</button>}</div>
+                    <div style={{marginBottom: '16px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}><label style={{fontSize: '12px', color: '#8b949e'}}>Guests *</label>{form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'none', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer'}}>+ Add</button>}</div>
                         {form.guests.map((g, i) => (
-                            <div key={i} className="flex gap-2 mb-2">
-                                <input type="text" required value={g.name} onChange={e => updateGuest(i, e.target.value)} placeholder={`Guest ${i+1}`} className="date-input flex-1"/>
-                                {form.guests.length > 1 && <button type="button" onClick={() => removeGuest(i)} className="text-red-400 px-2">✕</button>}
+                            <div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                                <input type="text" required value={g.name} onChange={e => upd('guests', i, e.target.value)} placeholder={`Guest ${i+1}`} style={{...inputStyle, flex: 1}}/>
+                                {form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'none', border: 'none', color: '#f85149', fontSize: '18px', cursor: 'pointer', padding: '0 8px'}}>×</button>}
                             </div>
                         ))}
                     </div>
-                    <div>
-                        <div className="flex justify-between mb-2"><label className="text-gray-400 text-xs">Phones</label>
-                            {form.phones.length < 3 && <button type="button" onClick={addPhone} className="text-blue-400 text-xs">+ Add</button>}</div>
+                    <div style={{marginBottom: '16px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}><label style={{fontSize: '12px', color: '#8b949e'}}>Phone *</label>{form.phones.length < 3 && <button type="button" onClick={() => add('phones')} style={{background: 'none', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer'}}>+ Add</button>}</div>
                         {form.phones.map((p, i) => (
-                            <div key={i} className="flex gap-2 mb-2">
-                                <input type="tel" required value={p} onChange={e => updatePhone(i, e.target.value)} placeholder={`Phone ${i+1}`} className="date-input flex-1"/>
-                                {form.phones.length > 1 && <button type="button" onClick={() => removePhone(i)} className="text-red-400 px-2">✕</button>}
+                            <div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                                <input type="tel" required value={p} onChange={e => upd('phones', i, e.target.value)} placeholder={`Phone ${i+1}`} style={{...inputStyle, flex: 1}}/>
+                                {form.phones.length > 1 && <button type="button" onClick={() => rem('phones', i)} style={{background: 'none', border: 'none', color: '#f85149', fontSize: '18px', cursor: 'pointer', padding: '0 8px'}}>×</button>}
                             </div>
                         ))}
                     </div>
-                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" className="date-input w-full"/>
-                    <div className="grid grid-cols-2 gap-3">
-                        <input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" className="date-input"/>
-                        <input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" className="date-input"/>
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" style={{...inputStyle, marginBottom: '12px'}}/>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
+                        <input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" style={inputStyle}/>
+                        <input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" style={inputStyle}/>
                     </div>
-                    {status.startsWith("error") && <div className="p-3 bg-red-500/20 rounded-xl text-red-300 text-sm">{status}</div>}
-                    <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="flex-1 py-3 glass rounded-xl font-medium">Cancel</button>
-                        <button type="submit" disabled={status === "loading"} className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl font-bold disabled:opacity-50">
-                            {status === "loading" ? "..." : "Book"}
-                        </button>
+                    {status.startsWith("error") && <div style={{padding: '10px', background: 'rgba(248,81,73,0.15)', border: '1px solid #f85149', borderRadius: '8px', color: '#f85149', fontSize: '13px', marginBottom: '16px'}}>{status}</div>}
+                    <div style={{display: 'flex', gap: '12px'}}>
+                        <button type="button" onClick={onClose} style={{flex: 1, padding: '12px', background: '#21262d', border: '1px solid #30363d', borderRadius: '8px', color: '#e6edf3', fontWeight: '600', cursor: 'pointer'}}>Cancel</button>
+                        <button type="submit" disabled={status === "loading"} style={{flex: 1, padding: '12px', background: '#238636', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: status === "loading" ? 0.6 : 1}}>{status === "loading" ? "..." : "Book"}</button>
                     </div>
                 </form>
             </div>
