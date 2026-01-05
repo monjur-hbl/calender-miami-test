@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="0">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort - Front Desk v17</title>
+    <title>Miami Beach Resort - Front Desk v18</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -16,77 +16,72 @@
         
         .header { background: #141824; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 100; }
         
-        .nav-btn { padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); white-space: nowrap; }
+        /* Stats Row - 5 items */
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 10px; text-align: center; }
+        .stat-num { font-size: 28px; font-weight: 700; }
+        .stat-label { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Search Button - 1.5x bigger */
+        .search-btn { display: flex; align-items: center; gap: 10px; padding: 15px 28px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s; }
+        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #10b981; }
+        
+        /* Tabs - Full width stretched */
+        .tabs-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 14px; }
+        .nav-btn { padding: 12px 8px; border-radius: 8px; font-size: 12px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); white-space: nowrap; text-align: center; }
         .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .nav-btn.active { background: #10b981; color: white; }
         
-        .day-btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
+        /* Date controls - Centered */
+        .date-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+        .day-btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
         .day-btn:hover { background: rgba(255,255,255,0.1); }
         .day-btn.active { background: #10b981; color: white; }
-        
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; }
         
-        /* Stats Row */
-        .stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
-        .stat-card { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; text-align: center; }
-        .stat-num { font-size: 32px; font-weight: 700; }
-        .stat-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        /* Search Button */
-        .search-btn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 14px; transition: all 0.2s; }
-        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-        
-        /* Calendar */
+        /* Calendar Container */
         .cal-container { padding: 0 16px 100px; overflow-x: auto; }
         
-        /* Date Header */
-        .date-row { display: flex; gap: 8px; margin-left: 140px; margin-bottom: 16px; padding: 8px 0; }
-        .date-cell { min-width: 130px; text-align: center; padding: 12px 8px; background: transparent; border-radius: 10px; }
+        /* Sticky Date Header */
+        .date-header-sticky { position: sticky; top: 200px; z-index: 50; background: #1a1f2e; padding: 10px 0; margin-left: 140px; }
+        .date-row { display: flex; gap: 6px; }
+        .date-cell { flex: 1; min-width: 100px; text-align: center; padding: 10px 6px; background: rgba(255,255,255,0.03); border-radius: 10px; }
         .date-cell.today { background: #10b981; }
-        .date-day { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7); }
-        .date-num { font-size: 22px; font-weight: 700; margin-top: 2px; }
+        .date-day { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); }
+        .date-num { font-size: 20px; font-weight: 700; margin-top: 2px; }
         
         /* Floor Header */
-        .floor-header { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 10px; margin: 20px 0 16px 0; }
+        .floor-header { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 10px; margin: 16px 0 12px 0; }
         
         /* Room Row */
-        .room-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .room-row { display: flex; gap: 6px; margin-bottom: 6px; }
         
         /* Room Label */
-        .room-label { min-width: 132px; max-width: 132px; background: #232a3b; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: center; }
-        .room-num { font-size: 24px; font-weight: 700; }
-        .room-type { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; line-height: 1.3; }
-        .room-cap { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+        .room-label { min-width: 134px; max-width: 134px; background: #232a3b; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+        .room-num { font-size: 22px; font-weight: 700; }
+        .room-type { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.2; }
+        .room-cap { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
         
-        /* Status Card */
-        .status-card { min-width: 130px; max-width: 130px; min-height: 90px; border-radius: 12px; padding: 10px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; overflow: hidden; }
+        /* Status Card - Responsive */
+        .status-card { flex: 1; min-width: 100px; min-height: 80px; border-radius: 10px; padding: 10px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .status-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
         
+        /* Only 2 colors for calendar: Green (available) and Red (booked) */
         .card-available { background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%); }
-        .card-occupied { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); }
-        .card-checkin { background: linear-gradient(145deg, #3b82f6 0%, #2563eb 100%); }
-        .card-checkout { background: linear-gradient(145deg, #a855f7 0%, #9333ea 100%); }
-        
-        /* Turnover - Diagonal Split: Purple (top-left) / Blue (bottom-right) */
-        .card-turnover { 
-            background: linear-gradient(135deg, #9333ea 0%, #9333ea 50%, #2563eb 50%, #2563eb 100%);
-            position: relative;
-        }
-        
+        .card-booked { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); }
         .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #10b981 !important; }
         
-        .status-icon { font-size: 18px; }
-        .status-badge { display: inline-block; padding: 3px 8px; background: rgba(255,255,255,0.2); border-radius: 12px; font-size: 10px; font-weight: 600; margin-top: auto; }
-        .guest-name { font-size: 12px; font-weight: 600; margin-top: 6px; line-height: 1.2; }
-        .guest-info { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; }
-        
-        /* Turnover content */
-        .turnover-content { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; }
-        .turnover-out { font-size: 10px; color: white; font-weight: 600; }
-        .turnover-in { font-size: 10px; color: white; font-weight: 600; margin-top: auto; text-align: right; }
+        .status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .guest-name { font-size: 11px; font-weight: 500; margin-top: 4px; opacity: 0.9; }
         
         .info-btn { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: none; color: white; z-index: 5; }
         .info-btn:hover { background: rgba(255,255,255,0.4); }
+        
+        /* Today Tab - View Selector */
+        .view-selector { display: flex; gap: 8px; margin-bottom: 16px; justify-content: center; }
+        .view-btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; background: transparent; color: rgba(255,255,255,0.6); transition: all 0.2s; }
+        .view-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+        .view-btn.active { background: #10b981; border-color: #10b981; color: white; }
         
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
@@ -99,26 +94,30 @@
         .info-value { font-size: 15px; font-weight: 600; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
-        /* Search Modal */
+        /* Search */
         .search-input { width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 15px; }
         .search-input:focus { outline: none; border-color: #10b981; }
         .search-result { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
         .search-result:hover { background: rgba(255,255,255,0.08); border-color: #10b981; }
         
-        /* Search & Book Tab */
-        .date-search-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 20px; }
+        /* Search & Book */
+        .date-search-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; justify-content: center; margin-bottom: 20px; }
         .date-field { display: flex; flex-direction: column; gap: 6px; }
         .date-field label { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .group-selector { padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; }
         
-        /* Guest Request */
+        /* Requests */
         .request-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
         .request-select { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 10px; }
         .request-note { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 8px; resize: none; }
         .request-btn { padding: 10px 20px; background: #10b981; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .request-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-top: 8px; font-size: 13px; }
         .request-pending { border-left: 3px solid #f59e0b; }
-        .request-done { border-left: 3px solid #10b981; opacity: 0.7; }
+        .request-done { border-left: 3px solid #10b981; }
         .done-btn { padding: 6px 12px; background: #10b981; border: none; border-radius: 6px; color: white; font-size: 11px; cursor: pointer; }
+        .request-count { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+        .request-count.pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .request-count.done { background: rgba(34,197,94,0.2); color: #22c55e; }
         
         /* Housekeeping */
         .hk-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; }
@@ -142,12 +141,27 @@
         ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
         
+        @media (max-width: 1200px) {
+            .status-card { min-width: 90px; min-height: 70px; }
+            .date-cell { min-width: 90px; }
+        }
+        @media (max-width: 900px) {
+            .stats-row { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+            .stat-card { padding: 12px 6px; }
+            .stat-num { font-size: 22px; }
+            .tabs-row { grid-template-columns: repeat(4, 1fr); }
+        }
         @media (max-width: 768px) {
-            .status-card, .date-cell { min-width: 110px; max-width: 110px; }
-            .room-label { min-width: 110px; max-width: 110px; }
-            .date-row { margin-left: 118px; }
-            .stats-row { flex-wrap: wrap; }
-            .stat-card { min-width: calc(33% - 8px); }
+            .stats-row { grid-template-columns: repeat(5, 1fr); }
+            .stat-num { font-size: 18px; }
+            .stat-label { font-size: 8px; }
+            .tabs-row { grid-template-columns: 1fr; }
+            .nav-btn { padding: 14px; }
+            .status-card { min-width: 80px; min-height: 65px; padding: 8px; }
+            .room-label { min-width: 100px; max-width: 100px; }
+            .date-cell { min-width: 80px; }
+            .date-header-sticky { margin-left: 106px; }
+            .search-btn { padding: 12px 20px; font-size: 14px; }
         }
     </style>
 </head>
@@ -176,14 +190,14 @@ const shortDay = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{week
 const dayNum = (d) => new Date(d+"T00:00:00").getDate();
 
 const ROOMS = [
-    {id:583459, name:"Royal Sea View Couple", short:"Royal Sea View Couple", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
-    {id:583466, name:"Premium Sea View Couple", short:"Premium Sea View Couple", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
-    {id:583467, name:"Deluxe Bay View Couple", short:"Deluxe Bay View Couple", max:2, units:[{id:1,n:"402"},{id:2,n:"403"},{id:3,n:"502"},{id:4,n:"503"}]},
-    {id:583468, name:"Deluxe Hill View Couple", short:"Deluxe Hill View Couple", max:2, units:[{id:1,n:"201"},{id:2,n:"204"},{id:3,n:"207"},{id:4,n:"301"},{id:5,n:"304"},{id:6,n:"307"},{id:7,n:"407"},{id:8,n:"507"}]},
-    {id:583469, name:"Deluxe Urban View Couple", short:"Deluxe Urban View Couple", max:2, units:[{id:1,n:"101"},{id:2,n:"102"},{id:3,n:"103"},{id:4,n:"104"},{id:5,n:"107"},{id:6,n:"202"},{id:7,n:"203"},{id:8,n:"302"},{id:9,n:"303"}]},
-    {id:583470, name:"Premium Sea View Family", short:"Premium Sea View Family", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
-    {id:583471, name:"Deluxe Hill View Family", short:"Deluxe Hill View Family", max:4, units:[{id:1,n:"205"},{id:2,n:"206"},{id:3,n:"208"},{id:4,n:"305"},{id:5,n:"306"},{id:6,n:"308"}]},
-    {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban View Family", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
+    {id:583459, name:"Royal Sea View Couple", short:"Royal Sea View", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
+    {id:583466, name:"Premium Sea View Couple", short:"Premium Sea View", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
+    {id:583467, name:"Deluxe Bay View Couple", short:"Deluxe Bay View", max:2, units:[{id:1,n:"402"},{id:2,n:"403"},{id:3,n:"502"},{id:4,n:"503"}]},
+    {id:583468, name:"Deluxe Hill View Couple", short:"Deluxe Hill View", max:2, units:[{id:1,n:"201"},{id:2,n:"204"},{id:3,n:"207"},{id:4,n:"301"},{id:5,n:"304"},{id:6,n:"307"},{id:7,n:"407"},{id:8,n:"507"}]},
+    {id:583469, name:"Deluxe Urban View Couple", short:"Deluxe Urban View", max:2, units:[{id:1,n:"101"},{id:2,n:"102"},{id:3,n:"103"},{id:4,n:"104"},{id:5,n:"107"},{id:6,n:"202"},{id:7,n:"203"},{id:8,n:"302"},{id:9,n:"303"}]},
+    {id:583470, name:"Premium Sea View Family", short:"Premium Sea Family", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
+    {id:583471, name:"Deluxe Hill View Family", short:"Deluxe Hill Family", max:4, units:[{id:1,n:"205"},{id:2,n:"206"},{id:3,n:"208"},{id:4,n:"305"},{id:5,n:"306"},{id:6,n:"308"}]},
+    {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban Family", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
 ];
 
 const getFloor = (n) => Math.floor(parseInt(n) / 100);
@@ -197,7 +211,7 @@ const getRoomInfo = (roomId, unitId) => {
 };
 
 const STORAGE_KEY = "miami_checkin_v2";
-const REQUEST_KEY = "miami_requests_v1";
+const REQUEST_KEY = "miami_requests_v2";
 const loadStatus = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
 const saveStatus = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
 const loadRequests = () => { try { return JSON.parse(localStorage.getItem(REQUEST_KEY) || "[]"); } catch { return []; } };
@@ -208,7 +222,7 @@ const REQUEST_TYPES = ["Room Service", "Water Bottle", "Room Clean", "Towel Requ
 function App() {
     const [tab, setTab] = useState("floor");
     const [calDays, setCalDays] = useState(7);
-    const [startDate, setStartDate] = useState(getBDDate());
+    const [startDate, setStartDate] = useState(getBDDate()); // Always starts today
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -223,6 +237,8 @@ function App() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [searchCheckIn, setSearchCheckIn] = useState(getBDDate());
     const [searchCheckOut, setSearchCheckOut] = useState(getBDDate(1));
+    const [searchGroupBy, setSearchGroupBy] = useState("floor");
+    const [todayViewBy, setTodayViewBy] = useState("floor");
 
     useEffect(() => {
         const h = () => setIsMobile(window.innerWidth < 768);
@@ -291,8 +307,8 @@ function App() {
         saveStatus(ns);
     };
 
-    const addRequest = (roomNum, guestName, requestType, note) => {
-        const newReq = { id: Date.now(), roomNum, guestName, requestType, note, timestamp: new Date().toISOString(), done: false };
+    const addRequest = (roomNum, guestName, bookingId, requestType, note) => {
+        const newReq = { id: Date.now(), roomNum, guestName, bookingId, requestType, note, timestamp: new Date().toISOString(), done: false };
         const updated = [newReq, ...requests];
         setRequests(updated);
         saveRequests(updated);
@@ -302,6 +318,16 @@ function App() {
         const updated = requests.map(r => r.id === id ? {...r, done: true, doneAt: new Date().toISOString()} : r);
         setRequests(updated);
         saveRequests(updated);
+    };
+
+    // Get request counts for a booking
+    const getRequestCounts = (bookingId) => {
+        const bookingRequests = requests.filter(r => r.bookingId === bookingId);
+        return {
+            total: bookingRequests.length,
+            pending: bookingRequests.filter(r => !r.done).length,
+            done: bookingRequests.filter(r => r.done).length
+        };
     };
 
     const stats = useMemo(() => {
@@ -327,13 +353,11 @@ function App() {
     const movements = useMemo(() => {
         const todayIn = bookings.filter(b => b.arrival === today);
         const todayOut = bookings.filter(b => b.departure === today);
-        const guests = bookings.filter(b => b.arrival <= today && b.departure > today);
         return {
             pendingIn: todayIn.filter(b => checkStatus[b.id] !== "checkedin"),
             doneIn: todayIn.filter(b => checkStatus[b.id] === "checkedin"),
             pendingOut: todayOut.filter(b => checkStatus[b.id] !== "checkedout"),
-            doneOut: todayOut.filter(b => checkStatus[b.id] === "checkedout"),
-            guests
+            doneOut: todayOut.filter(b => checkStatus[b.id] === "checkedout")
         };
     }, [bookings, checkStatus, today]);
 
@@ -374,6 +398,7 @@ function App() {
     const tabs = [
         {id: "floor", label: "🏢 By Floor"},
         {id: "category", label: "📁 By Category"},
+        {id: "today", label: "📅 Today"},
         {id: "searchbook", label: "🔍 Search & Book"},
         {id: "requests", label: "🛎️ Requests"},
         {id: "housekeeping", label: "🧹 Housekeeping"},
@@ -381,89 +406,31 @@ function App() {
         {id: "dashboard", label: "📊 Dashboard"}
     ];
 
-    // Status Card Component
-    const StatusCard = ({room, unit, date}) => {
+    // Simple Status Card - Only Green/Red
+    const StatusCard = ({room, unit, date, showGuestName = true}) => {
         const booking = getBooking(room.id, unit.id, date);
         const checkout = getCheckout(room.id, unit.id, date);
         const checkin = getCheckin(room.id, unit.id, date);
         const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}-${date}`);
         
-        let cardClass = "card-available";
-        let content = null;
-        let showInfo = false;
-        let infoBooking = null;
+        const isBooked = booking || checkout || checkin;
+        const cardClass = isBooked ? "card-booked" : "card-available";
+        const displayBooking = checkin || booking || checkout;
         
-        // Turnover: diagonal split purple/blue
-        if (checkout && checkin) {
-            cardClass = "card-turnover";
-            showInfo = true;
-            infoBooking = checkin;
-            content = (
-                <div className="turnover-content">
-                    <div className="turnover-out">⬆ {checkout.firstName}</div>
-                    <div className="turnover-in">⬇ {checkin.firstName}</div>
-                </div>
-            );
-        }
-        // Occupied
-        else if (booking) {
-            showInfo = true;
-            infoBooking = booking;
-            if (booking.arrival === date) {
-                cardClass = "card-checkin";
-                content = (
-                    <>
-                        <div className="status-icon">⬇️</div>
-                        <div className="guest-name">{booking.firstName}</div>
-                        <div className="guest-info">→ {formatDate(booking.departure)}</div>
-                    </>
-                );
-            } else {
-                cardClass = "card-occupied";
-                content = (
-                    <>
-                        <div className="status-icon">🏠</div>
-                        <div className="guest-name">{booking.firstName}</div>
-                        <div className="guest-info">→ {formatDate(booking.departure)}</div>
-                    </>
-                );
-            }
-        }
-        // Checkout only
-        else if (checkout) {
-            cardClass = "card-checkout";
-            showInfo = true;
-            infoBooking = checkout;
-            content = (
-                <>
-                    <div className="status-icon">⬆️</div>
-                    <div className="guest-name">{checkout.firstName}</div>
-                    <div className="status-badge">Check-out</div>
-                </>
-            );
-        }
-        // Available
-        else {
-            content = (
-                <>
-                    <div className="status-icon">✓</div>
-                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginTop: '4px'}}>👤 {room.max}A</div>
-                    <div className="status-badge">Available</div>
-                </>
-            );
-        }
-        
-        const canSelect = !booking && !checkout && !checkin;
+        const canSelect = !isBooked;
         
         return (
             <div 
                 className={`status-card ${cardClass} ${isSelected ? 'card-selected' : ''}`}
                 onClick={() => canSelect && toggleSelect(room, unit, date)}
             >
-                {showInfo && infoBooking && (
-                    <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(infoBooking);}}>ℹ</button>
+                {isBooked && displayBooking && (
+                    <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>
                 )}
-                {content}
+                <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
+                {showGuestName && isBooked && displayBooking && (
+                    <div className="guest-name">{displayBooking.firstName}</div>
+                )}
             </div>
         );
     };
@@ -472,17 +439,19 @@ function App() {
     const CalendarView = ({groupBy}) => {
         const groups = groupBy === "floor" 
             ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || [], count: (roomsByFloor[f] || []).length}))
-            : ROOMS.map(r => ({key: r.id, title: `📁 ${r.name}`, rooms: r.units.map(u => ({room: r, unit: u})), count: r.units.length}));
+            : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u})), count: r.units.length}));
 
         return (
             <div className="cal-container">
-                <div className="date-row">
-                    {days.map(d => (
-                        <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}>
-                            <div className="date-day">{shortDay(d)}</div>
-                            <div className="date-num">{dayNum(d)}</div>
-                        </div>
-                    ))}
+                <div className="date-header-sticky">
+                    <div className="date-row">
+                        {days.map(d => (
+                            <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}>
+                                <div className="date-day">{shortDay(d)}</div>
+                                <div className="date-num">{dayNum(d)}</div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
                 {groups.map(group => {
                     if (!group.rooms.length) return null;
@@ -509,6 +478,57 @@ function App() {
         );
     };
 
+    // Today View
+    const TodayView = () => {
+        const groups = todayViewBy === "floor" 
+            ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || []}))
+            : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u}))}));
+
+        return (
+            <div style={{padding: '16px'}}>
+                <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>📅 Today's Status - {formatDate(today)}</h2>
+                <div className="view-selector">
+                    <button className={`view-btn ${todayViewBy === 'floor' ? 'active' : ''}`} onClick={() => setTodayViewBy('floor')}>🏢 By Floor</button>
+                    <button className={`view-btn ${todayViewBy === 'category' ? 'active' : ''}`} onClick={() => setTodayViewBy('category')}>📁 By Category</button>
+                </div>
+                {groups.map(group => {
+                    if (!group.rooms.length) return null;
+                    return (
+                        <div key={group.key} style={{marginBottom: '20px'}}>
+                            <div className="floor-header">
+                                <span style={{fontWeight: 600}}>{group.title}</span>
+                                <span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span>
+                            </div>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px'}}>
+                                {group.rooms.map(({room, unit}) => {
+                                    const booking = getBooking(room.id, unit.id, today);
+                                    const isBooked = !!booking;
+                                    return (
+                                        <div 
+                                            key={`${room.id}-${unit.id}`}
+                                            onClick={() => booking && setShowInfoModal(booking)}
+                                            style={{
+                                                background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #22c55e, #16a34a)',
+                                                borderRadius: '10px',
+                                                padding: '14px',
+                                                cursor: isBooked ? 'pointer' : 'default',
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
+                                            <div style={{fontSize: '11px', fontWeight: '600', marginTop: '4px'}}>{isBooked ? 'BOOKED' : 'AVAILABLE'}</div>
+                                            {isBooked && <div style={{fontSize: '10px', marginTop: '4px', opacity: 0.9}}>{booking.firstName}</div>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <div style={{minHeight: '100vh', paddingBottom: '100px'}}>
             <div className="header">
@@ -518,29 +538,37 @@ function App() {
                             <h1 style={{fontSize: '20px', fontWeight: '700'}}>🏨 Miami Beach Resort</h1>
                             <p style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)} • {time}</p>
                         </div>
-                        <div style={{display: 'flex', gap: '10px'}}>
+                        <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
                             <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
-                            <button onClick={fetchData} disabled={loading} style={{padding: '10px 20px', background: '#10b981', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '13px'}}>
-                                {loading ? '⏳' : '🔄'} Refresh
+                            <button onClick={fetchData} disabled={loading} style={{padding: '15px 24px', background: '#10b981', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>
+                                {loading ? '⏳' : '🔄'}
                             </button>
                         </div>
                     </div>
+                    
+                    {/* Stats - 5 columns */}
                     <div className="stats-row">
                         <div className="stat-card"><div className="stat-num">{stats.total}</div><div className="stat-label">Total</div></div>
                         <div className="stat-card"><div className="stat-num" style={{color: '#22c55e'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
                         <div className="stat-card"><div className="stat-num" style={{color: '#ef4444'}}>{stats.occ}</div><div className="stat-label">Occupied</div></div>
+                        <div className="stat-card"><div className="stat-num" style={{color: '#3b82f6'}}>{stats.cin}</div><div className="stat-label">Check-in</div></div>
+                        <div className="stat-card"><div className="stat-num" style={{color: '#a855f7'}}>{stats.cout}</div><div className="stat-label">Check-out</div></div>
                     </div>
+                    
+                    {/* Tabs - Full width */}
                     {isMobile ? (
                         <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '12px'}}>
                             {tabs.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                         </select>
                     ) : (
-                        <div style={{display: 'flex', gap: '6px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px'}}>
+                        <div className="tabs-row">
                             {tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>{t.label}</button>)}
                         </div>
                     )}
+                    
+                    {/* Date Controls - Centered */}
                     {(tab === "floor" || tab === "category") && (
-                        <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px'}}>
+                        <div className="date-controls">
                             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
                             <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
                             <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
@@ -557,47 +585,64 @@ function App() {
                 <>
                     {tab === "floor" && <CalendarView groupBy="floor"/>}
                     {tab === "category" && <CalendarView groupBy="category"/>}
+                    {tab === "today" && <TodayView/>}
 
                     {tab === "searchbook" && (
                         <div style={{padding: '16px'}}>
-                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>🔍 Search & Book</h2>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>🔍 Search & Book</h2>
                             <div className="date-search-row">
                                 <div className="date-field">
-                                    <label>Check-in Date</label>
+                                    <label>Check-in</label>
                                     <input type="date" value={searchCheckIn} onChange={e => setSearchCheckIn(e.target.value)} className="date-input"/>
                                 </div>
                                 <div className="date-field">
-                                    <label>Check-out Date</label>
+                                    <label>Check-out</label>
                                     <input type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input"/>
                                 </div>
-                            </div>
-                            <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>✓ Available Rooms ({availableRooms.length})</h3>
-                            {availableRooms.length > 0 ? (
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px'}}>
-                                    {availableRooms.map(({room, unit}) => {
-                                        const isSelected = selected.find(x => x.room.id === room.id && x.unit.id === unit.id);
-                                        return (
-                                            <div key={`${room.id}-${unit.id}`} onClick={() => {
-                                                const key = `${room.id}-${unit.id}-${searchCheckIn}`;
-                                                if (isSelected) setSelected(selected.filter(x => !(x.room.id === room.id && x.unit.id === unit.id)));
-                                                else setSelected([...selected, {key, room, unit, date: searchCheckIn}]);
-                                            }} style={{background: isSelected ? 'linear-gradient(145deg, #22c55e, #16a34a)' : 'rgba(255,255,255,0.03)', border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px', cursor: 'pointer'}}>
-                                                <div style={{fontSize: '24px', fontWeight: '700'}}>{unit.n}</div>
-                                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>{room.short}</div>
-                                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>👤 {room.max}A</div>
-                                                {isSelected && <div style={{marginTop: '8px', fontSize: '11px', fontWeight: '600', color: '#fff'}}>✓ Selected</div>}
-                                            </div>
-                                        );
-                                    })}
+                                <div className="date-field">
+                                    <label>Group By</label>
+                                    <select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector">
+                                        <option value="floor">By Floor</option>
+                                        <option value="category">By Category</option>
+                                    </select>
                                 </div>
-                            ) : <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '30px', textAlign: 'center', color: 'rgba(255,255,255,0.5)'}}>No rooms available</div>}
+                            </div>
+                            <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#22c55e', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
+                            {(() => {
+                                const groups = searchGroupBy === "floor"
+                                    ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: availableRooms.filter(r => r.floor === f)}))
+                                    : ROOMS.map(r => ({key: r.id, title: r.name, rooms: availableRooms.filter(ar => ar.room.id === r.id)}));
+                                return groups.map(group => {
+                                    if (!group.rooms.length) return null;
+                                    return (
+                                        <div key={group.key} style={{marginBottom: '20px'}}>
+                                            <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} available</span></div>
+                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px'}}>
+                                                {group.rooms.map(({room, unit}) => {
+                                                    const isSelected = selected.find(x => x.room.id === room.id && x.unit.id === unit.id);
+                                                    return (
+                                                        <div key={`${room.id}-${unit.id}`} onClick={() => {
+                                                            const key = `${room.id}-${unit.id}-${searchCheckIn}`;
+                                                            if (isSelected) setSelected(selected.filter(x => !(x.room.id === room.id && x.unit.id === unit.id)));
+                                                            else setSelected([...selected, {key, room, unit, date: searchCheckIn}]);
+                                                        }} style={{background: isSelected ? 'linear-gradient(145deg, #22c55e, #16a34a)' : 'rgba(255,255,255,0.03)', border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', cursor: 'pointer'}}>
+                                                            <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
+                                                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>{room.short}</div>
+                                                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>👤 {room.max}A</div>
+                                                            {isSelected && <div style={{marginTop: '6px', fontSize: '10px', fontWeight: '600', color: '#fff'}}>✓ Selected</div>}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
                             {selected.length > 0 && (
-                                <div style={{marginTop: '24px', padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px'}}>
-                                    <h4 style={{marginBottom: '12px'}}>Selected: {selected.length} room(s)</h4>
-                                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px'}}>
-                                        {selected.map(s => <span key={s.key} style={{padding: '6px 12px', background: '#22c55e', borderRadius: '6px', fontSize: '13px'}}>{s.unit.n} <span onClick={() => setSelected(selected.filter(x => x.key !== s.key))} style={{cursor: 'pointer'}}>×</span></span>)}
-                                    </div>
-                                    <button onClick={() => setShowBookModal(true)} style={{padding: '12px 24px', background: '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '700', cursor: 'pointer'}}>📝 Book Now</button>
+                                <div style={{marginTop: '24px', padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px', textAlign: 'center'}}>
+                                    <h4 style={{marginBottom: '12px'}}>Selected: {selected.length} room(s) - {selected.map(s => s.unit.n).join(', ')}</h4>
+                                    <button onClick={() => setShowBookModal(true)} style={{padding: '14px 30px', background: '#22c55e', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>📝 Book Now</button>
+                                    <button onClick={() => setSelected([])} style={{marginLeft: '12px', padding: '14px 20px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: 'white', cursor: 'pointer'}}>Clear</button>
                                 </div>
                             )}
                         </div>
@@ -606,10 +651,13 @@ function App() {
                     {tab === "requests" && (
                         <div style={{padding: '16px'}}>
                             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>🛎️ Guest Requests</h2>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px'}}>
                                 <div>
-                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>📋 Current Guests</h3>
-                                    {currentGuests.map(guest => <GuestRequestCard key={guest.id} guest={guest} onAddRequest={addRequest}/>)}
+                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>📋 Current Guests ({currentGuests.length})</h3>
+                                    {currentGuests.map(guest => {
+                                        const counts = getRequestCounts(guest.id);
+                                        return <GuestRequestCard key={guest.id} guest={guest} onAddRequest={addRequest} requestCounts={counts}/>;
+                                    })}
                                     {!currentGuests.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No guests</div>}
                                 </div>
                                 <div>
@@ -620,6 +668,7 @@ function App() {
                                                 <div style={{fontWeight: '600'}}>{req.roomNum} - {req.guestName}</div>
                                                 <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)'}}>{req.requestType}</div>
                                                 {req.note && <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Note: {req.note}</div>}
+                                                <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px'}}>{new Date(req.timestamp).toLocaleTimeString()}</div>
                                             </div>
                                             <button className="done-btn" onClick={() => markRequestDone(req.id)}>✓ Done</button>
                                         </div>
@@ -628,7 +677,7 @@ function App() {
                                 </div>
                                 <div>
                                     <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>✅ Completed</h3>
-                                    {requests.filter(r => r.done).slice(0, 10).map(req => (
+                                    {requests.filter(r => r.done).slice(0, 15).map(req => (
                                         <div key={req.id} className="request-item request-done">
                                             <div>
                                                 <div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div>
@@ -648,39 +697,33 @@ function App() {
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
                                 <div className="hk-section">
                                     <h3 style={{color: '#0ea5e9', marginBottom: '12px', fontSize: '14px'}}>🛏️ Make-up ({housekeeping.makeup.length})</h3>
-                                    <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Guests staying - daily cleaning</p>
                                     {housekeeping.makeup.map(({room, unit, booking}) => (
                                         <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup">
                                             <div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div>
                                             <div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div>
                                         </div>
                                     ))}
-                                    {!housekeeping.makeup.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No rooms</div>}
+                                    {!housekeeping.makeup.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#f97316', marginBottom: '12px', fontSize: '14px'}}>🧽 Dirty ({housekeeping.dirty.length})</h3>
-                                    <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Checkout only - deep clean</p>
                                     {housekeeping.dirty.map(({room, unit, booking}) => (
                                         <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty">
                                             <div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div>
                                             <div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div>
                                         </div>
                                     ))}
-                                    {!housekeeping.dirty.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No rooms</div>}
+                                    {!housekeeping.dirty.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#a855f7', marginBottom: '12px', fontSize: '14px'}}>🔄 Turnover ({housekeeping.turnover.length})</h3>
-                                    <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Checkout + Checkin - PRIORITY</p>
                                     {housekeeping.turnover.map(({room, unit, out, in: ci}) => (
                                         <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover">
                                             <div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div>
-                                            <div>
-                                                <div style={{fontSize: '11px'}}>⬆ OUT: {out.firstName}</div>
-                                                <div style={{fontWeight: '600', marginTop: '2px'}}>⬇ IN: {ci.firstName}</div>
-                                            </div>
+                                            <div><div style={{fontSize: '11px'}}>⬆ {out.firstName}</div><div style={{fontWeight: '600'}}>⬇ {ci.firstName}</div></div>
                                         </div>
                                     ))}
-                                    {!housekeeping.turnover.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No rooms</div>}
+                                    {!housekeeping.turnover.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                             </div>
                         </div>
@@ -689,25 +732,57 @@ function App() {
                     {tab === "movements" && (
                         <div style={{padding: '16px'}}>
                             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>↔️ Movements - {formatDate(today)}</h2>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px'}}>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px'}}>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#3b82f6', marginBottom: '10px', fontSize: '13px'}}>⬇️ Pending Check-in ({movements.pendingIn.length})</h3>
-                                    {movements.pendingIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Room {num}</div></div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "in")}>✓</button></div>); })}
+                                    <h3 style={{color: '#3b82f6', marginBottom: '10px', fontSize: '13px'}}>⬇️ Pending In ({movements.pendingIn.length})</h3>
+                                    {movements.pendingIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card">
+                                            <div>
+                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
+                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
+                                            </div>
+                                            <button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "in")}>✓</button>
+                                        </div>
+                                    ); })}
                                     {!movements.pendingIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#22c55e', marginBottom: '10px', fontSize: '13px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
-                                    {movements.doneIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Room {num}</div></div><button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "in")}>↩</button></div>); })}
+                                    {movements.doneIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card">
+                                            <div>
+                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
+                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
+                                            </div>
+                                            <button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "in")}>↩</button>
+                                        </div>
+                                    ); })}
                                     {!movements.doneIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#a855f7', marginBottom: '10px', fontSize: '13px'}}>⬆️ Pending Check-out ({movements.pendingOut.length})</h3>
-                                    {movements.pendingOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Room {num}</div></div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "out")}>✓</button></div>); })}
+                                    <h3 style={{color: '#a855f7', marginBottom: '10px', fontSize: '13px'}}>⬆️ Pending Out ({movements.pendingOut.length})</h3>
+                                    {movements.pendingOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card">
+                                            <div>
+                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
+                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
+                                            </div>
+                                            <button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "out")}>✓</button>
+                                        </div>
+                                    ); })}
                                     {!movements.pendingOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{color: '#f59e0b', marginBottom: '10px', fontSize: '13px'}}>👋 Checked-out ({movements.doneOut.length})</h3>
-                                    {movements.doneOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Room {num}</div></div><button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "out")}>↩</button></div>); })}
+                                    {movements.doneOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card">
+                                            <div>
+                                                <div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>
+                                                {counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}
+                                            </div>
+                                            <button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "out")}>↩</button>
+                                        </div>
+                                    ); })}
                                     {!movements.doneOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                             </div>
@@ -719,21 +794,21 @@ function App() {
                             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>📊 Dashboard</h2>
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'}}>
                                 <div className="hk-section">
-                                    <h3 style={{marginBottom: '14px', fontSize: '14px'}}>Occupancy by Room Type</h3>
+                                    <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Room Type</h3>
                                     {ROOMS.map(r => {
                                         const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
                                         const pct = Math.round(booked / r.units.length * 100);
-                                        return (<div key={r.id} style={{marginBottom: '12px'}}><div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px'}}><span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length}</span></div><div style={{height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden'}}><div style={{height: '100%', width: pct+'%', background: 'linear-gradient(90deg, #22c55e, #4ade80)', borderRadius: '4px'}}></div></div></div>);
+                                        return (<div key={r.id} style={{marginBottom: '12px'}}><div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px'}}><span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length}</span></div><div style={{height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden'}}><div style={{height: '100%', width: pct+'%', background: pct > 70 ? '#ef4444' : '#22c55e', borderRadius: '4px'}}></div></div></div>);
                                     })}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{marginBottom: '14px', fontSize: '14px'}}>Occupancy by Floor</h3>
+                                    <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Floor</h3>
                                     <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px'}}>
                                         {FLOORS.map(f => {
                                             const rooms = roomsByFloor[f] || [];
                                             const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
                                             const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0;
-                                            return (<div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px', textAlign: 'center'}}><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '11px'}}>Floor {f}</div><div style={{fontSize: '26px', fontWeight: '700', color: pct > 70 ? '#ef4444' : pct > 40 ? '#f59e0b' : '#22c55e'}}>{pct}%</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{booked}/{rooms.length}</div></div>);
+                                            return (<div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px', textAlign: 'center'}}><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '11px'}}>Floor {f}</div><div style={{fontSize: '26px', fontWeight: '700', color: pct > 70 ? '#ef4444' : '#22c55e'}}>{pct}%</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{booked}/{rooms.length}</div></div>);
                                         })}
                                     </div>
                                 </div>
@@ -744,10 +819,9 @@ function App() {
             )}
 
             {selected.length > 0 && tab !== "searchbook" && (
-                <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '450px', margin: '0 auto'}}>
+                <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '500px', margin: '0 auto'}}>
                     <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '16px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 25px rgba(34,197,94,0.4)'}}>
-                        ➕ Book {selected.length} Room{selected.length > 1 ? 's' : ''} ({selected.map(s => s.unit.n).join(', ')})
-                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} style={{marginLeft: '16px', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: '24px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'}}>✕</span>
+                        ➕ Book {selected.length} Room(s): {selected.map(s => s.unit.n).join(', ')}
                     </button>
                 </div>
             )}
@@ -755,10 +829,7 @@ function App() {
             {showSearchModal && (
                 <div className="modal-overlay" onClick={() => setShowSearchModal(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '550px'}}>
-                        <div className="modal-header">
-                            <h3 style={{fontSize: '18px', fontWeight: '700'}}>🔍 Search Guest</h3>
-                            <button className="modal-close" onClick={() => setShowSearchModal(false)}>×</button>
-                        </div>
+                        <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>🔍 Search Guest</h3><button className="modal-close" onClick={() => setShowSearchModal(false)}>×</button></div>
                         <input type="text" placeholder="Search by ID, phone, email, or name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="search-input" autoFocus/>
                         <div style={{marginTop: '16px', maxHeight: '400px', overflowY: 'auto'}}>
                             {globalSearchResults.map(b => {
@@ -772,21 +843,32 @@ function App() {
                 </div>
             )}
 
-            {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo}/>}
+            {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests}/>}
             {showBookModal && <BookingModal selected={selected} checkIn={searchCheckIn} checkOut={searchCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData();}}/>}
         </div>
     );
 }
 
-function GuestRequestCard({guest, onAddRequest}) {
+function GuestRequestCard({guest, onAddRequest, requestCounts}) {
     const [requestType, setRequestType] = useState("");
     const [note, setNote] = useState("");
     const [expanded, setExpanded] = useState(false);
-    const handleSubmit = () => { if (!requestType) return; onAddRequest(guest.num, guest.firstName, requestType, note); setRequestType(""); setNote(""); setExpanded(false); };
+    const handleSubmit = () => { if (!requestType) return; onAddRequest(guest.num, guest.firstName, guest.id, requestType, note); setRequestType(""); setNote(""); setExpanded(false); };
     return (
         <div className="request-card">
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <div><div style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>{guest.num}</div><div style={{fontWeight: '600', marginTop: '2px'}}>{guest.firstName}</div></div>
+                <div>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        <span style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>{guest.num}</span>
+                        {requestCounts.total > 0 && (
+                            <span style={{fontSize: '11px'}}>
+                                {requestCounts.pending > 0 && <span className="request-count pending">⏳ {requestCounts.pending}</span>}
+                                {requestCounts.done > 0 && <span className="request-count done" style={{marginLeft: '4px'}}>✓ {requestCounts.done}</span>}
+                            </span>
+                        )}
+                    </div>
+                    <div style={{fontWeight: '600', marginTop: '2px'}}>{guest.firstName}</div>
+                </div>
                 <button onClick={() => setExpanded(!expanded)} style={{padding: '8px 14px', background: expanded ? 'rgba(255,255,255,0.1)' : '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>{expanded ? '✕' : '+ Request'}</button>
             </div>
             {expanded && (<div style={{marginTop: '12px'}}><select value={requestType} onChange={e => setRequestType(e.target.value)} className="request-select"><option value="">Select...</option>{REQUEST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select><textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Note..." className="request-note" rows={2}/><button onClick={handleSubmit} disabled={!requestType} className="request-btn" style={{opacity: requestType ? 1 : 0.5}}>Submit</button></div>)}
@@ -794,10 +876,13 @@ function GuestRequestCard({guest, onAddRequest}) {
     );
 }
 
-function InfoModal({booking, onClose, getMultiUnitInfo}) {
+function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, requests}) {
     const {num, room} = getRoomInfo(booking.roomId, booking.unitId);
     const multiUnit = getMultiUnitInfo(booking);
     const price = parseFloat(booking.price) || 0, paid = parseFloat(booking.paid) || 0, due = price - paid;
+    const counts = getRequestCounts(booking.id);
+    const bookingRequests = requests.filter(r => r.bookingId === booking.id);
+    
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
@@ -809,7 +894,25 @@ function InfoModal({booking, onClose, getMultiUnitInfo}) {
                 <div className="info-section"><div className="info-grid"><div><div className="info-label">Check-in</div><div className="info-value">{formatDate(booking.arrival)}</div></div><div><div className="info-label">Check-out</div><div className="info-value">{formatDate(booking.departure)}</div></div></div></div>
                 <div className="info-section"><div className="info-label">Contact</div><div className="info-value">{booking.mobile || "No phone"}</div>{booking.email && <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>{booking.email}</div>}</div>
                 <div className="info-section"><div className="info-label">Payment</div><div className="info-grid" style={{marginTop: '8px'}}><div><div className="info-label">Total</div><div className="info-value">৳{price.toLocaleString()}</div></div><div><div className="info-label">Paid</div><div className="info-value" style={{color: '#22c55e'}}>৳{paid.toLocaleString()}</div></div></div><div style={{marginTop: '12px', padding: '12px', background: due > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Due</div><div style={{fontSize: '28px', fontWeight: '700', color: due > 0 ? '#ef4444' : '#22c55e'}}>৳{due.toLocaleString()}</div></div></div>
-                {multiUnit && (<div className="info-section" style={{background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)'}}><div className="info-label" style={{color: '#3b82f6'}}>🔗 Multi-Room ({multiUnit.count} rooms)</div><div style={{fontSize: '13px', marginTop: '6px'}}>Rooms: {multiUnit.rooms.join(", ")}</div><div style={{marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Total Due</div><div style={{fontSize: '24px', fontWeight: '700', color: multiUnit.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{multiUnit.totalDue.toLocaleString()}</div></div></div>)}
+                {counts.total > 0 && (
+                    <div className="info-section">
+                        <div className="info-label">Requests ({counts.total})</div>
+                        <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
+                            {counts.pending > 0 && <span className="request-count pending" style={{padding: '4px 10px'}}>⏳ {counts.pending} Pending</span>}
+                            {counts.done > 0 && <span className="request-count done" style={{padding: '4px 10px'}}>✓ {counts.done} Done</span>}
+                        </div>
+                        <div style={{marginTop: '10px', maxHeight: '150px', overflowY: 'auto'}}>
+                            {bookingRequests.map(r => (
+                                <div key={r.id} style={{padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '6px', fontSize: '12px', borderLeft: r.done ? '3px solid #22c55e' : '3px solid #f59e0b'}}>
+                                    <div style={{fontWeight: '600'}}>{r.requestType}</div>
+                                    {r.note && <div style={{color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>{r.note}</div>}
+                                    <div style={{color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{r.done ? `✓ Done ${new Date(r.doneAt).toLocaleTimeString()}` : `⏳ ${new Date(r.timestamp).toLocaleTimeString()}`}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {multiUnit && (<div className="info-section" style={{background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)'}}><div className="info-label" style={{color: '#3b82f6'}}>🔗 Multi-Room ({multiUnit.count})</div><div style={{fontSize: '13px', marginTop: '6px'}}>Rooms: {multiUnit.rooms.join(", ")}</div><div style={{marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Total Due</div><div style={{fontSize: '24px', fontWeight: '700', color: multiUnit.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{multiUnit.totalDue.toLocaleString()}</div></div></div>)}
                 {booking.custom4 && booking.custom4 !== 'default' && <div className="info-section"><div className="info-label">NID</div><div className="info-value">{booking.custom4}</div></div>}
             </div>
         </div>
