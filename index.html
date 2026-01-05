@@ -182,20 +182,25 @@ const PROPERTY = 279646;
 
 const getBDDate = (offset = 0) => {
     const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-    const bd = new Date(utc + 6 * 3600000);
-    bd.setDate(bd.getDate() + offset);
-    return bd.toISOString().split('T')[0];
+    const bdDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+    const bdDate = new Date(bdDateStr + 'T00:00:00');
+    bdDate.setDate(bdDate.getDate() + offset);
+    return bdDate.toISOString().split('T')[0];
 };
 
 const getBDTime = () => {
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-    return new Date(utc + 6 * 3600000).toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: true});
+    return new Date().toLocaleTimeString("en-US", { 
+        timeZone: 'Asia/Dhaka',
+        hour: "2-digit", 
+        minute: "2-digit", 
+        hour12: true 
+    });
 };
 
-const formatDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
-const shortDay = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
+const formatDate = (d) => {
+    const date = new Date(d + 'T12:00:00');
+    return date.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"});
+};
 const dayNum = (d) => new Date(d+"T00:00:00").getDate();
 
 const ROOMS = [
