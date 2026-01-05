@@ -192,9 +192,9 @@ const getBDTime = () => {
     return new Date().toLocaleTimeString("en-US", { timeZone: 'Asia/Dhaka', hour: "2-digit", minute: "2-digit", hour12: true });
 };
 
-const formatDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
-const shortDay = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
-const dayNum = (d) => new Date(d+"T00:00:00").getDate();
+const formatDate = (d) => new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{timeZone:"Asia/Dhaka",weekday:"short",month:"short",day:"numeric"});
+const shortDay = (d) => new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{timeZone:"Asia/Dhaka",weekday:"short"});
+const dayNum = (d) => parseInt(new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{timeZone:"Asia/Dhaka",day:"numeric"}));
 
 const ROOMS = [
     {id:583459, name:"Royal Sea View Couple", short:"Royal Sea View", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
