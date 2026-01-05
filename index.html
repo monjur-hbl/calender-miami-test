@@ -472,7 +472,7 @@ function App() {
                     if (!group.rooms.length) return null;
                     return (
                         <div key={group.key} style={{marginBottom: '20px'}}>
-                            <div className="floor-header" style={{justifyContent: 'center', maxWidth: '900px', margin: '0 auto 10px auto'}}><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div>
+                            <div style={{maxWidth: '900px', margin: '0 auto 10px auto', textAlign: 'center'}}><div className="floor-header" style={{display: 'inline-flex', justifyContent: 'center'}}><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div></div>
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxWidth: '900px', margin: '0 auto', justifyContent: 'center'}}>
                                 {group.rooms.map(({room, unit}) => {
                                     const booking = getBooking(room.id, unit.id, today);
