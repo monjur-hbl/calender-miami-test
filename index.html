@@ -11,10 +11,10 @@
     <style>
         body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .room-available { background: rgba(16, 185, 129, 0.4); }
-        .room-booked { background: rgba(239, 68, 68, 0.4); }
-        .room-checkin { background: rgba(59, 130, 246, 0.4); }
-        .room-checkout { background: rgba(139, 92, 246, 0.4); }
+        .room-available { background: rgba(16, 185, 129, 0.5); }
+        .room-booked { background: rgba(239, 68, 68, 0.5); }
+        .room-checkin { background: rgba(59, 130, 246, 0.5); }
+        .room-checkout { background: rgba(139, 92, 246, 0.5); }
         .room-makeup { background: linear-gradient(135deg, #06b6d4, #0891b2); }
         .room-dirty { background: linear-gradient(135deg, #f97316, #ea580c); }
         .room-turnover { background: linear-gradient(135deg, #ec4899, #db2777); }
@@ -23,8 +23,12 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .day-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
         table { border-collapse: collapse; }
-        th, td { border: 1px solid rgba(255,255,255,0.1); }
-        .sticky-col { position: sticky; left: 0; z-index: 10; background: #1a1a2e; }
+        th, td { border: 1px solid rgba(255,255,255,0.15); }
+        .sticky-col { position: sticky; left: 0; z-index: 10; background: #1e293b; }
+        .scroll-container { overflow-x: auto; }
+        .scroll-container::-webkit-scrollbar { height: 8px; }
+        .scroll-container::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
+        .scroll-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -40,7 +44,7 @@ const getBDDate = (offset = 0) => {
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
     const bd = new Date(utc + 6 * 3600000);
     bd.setDate(bd.getDate() + offset);
-    return bd.getFullYear() + "-" + String(bd.getMonth()+1).padStart(2,"0") + "-" + String(bd.getDate()).padStart(2,"0");
+    return bd.toISOString().split('T')[0];
 };
 const getBDTime = () => {
     const now = new Date();
@@ -69,12 +73,8 @@ const getRoomInfo = (roomId, unitId) => {
 };
 
 const STORAGE_KEY = "miami_checkin_status";
-const loadCheckStatus = () => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
-};
-const saveCheckStatus = (data) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-};
+const loadCheckStatus = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
+const saveCheckStatus = (data) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); };
 
 function App() {
     const [tab, setTab] = useState("calendar");
@@ -118,40 +118,38 @@ function App() {
         return bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure);
     }, [bookings]);
 
-    const getDays = (count) => {
-        const days = [];
-        for (let i = 0; i < count; i++) days.push(getBDDate(i));
-        return days;
-    };
+    const getDays = (count) => { const days = []; for (let i = 0; i < count; i++) days.push(getBDDate(i)); return days; };
 
-    const toggleSelect = (room, unit) => {
+    const toggleSelect = (room, unit, checkIn, checkOut) => {
         const key = room.id + "-" + unit.id;
-        setSelected(s => s.find(x => x.key===key) ? s.filter(x => x.key!==key) : [...s, {key, room, unit}]);
+        setSelected(s => {
+            const exists = s.find(x => x.key === key);
+            if (exists) return s.filter(x => x.key !== key);
+            return [...s, {key, room, unit, checkIn: checkIn || getBDDate(), checkOut: checkOut || getBDDate(1)}];
+        });
     };
 
     const toggleCheckIn = (bookingId) => {
         const newStatus = {...checkStatus};
-        if (newStatus[bookingId] === "checkedin") delete newStatus[bookingId];
-        else newStatus[bookingId] = "checkedin";
+        newStatus[bookingId] = newStatus[bookingId] === "checkedin" ? null : "checkedin";
+        if (!newStatus[bookingId]) delete newStatus[bookingId];
         setCheckStatus(newStatus);
         saveCheckStatus(newStatus);
     };
 
     const toggleCheckOut = (bookingId) => {
         const newStatus = {...checkStatus};
-        if (newStatus[bookingId] === "checkedout") delete newStatus[bookingId];
-        else newStatus[bookingId] = "checkedout";
+        newStatus[bookingId] = newStatus[bookingId] === "checkedout" ? null : "checkedout";
+        if (!newStatus[bookingId]) delete newStatus[bookingId];
         setCheckStatus(newStatus);
         saveCheckStatus(newStatus);
     };
 
     const today = getBDDate();
+
     const stats = useMemo(() => {
         let occ=0, avail=0, cin=0, cout=0;
-        allRooms.forEach(({room,unit}) => {
-            const b = getBooking(room.id, unit.id, today);
-            if(b) occ++; else avail++;
-        });
+        allRooms.forEach(({room,unit}) => { if(getBooking(room.id, unit.id, today)) occ++; else avail++; });
         bookings.forEach(b => { if(b.arrival===today) cin++; if(b.departure===today) cout++; });
         return {total:allRooms.length, occ, avail, cin, cout};
     }, [allRooms, bookings, getBooking, today]);
@@ -162,7 +160,6 @@ function App() {
             const checkoutToday = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === today);
             const checkinToday = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival === today);
             const currentGuest = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < today && b.departure > today);
-            
             if (checkoutToday && checkinToday) turnover.push({room, unit, out: checkoutToday, in: checkinToday});
             else if (checkoutToday && !checkinToday) dirty.push({room, unit, booking: checkoutToday});
             else if (currentGuest) makeup.push({room, unit, booking: currentGuest});
@@ -170,17 +167,14 @@ function App() {
         return {makeup, dirty, turnover};
     }, [allRooms, bookings, today]);
 
-    // Movement data
     const movements = useMemo(() => {
         const todayCheckins = bookings.filter(b => b.arrival === today);
         const todayCheckouts = bookings.filter(b => b.departure === today);
-        const currentGuests = bookings.filter(b => b.arrival < today && b.departure > today);
-        
+        const currentGuests = bookings.filter(b => b.arrival <= today && b.departure > today);
         const pendingIn = todayCheckins.filter(b => checkStatus[b.id] !== "checkedin");
         const doneIn = todayCheckins.filter(b => checkStatus[b.id] === "checkedin");
         const pendingOut = todayCheckouts.filter(b => checkStatus[b.id] !== "checkedout");
         const doneOut = todayCheckouts.filter(b => checkStatus[b.id] === "checkedout");
-        
         return {pendingIn, doneIn, pendingOut, doneOut, currentGuests};
     }, [bookings, checkStatus, today]);
 
@@ -189,46 +183,44 @@ function App() {
         {id:"category", label:"👥 Category"},
         {id:"housekeeping", label:"🧹 Housekeeping"},
         {id:"movements", label:"↔️ Movements"},
-        {id:"guests", label:"🏠 Current Guests"},
+        {id:"guests", label:"🏠 Guests"},
         {id:"stats", label:"📊 Stats"}
     ];
 
     const CalendarCell = ({room, unit, d}) => {
         const booking = getBooking(room.id, unit.id, d);
         const isCheckin = booking?.arrival === d;
-        const isCheckout = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === d);
+        const isCheckoutDay = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === d);
         const isToday = d === today;
         const isSelected = selected.find(x => x.key === room.id+"-"+unit.id);
         
-        let cls = "room-available";
-        let content = "✓";
-        
+        let cls = "room-available", content = "✓";
         if (booking) {
             cls = isCheckin ? "room-checkin" : "room-booked";
-            content = <span className="truncate block">{booking.firstName}</span>;
-        } else if (isCheckout) {
+            content = <span className="truncate block text-xs">{booking.firstName?.substring(0,8)}</span>;
+        } else if (isCheckoutDay) {
             cls = "room-checkout";
-            content = <span className="text-xs">OUT</span>;
+            content = <span className="text-xs opacity-70">OUT</span>;
         }
         
         return (
-            <td className={cls + " p-1 text-center text-white text-xs cursor-pointer min-w-16 " + (isToday ? "ring-2 ring-yellow-400 ring-inset" : "") + (isSelected ? " ring-2 ring-white" : "")}
-                onClick={() => !booking && toggleSelect(room, unit)}>
+            <td className={cls + " p-1 text-center text-white cursor-pointer h-10 " + (isToday ? "ring-2 ring-yellow-400 ring-inset" : "") + (isSelected ? " ring-2 ring-white" : "")}
+                onClick={() => !booking && toggleSelect(room, unit, d, getBDDate(getDays(calDays).indexOf(d) + 2))}>
                 {content}
             </td>
         );
     };
 
-    const MovementCard = ({booking, type, onToggle}) => {
+    const MovementCard = ({booking, type, onToggle, actionLabel}) => {
         const {num, room} = getRoomInfo(booking.roomId, booking.unitId);
         return (
-            <div className="glass rounded-lg p-3 flex justify-between items-center">
-                <div>
-                    <div className="text-white font-semibold">{booking.firstName} {booking.lastName}</div>
-                    <div className="text-white text-opacity-60 text-sm">Room {num} • {room?.short}</div>
+            <div className="glass rounded-lg p-2 flex justify-between items-center mb-2">
+                <div className="flex-1 min-w-0">
+                    <div className="text-white font-medium text-sm truncate">{booking.firstName} {booking.lastName}</div>
+                    <div className="text-white text-opacity-50 text-xs">Room {num}</div>
                 </div>
                 <button onClick={() => onToggle(booking.id)} 
-                    className={"w-8 h-8 rounded-full flex items-center justify-center " + (type === "done" ? "bg-green-500" : "bg-white bg-opacity-20 hover:bg-opacity-40")}>
+                    className={"w-7 h-7 rounded-full flex items-center justify-center text-xs " + (type === "done" ? "bg-green-500 text-white" : "bg-white bg-opacity-20 text-white hover:bg-opacity-40")}>
                     {type === "done" ? "↩" : "✓"}
                 </button>
             </div>
@@ -236,29 +228,28 @@ function App() {
     };
 
     return (
-        <div className="min-h-screen p-4 pb-24">
+        <div className="min-h-screen p-2 pb-24">
             {/* Header */}
-            <div className="glass rounded-xl p-4 mb-4">
-                <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="glass rounded-xl p-3 mb-3">
+                <div className="flex flex-wrap justify-between items-center gap-2">
                     <div>
-                        <h1 className="text-xl font-bold text-white">🏨 Miami Beach Resort</h1>
-                        <p className="text-white text-opacity-50 text-sm">{formatDate(today)} • {time} • {bookings.length} bookings</p>
+                        <h1 className="text-lg font-bold text-white">🏨 Miami Beach Resort</h1>
+                        <p className="text-white text-opacity-50 text-xs">{formatDate(today)} • {time} • {bookings.length} bookings</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="flex gap-1 text-sm">
-                            <span className="text-blue-400">↓{stats.cin}</span>
-                            <span className="text-purple-400">↑{stats.cout}</span>
-                        </div>
-                        <button onClick={fetchData} disabled={loading} className="px-3 py-1.5 glass rounded-lg text-white text-sm">
+                    <div className="flex items-center gap-2">
+                        <span className="text-green-400 text-sm">{stats.avail}A</span>
+                        <span className="text-blue-400 text-sm">↓{stats.cin}</span>
+                        <span className="text-purple-400 text-sm">↑{stats.cout}</span>
+                        <button onClick={fetchData} disabled={loading} className="px-2 py-1 glass rounded text-white text-xs">
                             {loading ? "⏳" : "🔄"}
                         </button>
                     </div>
                 </div>
-                {error && <div className="mt-2 p-2 bg-red-500 bg-opacity-20 rounded text-red-300 text-sm">{error}</div>}
-                <div className="flex gap-2 mt-4 overflow-x-auto">
+                {error && <div className="mt-2 p-2 bg-red-500 bg-opacity-20 rounded text-red-300 text-xs">{error}</div>}
+                <div className="flex gap-1 mt-3 overflow-x-auto">
                     {tabs.map(t => (
                         <button key={t.id} onClick={() => setTab(t.id)} 
-                            className={"px-3 py-2 rounded-lg text-sm whitespace-nowrap " + (tab===t.id ? "tab-active text-white" : "text-white text-opacity-60")}>
+                            className={"px-2 py-1.5 rounded-lg text-xs whitespace-nowrap " + (tab===t.id ? "tab-active text-white" : "text-white text-opacity-60")}>
                             {t.label}
                         </button>
                     ))}
@@ -271,32 +262,31 @@ function App() {
                 <>
                     {/* CALENDAR TAB */}
                     {tab === "calendar" && (
-                        <div className="glass rounded-xl p-4">
-                            <div className="flex flex-wrap items-center gap-4 mb-4">
-                                <span className="text-white font-bold">View:</span>
+                        <div className="glass rounded-xl p-3">
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                                <span className="text-white text-sm font-medium">Days:</span>
                                 {[1,3,7,15].map(d => (
                                     <button key={d} onClick={() => setCalDays(d)}
-                                        className={"px-4 py-2 rounded-lg text-sm day-btn " + (calDays===d ? "active" : "glass text-white")}>
-                                        {d} Day{d>1?"s":""}
+                                        className={"px-3 py-1 rounded text-xs day-btn " + (calDays===d ? "active" : "glass text-white")}>
+                                        {d}
                                     </button>
                                 ))}
                                 <div className="flex-1"></div>
-                                <div className="flex gap-2 text-xs text-white">
-                                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-available"></span>Available</span>
-                                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-booked"></span>Occupied</span>
-                                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-checkin"></span>Check-in</span>
-                                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-checkout"></span>Check-out</span>
+                                <div className="flex gap-2 text-xs text-white flex-wrap">
+                                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-available"></span>Avail</span>
+                                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-booked"></span>Booked</span>
+                                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-checkin"></span>IN</span>
                                 </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-white text-sm">
+                            <div className="scroll-container">
+                                <table className="w-full text-white text-xs">
                                     <thead>
                                         <tr>
-                                            <th className="sticky-col p-2 text-left min-w-24">Room</th>
+                                            <th className="sticky-col p-2 text-left min-w-20">Room</th>
                                             {getDays(calDays).map(d => (
-                                                <th key={d} className={"p-2 text-center min-w-16 " + (d===today ? "bg-yellow-900 bg-opacity-30" : "")}>
-                                                    <div>{dayName(d)}</div>
-                                                    <div className="text-xs opacity-60">{shortDate(d)}</div>
+                                                <th key={d} className={"p-1 text-center min-w-12 " + (d===today ? "bg-yellow-900 bg-opacity-40" : "")}>
+                                                    <div className="font-medium">{dayName(d)}</div>
+                                                    <div className="opacity-60 text-xs">{shortDate(d)}</div>
                                                 </th>
                                             ))}
                                         </tr>
@@ -304,13 +294,8 @@ function App() {
                                     <tbody>
                                         {allRooms.map(({room, unit}) => (
                                             <tr key={room.id+"-"+unit.id}>
-                                                <td className="sticky-col p-2">
-                                                    <span className="font-bold">{unit.n}</span>
-                                                    <span className="text-xs opacity-60 ml-2">{room.short}</span>
-                                                </td>
-                                                {getDays(calDays).map(d => (
-                                                    <CalendarCell key={d} room={room} unit={unit} d={d}/>
-                                                ))}
+                                                <td className="sticky-col p-1"><span className="font-bold">{unit.n}</span></td>
+                                                {getDays(calDays).map(d => <CalendarCell key={d} room={room} unit={unit} d={d}/>)}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -321,27 +306,24 @@ function App() {
 
                     {/* CATEGORY TAB */}
                     {tab === "category" && (
-                        <div className="glass rounded-xl p-4">
-                            <div className="flex gap-2 text-xs text-white mb-4 justify-center">
-                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-available"></span>Available</span>
-                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-booked"></span>Occupied</span>
-                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded room-checkin"></span>Check-in</span>
+                        <div className="glass rounded-xl p-3">
+                            <div className="flex gap-2 text-xs text-white mb-3 flex-wrap justify-center">
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-available"></span>Avail</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-booked"></span>Booked</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-checkin"></span>IN</span>
                             </div>
                             {ROOMS.map(roomType => (
-                                <div key={roomType.id} className="mb-6">
-                                    <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-                                        <span className="px-3 py-1 glass rounded">{roomType.name}</span>
-                                        <span className="text-sm text-white text-opacity-50">({roomType.units.length} units)</span>
-                                    </h3>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-white text-sm">
+                                <div key={roomType.id} className="mb-4">
+                                    <h3 className="text-white font-bold text-sm mb-2 px-1">{roomType.name} ({roomType.units.length})</h3>
+                                    <div className="scroll-container">
+                                        <table className="w-full text-white text-xs">
                                             <thead>
                                                 <tr>
-                                                    <th className="sticky-col p-2 text-left min-w-16">Unit</th>
+                                                    <th className="sticky-col p-1 text-left min-w-12">Unit</th>
                                                     {getDays(7).map(d => (
-                                                        <th key={d} className={"p-2 text-center min-w-20 " + (d===today ? "bg-yellow-900 bg-opacity-30" : "")}>
+                                                        <th key={d} className={"p-1 text-center min-w-14 " + (d===today ? "bg-yellow-900 bg-opacity-40" : "")}>
                                                             <div>{dayName(d)}</div>
-                                                            <div className="text-xs opacity-60">{shortDate(d)}</div>
+                                                            <div className="opacity-60">{shortDate(d)}</div>
                                                         </th>
                                                     ))}
                                                 </tr>
@@ -349,10 +331,8 @@ function App() {
                                             <tbody>
                                                 {roomType.units.map(unit => (
                                                     <tr key={unit.id}>
-                                                        <td className="sticky-col p-2 font-bold">{unit.n}</td>
-                                                        {getDays(7).map(d => (
-                                                            <CalendarCell key={d} room={roomType} unit={unit} d={d}/>
-                                                        ))}
+                                                        <td className="sticky-col p-1 font-bold">{unit.n}</td>
+                                                        {getDays(7).map(d => <CalendarCell key={d} room={roomType} unit={unit} d={d}/>)}
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -365,58 +345,35 @@ function App() {
 
                     {/* HOUSEKEEPING TAB */}
                     {tab === "housekeeping" && (
-                        <div className="glass rounded-xl p-4">
-                            <h2 className="text-white font-bold text-lg mb-4">🧹 Housekeeping - {formatDate(today)}</h2>
-                            <div className="grid md:grid-cols-3 gap-4">
-                                <div className="glass rounded-xl p-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="w-4 h-4 rounded room-makeup"></span>
-                                        <h3 className="text-white font-bold">M/K ({housekeeping.makeup.length})</h3>
-                                    </div>
-                                    <p className="text-white text-opacity-50 text-xs mb-3">Staying guests - daily cleaning</p>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {housekeeping.makeup.map(({room, unit, booking}) => (
-                                            <div key={room.id+"-"+unit.id} className="room-makeup rounded p-2 text-white text-center">
-                                                <div className="font-bold">{unit.n}</div>
-                                                <div className="text-xs truncate">{booking.firstName}</div>
-                                            </div>
+                        <div className="glass rounded-xl p-3">
+                            <h2 className="text-white font-bold mb-3">🧹 Housekeeping - {formatDate(today)}</h2>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="glass rounded-lg p-2">
+                                    <h3 className="text-cyan-400 font-bold text-sm mb-2">M/K ({housekeeping.makeup.length})</h3>
+                                    <div className="flex flex-wrap gap-1">
+                                        {housekeeping.makeup.map(({room, unit}) => (
+                                            <span key={room.id+"-"+unit.id} className="room-makeup rounded px-2 py-1 text-white text-xs font-bold">{unit.n}</span>
                                         ))}
+                                        {housekeeping.makeup.length === 0 && <span className="text-white text-opacity-40 text-xs">None</span>}
                                     </div>
-                                    {housekeeping.makeup.length === 0 && <div className="text-white text-opacity-40 text-center py-4">None</div>}
                                 </div>
-                                
-                                <div className="glass rounded-xl p-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="w-4 h-4 rounded room-dirty"></span>
-                                        <h3 className="text-white font-bold">Dirty ({housekeeping.dirty.length})</h3>
-                                    </div>
-                                    <p className="text-white text-opacity-50 text-xs mb-3">Checked out - no new guest</p>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {housekeeping.dirty.map(({room, unit, booking}) => (
-                                            <div key={room.id+"-"+unit.id} className="room-dirty rounded p-2 text-white text-center">
-                                                <div className="font-bold">{unit.n}</div>
-                                                <div className="text-xs truncate">{booking.firstName}</div>
-                                            </div>
+                                <div className="glass rounded-lg p-2">
+                                    <h3 className="text-orange-400 font-bold text-sm mb-2">Dirty ({housekeeping.dirty.length})</h3>
+                                    <div className="flex flex-wrap gap-1">
+                                        {housekeeping.dirty.map(({room, unit}) => (
+                                            <span key={room.id+"-"+unit.id} className="room-dirty rounded px-2 py-1 text-white text-xs font-bold">{unit.n}</span>
                                         ))}
+                                        {housekeeping.dirty.length === 0 && <span className="text-white text-opacity-40 text-xs">None</span>}
                                     </div>
-                                    {housekeeping.dirty.length === 0 && <div className="text-white text-opacity-40 text-center py-4">None</div>}
                                 </div>
-                                
-                                <div className="glass rounded-xl p-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="w-4 h-4 rounded room-turnover"></span>
-                                        <h3 className="text-white font-bold">C/O-C/I ({housekeeping.turnover.length})</h3>
-                                    </div>
-                                    <p className="text-white text-opacity-50 text-xs mb-3">Same-day turnover!</p>
-                                    <div className="space-y-2">
-                                        {housekeeping.turnover.map(({room, unit, out, in: inB}) => (
-                                            <div key={room.id+"-"+unit.id} className="room-turnover rounded p-2 text-white">
-                                                <div className="font-bold">{unit.n}</div>
-                                                <div className="text-xs">OUT: {out.firstName} → IN: {inB.firstName}</div>
-                                            </div>
+                                <div className="glass rounded-lg p-2">
+                                    <h3 className="text-pink-400 font-bold text-sm mb-2">C/O-C/I ({housekeeping.turnover.length})</h3>
+                                    <div className="flex flex-wrap gap-1">
+                                        {housekeeping.turnover.map(({room, unit}) => (
+                                            <span key={room.id+"-"+unit.id} className="room-turnover rounded px-2 py-1 text-white text-xs font-bold">{unit.n}</span>
                                         ))}
+                                        {housekeeping.turnover.length === 0 && <span className="text-white text-opacity-40 text-xs">None</span>}
                                     </div>
-                                    {housekeeping.turnover.length === 0 && <div className="text-white text-opacity-40 text-center py-4">None</div>}
                                 </div>
                             </div>
                         </div>
@@ -424,46 +381,35 @@ function App() {
 
                     {/* MOVEMENTS TAB */}
                     {tab === "movements" && (
-                        <div className="glass rounded-xl p-4">
-                            <h2 className="text-white font-bold text-lg mb-4">↔️ Movements - {formatDate(today)}</h2>
-                            <div className="grid md:grid-cols-4 gap-4">
-                                <div>
-                                    <h3 className="text-blue-400 font-bold mb-3 flex items-center gap-2">
-                                        ⬇️ Today's Check-in ({movements.pendingIn.length})
-                                    </h3>
-                                    <div className="space-y-2">
+                        <div className="glass rounded-xl p-3">
+                            <h2 className="text-white font-bold mb-3">↔️ Movements - {formatDate(today)}</h2>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                <div className="glass rounded-lg p-2">
+                                    <h3 className="text-blue-400 font-bold text-xs mb-2">⬇️ Today's C/I ({movements.pendingIn.length})</h3>
+                                    <div className="max-h-60 overflow-y-auto">
                                         {movements.pendingIn.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckIn}/>)}
-                                        {movements.pendingIn.length === 0 && <div className="text-white text-opacity-40 text-center py-4 glass rounded-lg">None</div>}
+                                        {movements.pendingIn.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
                                     </div>
                                 </div>
-                                
-                                <div>
-                                    <h3 className="text-green-400 font-bold mb-3 flex items-center gap-2">
-                                        ✅ Already Checked-in ({movements.doneIn.length})
-                                    </h3>
-                                    <div className="space-y-2">
+                                <div className="glass rounded-lg p-2">
+                                    <h3 className="text-green-400 font-bold text-xs mb-2">✅ Checked-in ({movements.doneIn.length})</h3>
+                                    <div className="max-h-60 overflow-y-auto">
                                         {movements.doneIn.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckIn}/>)}
-                                        {movements.doneIn.length === 0 && <div className="text-white text-opacity-40 text-center py-4 glass rounded-lg">None</div>}
+                                        {movements.doneIn.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
                                     </div>
                                 </div>
-                                
-                                <div>
-                                    <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
-                                        ⬆️ Today's Check-out ({movements.pendingOut.length})
-                                    </h3>
-                                    <div className="space-y-2">
+                                <div className="glass rounded-lg p-2">
+                                    <h3 className="text-purple-400 font-bold text-xs mb-2">⬆️ Today's C/O ({movements.pendingOut.length})</h3>
+                                    <div className="max-h-60 overflow-y-auto">
                                         {movements.pendingOut.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckOut}/>)}
-                                        {movements.pendingOut.length === 0 && <div className="text-white text-opacity-40 text-center py-4 glass rounded-lg">None</div>}
+                                        {movements.pendingOut.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
                                     </div>
                                 </div>
-                                
-                                <div>
-                                    <h3 className="text-orange-400 font-bold mb-3 flex items-center gap-2">
-                                        👋 Already Checked-out ({movements.doneOut.length})
-                                    </h3>
-                                    <div className="space-y-2">
+                                <div className="glass rounded-lg p-2">
+                                    <h3 className="text-orange-400 font-bold text-xs mb-2">👋 Checked-out ({movements.doneOut.length})</h3>
+                                    <div className="max-h-60 overflow-y-auto">
                                         {movements.doneOut.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckOut}/>)}
-                                        {movements.doneOut.length === 0 && <div className="text-white text-opacity-40 text-center py-4 glass rounded-lg">None</div>}
+                                        {movements.doneOut.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
                                     </div>
                                 </div>
                             </div>
@@ -472,53 +418,50 @@ function App() {
 
                     {/* CURRENT GUESTS TAB */}
                     {tab === "guests" && (
-                        <div className="glass rounded-xl p-4">
-                            <h2 className="text-white font-bold text-lg mb-4">🏠 Current Guests ({movements.currentGuests.length + movements.doneIn.length})</h2>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {[...movements.doneIn, ...movements.currentGuests].map(b => {
+                        <div className="glass rounded-xl p-3">
+                            <h2 className="text-white font-bold mb-3">🏠 Current Guests ({movements.currentGuests.length})</h2>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                                {movements.currentGuests.map(b => {
                                     const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                     return (
-                                        <div key={b.id} className="glass rounded-lg p-4">
-                                            <div className="flex justify-between">
-                                                <div>
-                                                    <div className="text-white font-bold">{b.firstName} {b.lastName}</div>
-                                                    <div className="text-white text-opacity-60 text-sm">{room?.name}</div>
+                                        <div key={b.id} className="glass rounded-lg p-2">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-white font-bold text-sm truncate">{b.firstName}</div>
+                                                    <div className="text-white text-opacity-50 text-xs truncate">{room?.short}</div>
                                                 </div>
-                                                <div className="text-2xl font-bold text-blue-400">{num}</div>
+                                                <div className="text-lg font-bold text-blue-400 ml-1">{num}</div>
                                             </div>
-                                            <div className="mt-2 text-xs text-white text-opacity-50">
-                                                {formatDate(b.arrival)} → {formatDate(b.departure)}
-                                            </div>
+                                            <div className="mt-1 text-xs text-white text-opacity-40">→ {shortDate(b.departure)}</div>
                                         </div>
                                     );
                                 })}
                             </div>
-                            {movements.currentGuests.length + movements.doneIn.length === 0 && 
-                                <div className="text-white text-opacity-40 text-center py-8">No current guests</div>}
+                            {movements.currentGuests.length === 0 && <div className="text-white text-opacity-40 text-center py-8">No current guests</div>}
                         </div>
                     )}
 
                     {/* STATS TAB */}
                     {tab === "stats" && (
-                        <div className="glass rounded-xl p-4">
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                                <div className="glass rounded-xl p-5 text-center"><div className="text-3xl font-bold text-white">{stats.total}</div><div className="text-white text-opacity-60 text-sm">Total</div></div>
-                                <div className="glass rounded-xl p-5 text-center"><div className="text-3xl font-bold text-green-400">{stats.avail}</div><div className="text-white text-opacity-60 text-sm">Available</div></div>
-                                <div className="glass rounded-xl p-5 text-center"><div className="text-3xl font-bold text-red-400">{stats.occ}</div><div className="text-white text-opacity-60 text-sm">Occupied</div></div>
-                                <div className="glass rounded-xl p-5 text-center"><div className="text-3xl font-bold text-blue-400">{stats.cin}</div><div className="text-white text-opacity-60 text-sm">Check-in</div></div>
-                                <div className="glass rounded-xl p-5 text-center"><div className="text-3xl font-bold text-purple-400">{stats.cout}</div><div className="text-white text-opacity-60 text-sm">Check-out</div></div>
+                        <div className="glass rounded-xl p-3">
+                            <div className="grid grid-cols-5 gap-2 mb-4">
+                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-white">{stats.total}</div><div className="text-white text-opacity-50 text-xs">Total</div></div>
+                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.avail}</div><div className="text-white text-opacity-50 text-xs">Avail</div></div>
+                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-red-400">{stats.occ}</div><div className="text-white text-opacity-50 text-xs">Occ</div></div>
+                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-blue-400">{stats.cin}</div><div className="text-white text-opacity-50 text-xs">C/I</div></div>
+                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-purple-400">{stats.cout}</div><div className="text-white text-opacity-50 text-xs">C/O</div></div>
                             </div>
-                            <h3 className="text-white font-bold mb-4">By Room Type</h3>
+                            <h3 className="text-white font-bold text-sm mb-2">By Room Type</h3>
                             {ROOMS.map(r => {
                                 const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
                                 return (
-                                    <div key={r.id} className="glass rounded-lg p-4 mb-2">
-                                        <div className="flex justify-between mb-2">
-                                            <span className="text-white">{r.name}</span>
+                                    <div key={r.id} className="glass rounded-lg p-2 mb-1">
+                                        <div className="flex justify-between text-xs mb-1">
+                                            <span className="text-white truncate">{r.short}</span>
                                             <span><span className="text-green-400">{r.units.length-booked}</span>/<span className="text-red-400">{booked}</span></span>
                                         </div>
-                                        <div className="w-full bg-white bg-opacity-10 rounded-full h-2">
-                                            <div className="bg-blue-500 h-2 rounded-full" style={{width:Math.round(booked/r.units.length*100)+"%"}}></div>
+                                        <div className="w-full bg-white bg-opacity-10 rounded-full h-1.5">
+                                            <div className="bg-blue-500 h-1.5 rounded-full" style={{width:Math.round(booked/r.units.length*100)+"%"}}></div>
                                         </div>
                                     </div>
                                 );
@@ -530,10 +473,10 @@ function App() {
 
             {/* Book Button */}
             {selected.length > 0 && (
-                <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50">
-                    <button onClick={() => setShowModal(true)} className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl text-white font-bold shadow-xl flex items-center justify-center gap-3">
+                <div className="fixed bottom-4 left-4 right-4 z-50">
+                    <button onClick={() => setShowModal(true)} className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl text-white font-bold shadow-xl flex items-center justify-center gap-2">
                         ➕ Book {selected.length} Room{selected.length>1?"s":""}
-                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} className="bg-white bg-opacity-20 rounded-full w-6 h-6 flex items-center justify-center">✕</span>
+                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} className="bg-white bg-opacity-20 rounded-full w-6 h-6 flex items-center justify-center text-sm">✕</span>
                     </button>
                 </div>
             )}
@@ -549,8 +492,8 @@ function BookingModal({rooms, onClose}) {
         phones: [""],
         email: "",
         nid: "",
-        checkIn: getBDDate(),
-        checkOut: getBDDate(1)
+        checkIn: rooms[0]?.checkIn || getBDDate(),
+        checkOut: rooms[0]?.checkOut || getBDDate(1)
     });
     const [status, setStatus] = useState("");
 
@@ -558,18 +501,13 @@ function BookingModal({rooms, onClose}) {
     const addPhone = () => { if (form.phones.length < 3) setForm({...form, phones: [...form.phones, ""]}); };
     const updateGuest = (i, v) => { const g = [...form.guests]; g[i].name = v; setForm({...form, guests: g}); };
     const updatePhone = (i, v) => { const p = [...form.phones]; p[i] = v; setForm({...form, phones: p}); };
-    const removeGuest = (i) => { setForm({...form, guests: form.guests.filter((_,idx) => idx !== i)}); };
-    const removePhone = (i) => { setForm({...form, phones: form.phones.filter((_,idx) => idx !== i)}); };
+    const removeGuest = (i) => { if (form.guests.length > 1) setForm({...form, guests: form.guests.filter((_,idx) => idx !== i)}); };
+    const removePhone = (i) => { if (form.phones.length > 1) setForm({...form, phones: form.phones.filter((_,idx) => idx !== i)}); };
 
     const submit = async (e) => {
         e.preventDefault();
         setStatus("loading");
         try {
-            // Get write token
-            const tokenRes = await fetch(PROXY + "?endpoint=authentication/token&action=write");
-            const tokenData = await tokenRes.json();
-            if (!tokenData.token) { setStatus("error: No token"); return; }
-
             const guestNames = form.guests.map(g => g.name).filter(n => n).join(", ");
             const phoneNums = form.phones.filter(p => p).join(", ");
             
@@ -578,7 +516,7 @@ function BookingModal({rooms, onClose}) {
                 arrival: form.checkIn, departure: form.checkOut,
                 numAdult: r.room.max, numChild: 0, status: "confirmed",
                 firstName: guestNames, email: form.email || "noemail@example.com",
-                mobile: phoneNums, custom4: form.nid, referer: "holidayzer"
+                mobile: phoneNums, custom4: form.nid, referer: "miami_frontdesk"
             }));
             
             const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
@@ -594,77 +532,72 @@ function BookingModal({rooms, onClose}) {
 
     if (status === "success") return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div className="glass rounded-2xl p-10 text-center">
-                <div className="text-6xl mb-4">✅</div>
-                <div className="text-white text-xl font-bold">Booking Created!</div>
-            </div>
+            <div className="glass rounded-2xl p-8 text-center"><div className="text-5xl mb-3">✅</div><div className="text-white text-lg font-bold">Booking Created!</div></div>
         </div>
     );
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
-            <div className="glass rounded-2xl p-6 w-full max-w-lg my-4">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-white">New Booking</h3>
-                    <button onClick={onClose} className="text-white text-2xl">×</button>
+            <div className="glass rounded-2xl p-4 w-full max-w-md my-4">
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-bold text-white">New Booking</h3>
+                    <button onClick={onClose} className="text-white text-xl">×</button>
                 </div>
                 
-                <div className="mb-4 flex flex-wrap gap-2">
-                    {rooms.map(r => <span key={r.key} className="px-3 py-1 bg-blue-500 bg-opacity-30 rounded-full text-white text-sm">{r.unit.n}</span>)}
+                <div className="mb-3 flex flex-wrap gap-1">
+                    {rooms.map(r => <span key={r.key} className="px-2 py-1 bg-blue-500 bg-opacity-30 rounded text-white text-xs">{r.unit.n}</span>)}
                 </div>
                 
-                <form onSubmit={submit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div><label className="text-white text-opacity-70 text-xs">Check-in</label>
+                <form onSubmit={submit} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div><label className="text-white text-opacity-60 text-xs">Check-in</label>
                             <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn:e.target.value})} 
-                                className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20"/></div>
-                        <div><label className="text-white text-opacity-70 text-xs">Check-out</label>
+                                className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20"/></div>
+                        <div><label className="text-white text-opacity-60 text-xs">Check-out</label>
                             <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut:e.target.value})} 
-                                className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20"/></div>
+                                className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20"/></div>
                     </div>
 
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label className="text-white text-opacity-70 text-xs">Guest Names *</label>
-                            {form.guests.length < 3 && <button type="button" onClick={addGuest} className="text-blue-400 text-sm">+ Add Guest</button>}
+                            <label className="text-white text-opacity-60 text-xs">Guests *</label>
+                            {form.guests.length < 3 && <button type="button" onClick={addGuest} className="text-blue-400 text-xs">+ Add</button>}
                         </div>
                         {form.guests.map((g, i) => (
-                            <div key={i} className="flex gap-2 mb-2">
-                                <input type="text" required value={g.name} onChange={e => updateGuest(i, e.target.value)} 
-                                    placeholder={`Guest ${i+1} Name`}
-                                    className="flex-1 px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
-                                {form.guests.length > 1 && <button type="button" onClick={() => removeGuest(i)} className="text-red-400 px-2">✕</button>}
+                            <div key={i} className="flex gap-1 mb-1">
+                                <input type="text" required value={g.name} onChange={e => updateGuest(i, e.target.value)} placeholder={`Guest ${i+1}`}
+                                    className="flex-1 px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
+                                {form.guests.length > 1 && <button type="button" onClick={() => removeGuest(i)} className="text-red-400 px-2 text-sm">✕</button>}
                             </div>
                         ))}
                     </div>
 
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label className="text-white text-opacity-70 text-xs">Phone Numbers *</label>
-                            {form.phones.length < 3 && <button type="button" onClick={addPhone} className="text-blue-400 text-sm">+ Add Phone</button>}
+                            <label className="text-white text-opacity-60 text-xs">Phone *</label>
+                            {form.phones.length < 3 && <button type="button" onClick={addPhone} className="text-blue-400 text-xs">+ Add</button>}
                         </div>
                         {form.phones.map((p, i) => (
-                            <div key={i} className="flex gap-2 mb-2">
-                                <input type="tel" required value={p} onChange={e => updatePhone(i, e.target.value)} 
-                                    placeholder={`Phone ${i+1}`}
-                                    className="flex-1 px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
-                                {form.phones.length > 1 && <button type="button" onClick={() => removePhone(i)} className="text-red-400 px-2">✕</button>}
+                            <div key={i} className="flex gap-1 mb-1">
+                                <input type="tel" required value={p} onChange={e => updatePhone(i, e.target.value)} placeholder={`Phone ${i+1}`}
+                                    className="flex-1 px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
+                                {form.phones.length > 1 && <button type="button" onClick={() => removePhone(i)} className="text-red-400 px-2 text-sm">✕</button>}
                             </div>
                         ))}
                     </div>
 
                     <input type="email" value={form.email} onChange={e => setForm({...form, email:e.target.value})} placeholder="Email (optional)"
-                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
+                        className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
                     
                     <input type="text" required value={form.nid} onChange={e => setForm({...form, nid:e.target.value})} placeholder="NID *"
-                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
+                        className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
 
-                    {status.startsWith("error") && <div className="p-3 bg-red-500 bg-opacity-20 rounded text-red-300 text-sm">{status}</div>}
+                    {status.startsWith("error") && <div className="p-2 bg-red-500 bg-opacity-20 rounded text-red-300 text-xs">{status}</div>}
                     
-                    <div className="flex gap-3">
-                        <button type="button" onClick={onClose} className="flex-1 py-3 glass rounded-xl text-white">Cancel</button>
-                        <button type="submit" disabled={status==="loading"} className="flex-1 py-3 bg-blue-500 rounded-xl text-white font-bold disabled:opacity-50">
-                            {status==="loading" ? "Creating..." : "Book Now"}
+                    <div className="flex gap-2 pt-2">
+                        <button type="button" onClick={onClose} className="flex-1 py-2 glass rounded-lg text-white text-sm">Cancel</button>
+                        <button type="submit" disabled={status==="loading"} className="flex-1 py-2 bg-blue-500 rounded-lg text-white font-bold text-sm disabled:opacity-50">
+                            {status==="loading" ? "..." : "Book"}
                         </button>
                     </div>
                 </form>
