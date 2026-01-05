@@ -225,7 +225,7 @@ const saveRequests = (d) => localStorage.setItem(REQUEST_KEY, JSON.stringify(d))
 const REQUEST_TYPES = ["Room Service", "Water Bottle", "Room Clean", "Towel Request", "Bedsheet Change", "Toiletries", "Extra Pillow", "AC/Heating Issue", "Maintenance", "Other"];
 
 function App() {
-    const [tab, setTab] = useState("floor");
+    const [tab, setTab] = useState("today");
     const [calDays, setCalDays] = useState(7);
     const [startDate, setStartDate] = useState(getBDDate());
     const [bookings, setBookings] = useState([]);
@@ -397,9 +397,9 @@ function App() {
     };
 
     const tabs = [
+        {id: "today", label: "📅 Today"},
         {id: "floor", label: "🏢 By Floor"},
         {id: "category", label: "📁 By Category"},
-        {id: "today", label: "📅 Today"},
         {id: "searchbook", label: "🔍 Search & Book"},
         {id: "requests", label: "🛎️ Requests"},
         {id: "housekeeping", label: "🧹 Housekeeping"},
@@ -472,8 +472,8 @@ function App() {
                     if (!group.rooms.length) return null;
                     return (
                         <div key={group.key} style={{marginBottom: '20px'}}>
-                            <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px'}}>
+                            <div className="floor-header" style={{justifyContent: 'center', maxWidth: '900px', margin: '0 auto 10px auto'}}><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxWidth: '900px', margin: '0 auto', justifyContent: 'center'}}>
                                 {group.rooms.map(({room, unit}) => {
                                     const booking = getBooking(room.id, unit.id, today);
                                     const isBooked = !!booking;
