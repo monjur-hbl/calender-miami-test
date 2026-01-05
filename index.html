@@ -6,1432 +6,825 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v20</title>
+    <title>Miami Beach Resort v18.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #1a1f2e 0%, #0f1318 100%); min-height: 100vh; color: #fff; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1f2e; min-height: 100vh; color: #fff; }
         
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .animate-fade { animation: fadeIn 0.5s ease-out; }
-        .animate-slide { animation: slideIn 0.4s ease-out; }
+        /* Top Bar - Always sticky */
+        .top-bar { background: #141824; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 200; padding: 12px 16px; }
         
-        /* Top Bar - Fixed height */
-        .top-bar { 
-            background: linear-gradient(180deg, #141824 0%, #1a1f2e 100%); 
-            border-bottom: 1px solid rgba(255,255,255,0.08); 
-            position: fixed; 
-            top: 0; 
-            left: 0;
-            right: 0;
-            z-index: 300; 
-            padding: 14px 20px; 
-            height: 70px;
-            backdrop-filter: blur(10px);
-        }
-        .property-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-        .property-time { font-size: 14px; color: rgba(255,255,255,0.6); }
-        .property-time .gmt-badge { 
-            display: inline-block;
-            background: rgba(16,185,129,0.2); 
-            color: #10b981;
-            padding: 2px 8px; 
-            border-radius: 6px; 
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
+        /* Controls Section - Scrolls away */
+        .controls-section { background: #141824; padding: 16px; padding-top: 8px; }
         
-        /* Main content with top padding */
-        .main-content { padding-top: 80px; }
+        /* Stats Row - 5 items */
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
+        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 8px; text-align: center; }
+        .stat-num { font-size: 26px; font-weight: 700; }
+        .stat-label { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* Stats Row - Bigger */
-        .stats-row { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 14px; 
-            margin-bottom: 20px; 
-            padding: 20px; 
-        }
-        @media (max-width: 900px) { .stats-row { grid-template-columns: repeat(3, 1fr); gap: 10px; } }
-        @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
-        .stat-card { 
-            background: rgba(255,255,255,0.04); 
-            border: 1px solid rgba(255,255,255,0.08); 
-            border-radius: 16px; 
-            padding: 20px 14px; 
-            text-align: center; 
-            transition: all 0.3s ease; 
-        }
-        .stat-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .stat-num { font-size: 38px; font-weight: 800; line-height: 1; }
-        .stat-label { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
+        /* Search Button - 1.5x bigger */
+        .search-btn { display: flex; align-items: center; gap: 10px; padding: 14px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.2s; }
+        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #10b981; }
         
-        /* Tabs Row - Bigger and Centered */
-        .tabs-container { 
-            display: flex; 
-            justify-content: center; 
-            padding: 0 20px; 
-            margin-bottom: 20px; 
-        }
-        .tabs-row { 
-            display: flex; 
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px; 
-        }
-        .nav-btn { 
-            padding: 16px 20px; 
-            border-radius: 12px; 
-            font-size: 15px; 
-            font-weight: 600; 
-            border: none; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            background: rgba(255,255,255,0.06); 
-            color: rgba(255,255,255,0.7); 
-            white-space: nowrap; 
-        }
-        .nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); }
-        .nav-btn.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 15px rgba(16,185,129,0.4); }
-        .nav-btn-wrapper { position: relative; }
-        .notification-badge { 
-            position: absolute; top: -6px; right: -6px; 
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
-            color: white; font-size: 11px; font-weight: 700; 
-            min-width: 20px; height: 20px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            animation: pulse 2s infinite; 
-            box-shadow: 0 2px 8px rgba(239,68,68,0.5);
-        }
+        /* Tabs - Full width stretched */
+        .tabs-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 12px; }
+        .nav-btn { padding: 11px 6px; border-radius: 8px; font-size: 11px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); white-space: nowrap; text-align: center; }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-btn.active { background: #10b981; color: white; }
         
-        /* Date Header - Properly Separated */
-        .date-header-wrapper { 
-            position: sticky; 
-            top: 70px; 
-            z-index: 200; 
-            background: linear-gradient(180deg, #1a1f2e 0%, rgba(26,31,46,0.95) 100%);
-            padding: 16px 20px; 
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            backdrop-filter: blur(10px);
-        }
-        .date-header-inner { 
-            display: flex; 
-            gap: 10px; 
-            overflow-x: auto; 
-            padding-bottom: 6px;
-            justify-content: center;
-        }
-        .date-header-inner::-webkit-scrollbar { height: 4px; }
-        .date-header-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-        .date-cell { 
-            min-width: 90px; 
-            text-align: center; 
-            padding: 14px 12px; 
-            background: rgba(255,255,255,0.05); 
-            border-radius: 14px; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            flex-shrink: 0;
-        }
-        .date-cell:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
-        .date-cell.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
-        .date-cell .day-name { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 4px; font-weight: 500; }
-        .date-cell.active .day-name { color: rgba(255,255,255,0.9); }
-        .date-cell .day-num { font-size: 26px; font-weight: 800; }
+        /* Date controls - Centered */
+        .date-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+        .day-btn { padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
+        .day-btn:hover { background: rgba(255,255,255,0.1); }
+        .day-btn.active { background: #10b981; color: white; }
+        .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
-        /* Room Cards */
-        .room-card { 
-            background: #2563eb; 
-            border-radius: 12px; 
-            padding: 14px 16px; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            display: flex; 
-            align-items: center; 
-            gap: 14px; 
-            margin-bottom: 10px; 
-        }
-        .room-card:hover { transform: translateX(5px); filter: brightness(1.15); }
-        .room-card.available { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
-        .room-card.checkout, .room-card.dirty { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
-        .room-card.turnover { background: linear-gradient(135deg, #8b5cf6 50%, #2563eb 50%); }
-        .room-card.checkin { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
-        .room-card.occupied { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
-        .room-num { font-size: 20px; font-weight: 800; min-width: 50px; }
-        .room-info { flex: 1; }
-        .guest-name { font-size: 16px; font-weight: 600; }
-        .room-type { font-size: 13px; opacity: 0.85; }
+        /* Sticky Date Header - sticks below top bar */
+        .date-header-wrapper { position: sticky; top: 58px; z-index: 150; background: #1a1f2e; padding: 10px 16px; margin-left: 0; }
+        .date-header-inner { display: flex; gap: 6px; margin-left: 140px; }
+        .date-cell { flex: 1; min-width: 100px; text-align: center; padding: 10px 6px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .date-cell.today { background: #10b981; }
+        .date-day { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); }
+        .date-num { font-size: 20px; font-weight: 700; margin-top: 2px; }
         
-        /* Today Grid - Centered and Responsive */
-        .today-grid { 
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: center; 
-            gap: 16px; 
-            padding: 24px; 
-            animation: fadeIn 0.5s ease-out; 
-        }
-        .today-card { 
-            background: rgba(255,255,255,0.04); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 18px; 
-            padding: 24px; 
-            width: 100%;
-            max-width: 380px;
-            min-width: 300px;
-            flex: 1 1 340px;
-            transition: all 0.3s ease; 
-        }
-        .today-card:hover { transform: translateY(-4px); box-shadow: 0 15px 40px rgba(0,0,0,0.35); border-color: rgba(255,255,255,0.15); }
-        .today-card h3 { 
-            font-size: 18px; 
-            margin-bottom: 18px; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-        }
-        .today-card .count { 
-            font-size: 14px; 
-            background: rgba(255,255,255,0.12); 
-            padding: 5px 14px; 
-            border-radius: 20px; 
-            font-weight: 600;
-        }
+        /* Calendar Container */
+        .cal-container { padding: 0 16px 100px; overflow-x: auto; }
         
-        /* Search Results - Centered and Colored */
-        .search-results { 
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: center; 
-            gap: 14px; 
-            padding: 24px; 
-        }
-        .search-result-card { 
-            border-radius: 14px; 
-            padding: 20px 24px; 
-            min-width: 160px; 
-            text-align: center; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-        }
-        .search-result-card:hover { transform: scale(1.08); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .search-result-card.available { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
-        .search-result-card.occupied { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .search-result-card .room-number { font-size: 28px; font-weight: 800; }
-        .search-result-card .room-status { font-size: 13px; opacity: 0.9; margin-top: 6px; font-weight: 500; }
+        /* Floor Header */
+        .floor-header { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 10px; margin: 12px 0 10px 0; }
         
-        /* View Toggle */
-        .view-toggle { 
-            display: flex; 
-            gap: 8px; 
-            padding: 8px; 
-            background: rgba(255,255,255,0.05); 
-            border-radius: 12px; 
-        }
-        .view-toggle button { 
-            padding: 12px 24px; 
-            border: none; 
-            border-radius: 10px; 
-            background: transparent; 
-            color: rgba(255,255,255,0.6); 
-            cursor: pointer; 
-            font-size: 15px; 
-            font-weight: 600; 
-            transition: all 0.3s ease; 
-        }
-        .view-toggle button.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-        .view-toggle button:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; }
+        /* Room Row */
+        .room-row { display: flex; gap: 6px; margin-bottom: 6px; }
         
-        /* Search Date Selectors */
-        .date-selector { 
-            padding: 20px 28px; 
-            background: rgba(255,255,255,0.05); 
-            border-radius: 14px; 
-            cursor: pointer; 
-            min-width: 180px; 
-            text-align: center; 
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-        .date-selector:hover { background: rgba(255,255,255,0.1); }
-        .date-selector.active { 
-            background: rgba(16,185,129,0.15); 
-            border-color: #10b981; 
-        }
-        .date-selector .label { font-size: 13px; opacity: 0.7; margin-bottom: 6px; }
-        .date-selector .date { font-size: 22px; font-weight: 700; }
+        /* Room Label */
+        .room-label { min-width: 134px; max-width: 134px; background: #232a3b; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+        .room-num { font-size: 22px; font-weight: 700; }
+        .room-type { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.2; }
+        .room-cap { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
         
-        /* Housekeeping Grid */
-        .housekeeping-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
-            gap: 20px; 
-            padding: 24px; 
-        }
-        .housekeeping-column { 
-            background: rgba(255,255,255,0.04); 
-            border-radius: 16px; 
-            padding: 20px; 
-        }
-        .housekeeping-column h4 { 
-            font-size: 16px; 
-            margin-bottom: 16px; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-        }
-        .housekeeping-column .badge { 
-            font-size: 13px; 
-            background: rgba(255,255,255,0.15); 
-            padding: 4px 12px; 
-            border-radius: 20px;
-            font-weight: 600;
-        }
-        .request-indicator {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 12px;
-            height: 12px;
-            background: #ef4444;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
+        /* Status Card - Responsive */
+        .status-card { flex: 1; min-width: 100px; min-height: 80px; border-radius: 10px; padding: 10px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .status-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
         
-        /* Accounting */
-        .accounting-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-            gap: 18px; 
-            padding: 24px; 
-        }
-        .accounting-card { 
-            background: rgba(255,255,255,0.04); 
-            border: 1px solid rgba(255,255,255,0.08); 
-            border-radius: 16px; 
-            padding: 24px; 
-        }
-        .accounting-card h4 { font-size: 15px; color: rgba(255,255,255,0.6); margin-bottom: 10px; }
-        .accounting-card .amount { font-size: 32px; font-weight: 800; }
-        .accounting-card.income { border-left: 5px solid #22c55e; }
-        .accounting-card.expense { border-left: 5px solid #ef4444; }
-        .accounting-card.pending { border-left: 5px solid #f59e0b; }
+        /* Only 2 colors: Green (available) and Red (booked) */
+        .card-available { background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%); }
+        .card-booked { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); }
+        .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #10b981 !important; }
+        
+        .status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .guest-name { font-size: 11px; font-weight: 500; margin-top: 4px; opacity: 0.9; }
+        
+        .info-btn { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: none; color: white; z-index: 5; }
+        .info-btn:hover { background: rgba(255,255,255,0.4); }
+        
+        /* Today Tab - View Selector */
+        .view-selector { display: flex; gap: 8px; margin-bottom: 16px; justify-content: center; }
+        .view-btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; background: transparent; color: rgba(255,255,255,0.6); transition: all 0.2s; }
+        .view-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+        .view-btn.active { background: #10b981; border-color: #10b981; color: white; }
         
         /* Modal */
-        .modal-overlay { 
-            position: fixed; inset: 0; 
-            background: rgba(0,0,0,0.8); 
-            display: flex; align-items: center; justify-content: center; 
-            z-index: 1000; 
-            animation: fadeIn 0.2s ease; 
-            backdrop-filter: blur(5px);
-        }
-        .modal { 
-            background: linear-gradient(180deg, #1e2433 0%, #171c28 100%); 
-            border-radius: 20px; 
-            padding: 28px; 
-            max-width: 540px; 
-            width: 92%; 
-            max-height: 90vh; 
-            overflow-y: auto; 
-            animation: slideIn 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .modal-header h3 { font-size: 22px; font-weight: 700; }
-        .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; opacity: 0.6; }
-        .modal-close:hover { opacity: 1; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px; font-weight: 500; }
-        .form-input { 
-            width: 100%; padding: 14px 16px; 
-            background: rgba(255,255,255,0.06); 
-            border: 1px solid rgba(255,255,255,0.12); 
-            border-radius: 12px; 
-            color: #fff; font-size: 16px; 
-        }
-        .form-input:focus { outline: none; border-color: #10b981; background: rgba(255,255,255,0.08); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+        .modal { background: #1a1f2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 28px; cursor: pointer; }
         
-        /* Buttons */
-        .btn-primary { 
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-            color: white; border: none; 
-            padding: 16px 28px; border-radius: 12px; 
-            font-size: 16px; font-weight: 600; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            box-shadow: 0 4px 15px rgba(16,185,129,0.3);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
+        .info-section { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+        .info-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 4px; }
+        .info-value { font-size: 15px; font-weight: 600; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
-        .search-btn { 
-            display: flex; align-items: center; gap: 10px; 
-            padding: 14px 24px; 
-            background: rgba(255,255,255,0.06); 
-            border: 1px solid rgba(255,255,255,0.15); 
-            border-radius: 12px; 
-            color: rgba(255,255,255,0.8); 
-            cursor: pointer; font-size: 15px; 
-            transition: all 0.3s ease; 
-        }
-        .search-btn:hover { background: rgba(255,255,255,0.12); color: #fff; border-color: #10b981; }
+        /* Search */
+        .search-input { width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 15px; }
+        .search-input:focus { outline: none; border-color: #10b981; }
+        .search-result { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .search-result:hover { background: rgba(255,255,255,0.08); border-color: #10b981; }
         
-        .refresh-btn { 
-            padding: 14px 24px; 
-            background: rgba(255,255,255,0.08); 
-            border: 1px solid rgba(255,255,255,0.15); 
-            border-radius: 12px; 
-            color: #fff; font-size: 15px; font-weight: 600; 
-            cursor: pointer; transition: all 0.3s ease; 
-            display: flex; align-items: center; gap: 10px; 
-        }
-        .refresh-btn:hover { background: #10b981; border-color: #10b981; }
-        .refresh-btn.loading { animation: pulse 1s infinite; }
+        /* Search & Book */
+        .date-search-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; justify-content: center; margin-bottom: 20px; }
+        .date-field { display: flex; flex-direction: column; gap: 6px; }
+        .date-field label { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .group-selector { padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; }
         
-        /* Info Icon */
-        .info-icon { 
-            width: 28px; height: 28px; 
-            background: rgba(255,255,255,0.15); 
-            border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 14px; cursor: pointer; 
-            transition: all 0.3s ease; 
-        }
-        .info-icon:hover { background: rgba(255,255,255,0.3); transform: scale(1.15); }
+        /* Requests */
+        .request-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .request-select { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 10px; }
+        .request-note { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 8px; resize: none; }
+        .request-btn { padding: 10px 20px; background: #10b981; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .request-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-top: 8px; font-size: 13px; }
+        .request-pending { border-left: 3px solid #f59e0b; }
+        .request-done { border-left: 3px solid #10b981; }
+        .done-btn { padding: 6px 12px; background: #10b981; border: none; border-radius: 6px; color: white; font-size: 11px; cursor: pointer; }
+        .request-count { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+        .request-count.pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .request-count.done { background: rgba(34,197,94,0.2); color: #22c55e; }
         
-        /* Unit Selection */
-        .unit-selected { box-shadow: 0 0 0 4px #10b981, 0 0 25px rgba(16,185,129,0.4); }
+        /* Housekeeping */
+        .hk-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; }
+        .hk-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; margin-bottom: 8px; }
+        .hk-makeup { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+        .hk-dirty { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .hk-turnover { background: linear-gradient(135deg, #9333ea 0%, #9333ea 50%, #2563eb 50%, #2563eb 100%); }
         
-        /* Spinner */
-        .spinner { 
-            border: 3px solid rgba(255,255,255,0.1); 
-            border-top-color: #10b981; 
-            border-radius: 50%; 
-            width: 22px; height: 22px; 
-            animation: spin 0.8s linear infinite; 
-        }
+        /* Movement */
+        .mv-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .mv-btn { width: 40px; height: 40px; border-radius: 8px; border: none; cursor: pointer; font-size: 16px; }
+        .mv-btn-pending { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+        .mv-btn-pending:hover { background: #10b981; color: white; }
+        .mv-btn-done { background: #10b981; color: white; }
+        
+        .mobile-select { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; }
+        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Version Tag */
-        .version-tag { position: fixed; bottom: 12px; right: 12px; font-size: 12px; color: rgba(255,255,255,0.3); }
+        .version-tag { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 4px; font-size: 10px; color: rgba(255,255,255,0.5); z-index: 9999; }
         
-        /* Responsive */
-        @media (max-width: 768px) { 
-            .stat-num { font-size: 28px; } 
-            .top-bar { padding: 12px 14px; height: 64px; }
-            .main-content { padding-top: 74px; }
-            .date-header-wrapper { top: 64px; }
-            .nav-btn { padding: 14px 14px; font-size: 14px; } 
-            .room-card { padding: 12px 14px; } 
-            .today-card { min-width: 100%; max-width: 100%; }
-            .property-name { font-size: 17px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        
+        @media (max-width: 1200px) {
+            .status-card { min-width: 90px; min-height: 70px; }
+            .date-cell { min-width: 90px; }
         }
-        @media (max-width: 480px) {
-            .tabs-row { gap: 6px; }
-            .nav-btn { padding: 12px 10px; font-size: 13px; }
+        @media (max-width: 900px) {
+            .stats-row { gap: 6px; }
+            .stat-card { padding: 10px 4px; }
+            .stat-num { font-size: 20px; }
+            .tabs-row { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stat-num { font-size: 16px; }
+            .stat-label { font-size: 7px; }
+            .tabs-row { grid-template-columns: 1fr; }
+            .nav-btn { padding: 12px; }
+            .status-card { min-width: 80px; min-height: 65px; padding: 8px; }
+            .room-label { min-width: 100px; max-width: 100px; }
+            .date-cell { min-width: 80px; }
+            .date-header-inner { margin-left: 106px; }
+            .search-btn { padding: 10px 16px; font-size: 13px; }
+            .date-header-wrapper { top: 52px; }
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
-        
-        // Beds24 API Configuration
-        const PROPERTY = "miamibr";
-        const PROXY = "https://beds24-proxy-1006186358018.us-central1.run.app";
-        
-        // FIXED: Bangladesh GMT+6 Time - Using Intl API for accurate timezone
-        const formatBDDateTime = () => {
-            const options = { 
-                timeZone: 'Asia/Dhaka',
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            };
-            return new Date().toLocaleString('en-US', options).replace(',', ' •');
-        };
-        
-        const getBDDate = (offset = 0) => {
-            const now = new Date();
-            // Get Bangladesh date using Intl
-            const bdDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
-            const bdDate = new Date(bdDateStr + 'T00:00:00');
-            bdDate.setDate(bdDate.getDate() + offset);
-            return bdDate.toISOString().split('T')[0];
-        };
-        
-        const formatDateDisplay = (dateStr) => {
-            const date = new Date(dateStr + 'T00:00:00');
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return { 
-                day: days[date.getDay()], 
-                num: date.getDate(),
-                month: months[date.getMonth()]
-            };
-        };
-        
-        // Sample room data (will be replaced with Beds24 API)
-        const sampleRooms = [
-            { id: '101', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe', rate: 5000 },
-            { id: '102', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe', rate: 5000 },
-            { id: '201', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe', rate: 5500 },
-            { id: '202', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe', rate: 5500 },
-            { id: '301', name: 'Premium Sea View', floor: 3, category: 'Premium', rate: 7000 },
-            { id: '302', name: 'Premium Sea View', floor: 3, category: 'Premium', rate: 7000 },
-            { id: '401', name: 'Royal Suite', floor: 4, category: 'Suite', rate: 12000 },
-            { id: '402', name: 'Royal Suite', floor: 4, category: 'Suite', rate: 12000 },
-            { id: '501', name: 'Penthouse', floor: 5, category: 'Suite', rate: 20000 },
-        ];
-        
-        // Generate sample bookings
-        const generateSampleBookings = () => {
-            const bookings = [];
-            const guests = ['Misty', 'Karif', 'Trisha', 'Mahim', 'Imam', 'Foyez', 'Hossain', 'Mobarak', 'Rajo', 'Shamim'];
-            const phones = ['01711234567', '01812345678', '01912345678', '01612345678', '01512345678'];
-            
-            sampleRooms.forEach((room, idx) => {
-                if (Math.random() > 0.35) {
-                    const checkInOffset = Math.floor(Math.random() * 3) - 1;
-                    const checkIn = getBDDate(checkInOffset);
-                    const nights = Math.floor(Math.random() * 4) + 1;
-                    const checkOutDate = new Date(checkIn);
-                    checkOutDate.setDate(checkOutDate.getDate() + nights);
-                    const totalAmount = room.rate * nights;
-                    const paidAmount = Math.floor(Math.random() * 2) === 0 ? totalAmount : Math.floor(totalAmount * 0.5);
-                    
-                    bookings.push({
-                        id: 'BK' + (1000 + idx),
-                        roomId: room.id,
-                        unitId: room.id,
-                        guestName: guests[idx % guests.length],
-                        phone: phones[idx % phones.length],
-                        checkIn,
-                        checkOut: checkOutDate.toISOString().split('T')[0],
-                        status: 'confirmed',
-                        numAdults: Math.floor(Math.random() * 2) + 1,
-                        numChildren: Math.floor(Math.random() * 2),
-                        totalAmount,
-                        paidAmount,
-                        paymentMethod: ['Cash', 'bKash', 'Bank'][Math.floor(Math.random() * 3)]
-                    });
-                }
-            });
-            return bookings;
-        };
-        
-        // Housekeeping requests
-        const generateRequests = () => [
-            { id: 1, roomId: '102', type: 'Extra Towels', status: 'pending', time: '09:30 AM' },
-            { id: 2, roomId: '301', type: 'Room Cleaning', status: 'pending', time: '10:15 AM' },
-        ];
-        
-        function App() {
-            const [currentTime, setCurrentTime] = useState(formatBDDateTime());
-            const [activeTab, setActiveTab] = useState('today');
-            const [selectedDate, setSelectedDate] = useState(getBDDate());
-            const [rooms] = useState(sampleRooms);
-            const [bookings, setBookings] = useState(generateSampleBookings());
-            const [loading, setLoading] = useState(false);
-            const [calendarView, setCalendarView] = useState('floor');
-            const [bookingModal, setBookingModal] = useState(null);
-            const [selectedUnits, setSelectedUnits] = useState([]);
-            const [searchDates, setSearchDates] = useState({ checkIn: getBDDate(), checkOut: getBDDate(1) });
-            const [dateSelectionMode, setDateSelectionMode] = useState('checkIn');
-            const [housekeepingTab, setHousekeepingTab] = useState('today');
-            const [requests, setRequests] = useState(generateRequests());
-            
-            // Update time every minute
-            useEffect(() => {
-                const timer = setInterval(() => setCurrentTime(formatBDDateTime()), 60000);
-                return () => clearInterval(timer);
-            }, []);
-            
-            const dateRange = Array.from({ length: 7 }, (_, i) => getBDDate(i));
-            
-            // Get today's stats
-            const getStats = () => {
-                const today = getBDDate();
-                const occupied = bookings.filter(b => b.checkIn <= today && b.checkOut > today).length;
-                return {
-                    total: rooms.length,
-                    available: rooms.length - occupied,
-                    occupied,
-                    checkIn: bookings.filter(b => b.checkIn === today).length,
-                    checkOut: bookings.filter(b => b.checkOut === today).length
-                };
-            };
-            const stats = getStats();
-            
-            // Notification count for housekeeping
-            const pendingRequests = requests.filter(r => r.status === 'pending').length;
-            
-            // Tab configuration
-            const tabs = [
-                { id: 'today', label: '📅 Today' },
-                { id: 'calendar', label: '🗓️ Calendar' },
-                { id: 'search', label: '🔍 Search & Book' },
-                { id: 'requests', label: '🔔 Requests' },
-                { id: 'housekeeping', label: '🧹 Housekeeping', hasNotification: pendingRequests > 0, notificationCount: pendingRequests },
-                { id: 'movements', label: '🚶 Movements' },
-                { id: 'accounting', label: '💰 Accounting' }
-            ];
-            
-            // Refresh handler
-            const handleRefresh = async () => {
-                setLoading(true);
-                await new Promise(r => setTimeout(r, 1000));
-                setBookings(generateSampleBookings());
-                setRequests(generateRequests());
-                setLoading(false);
-            };
-            
-            // Get room status for a specific date
-            const getRoomStatus = (roomId, date) => {
-                const booking = bookings.find(b => b.roomId === roomId && b.checkIn <= date && b.checkOut > date);
-                if (!booking) return { status: 'available', booking: null };
-                if (booking.checkIn === date) return { status: 'checkin', booking };
-                if (booking.checkOut === date) return { status: 'checkout', booking };
-                return { status: 'occupied', booking };
-            };
-            
-            // Search date click handler - AUTO CHECKOUT DATE SELECTION
-            const handleSearchDateClick = (date) => {
-                if (dateSelectionMode === 'checkIn') {
-                    setSearchDates({ checkIn: date, checkOut: getBDDate(1) }); // Reset checkout
-                    setDateSelectionMode('checkOut');
-                } else {
-                    if (date > searchDates.checkIn) {
-                        setSearchDates({ ...searchDates, checkOut: date });
-                        setDateSelectionMode('checkIn');
-                    } else {
-                        // If selected date is before or same as check-in, make it new check-in
-                        setSearchDates({ checkIn: date, checkOut: searchDates.checkOut });
-                    }
-                }
-            };
-            
-            // Unit click handler for multi-select
-            const handleUnitClick = (room, date, checkOut = null) => {
-                const key = room.id + '-' + date;
-                const existing = selectedUnits.find(u => u.key === key);
-                if (existing) {
-                    setSelectedUnits(selectedUnits.filter(u => u.key !== key));
-                } else {
-                    setSelectedUnits([...selectedUnits, { 
-                        key, 
-                        roomId: room.id, 
-                        checkIn: date,
-                        checkOut: checkOut || getBDDate(1),
-                        room 
-                    }]);
-                }
-            };
+<div id="root"></div>
+<div class="version-tag">v18.2</div>
+<script type="text/babel">
+const {useState, useEffect, useMemo, useCallback} = React;
 
-            // RENDER: Today View - Centered and Responsive
-            const renderTodayView = () => {
-                const today = getBDDate();
-                const checkIns = bookings.filter(b => b.checkIn === today);
-                const checkOuts = bookings.filter(b => b.checkOut === today);
-                const stayOvers = bookings.filter(b => b.checkIn < today && b.checkOut > today);
-                const available = rooms.filter(r => !bookings.some(b => b.roomId === r.id && b.checkIn <= today && b.checkOut > today));
-                
-                return React.createElement('div', {className: 'today-grid animate-fade'},
-                    // Check-ins Card
-                    React.createElement('div', {className: 'today-card'},
-                        React.createElement('h3', null, '🟢 Check-ins ', React.createElement('span', {className: 'count'}, checkIns.length)),
-                        checkIns.map(b => React.createElement('div', {
-                            key: b.id, 
-                            className: 'room-card checkin',
-                            onClick: () => setBookingModal(b)
-                        },
-                            React.createElement('div', {className: 'room-num'}, b.roomId),
-                            React.createElement('div', {className: 'room-info'},
-                                React.createElement('div', {className: 'guest-name'}, b.guestName),
-                                React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)
-                            ),
-                            React.createElement('div', {className: 'info-icon'}, 'ℹ️')
-                        )),
-                        checkIns.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No check-ins today')
-                    ),
-                    
-                    // Check-outs Card
-                    React.createElement('div', {className: 'today-card'},
-                        React.createElement('h3', null, '🟠 Check-outs ', React.createElement('span', {className: 'count'}, checkOuts.length)),
-                        checkOuts.map(b => React.createElement('div', {
-                            key: b.id, 
-                            className: 'room-card checkout',
-                            onClick: () => setBookingModal(b)
-                        },
-                            React.createElement('div', {className: 'room-num'}, b.roomId),
-                            React.createElement('div', {className: 'room-info'},
-                                React.createElement('div', {className: 'guest-name'}, b.guestName),
-                                React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)
-                            ),
-                            React.createElement('div', {className: 'info-icon'}, 'ℹ️')
-                        )),
-                        checkOuts.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No check-outs today')
-                    ),
-                    
-                    // Stay Over Card
-                    React.createElement('div', {className: 'today-card'},
-                        React.createElement('h3', null, '🔵 Stay Over ', React.createElement('span', {className: 'count'}, stayOvers.length)),
-                        stayOvers.slice(0, 6).map(b => React.createElement('div', {
-                            key: b.id, 
-                            className: 'room-card occupied',
-                            onClick: () => setBookingModal(b)
-                        },
-                            React.createElement('div', {className: 'room-num'}, b.roomId),
-                            React.createElement('div', {className: 'room-info'},
-                                React.createElement('div', {className: 'guest-name'}, b.guestName),
-                                React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)
-                            )
-                        )),
-                        stayOvers.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No stay-overs')
-                    ),
-                    
-                    // Available Card
-                    React.createElement('div', {className: 'today-card'},
-                        React.createElement('h3', null, '⚪ Available ', React.createElement('span', {className: 'count'}, available.length)),
-                        available.map(room => {
-                            const isSelected = selectedUnits.some(u => u.roomId === room.id && u.checkIn === today);
-                            return React.createElement('div', {
-                                key: room.id, 
-                                className: 'room-card' + (isSelected ? ' unit-selected' : ''),
-                                style: {background: 'rgba(255,255,255,0.1)'},
-                                onClick: () => handleUnitClick(room, today)
-                            },
-                                React.createElement('div', {className: 'room-num'}, room.id),
-                                React.createElement('div', {className: 'room-info'},
-                                    React.createElement('div', {className: 'guest-name'}, 'Available'),
-                                    React.createElement('div', {className: 'room-type'}, room.name)
-                                )
-                            );
-                        }),
-                        available.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No rooms available')
-                    ),
-                    
-                    // Floating Book Button
-                    selectedUnits.length > 0 && React.createElement('div', {
-                        style: {position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}
-                    },
-                        React.createElement('button', {
-                            className: 'btn-primary',
-                            style: {padding: '18px 36px', fontSize: '17px'},
-                            onClick: () => setBookingModal({isNew: true, units: selectedUnits})
-                        }, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : ''))
-                    )
-                );
-            };
+const PROXY = "https://beds24-proxy-1006186358018.us-central1.run.app";
+const PROPERTY = 279646;
 
-            // RENDER: Calendar View with Floor/Category Toggle
-            const renderCalendarView = () => {
-                const groupedRooms = calendarView === 'floor' 
-                    ? rooms.reduce((acc, room) => {
-                        const key = 'Floor ' + room.floor;
-                        if (!acc[key]) acc[key] = [];
-                        acc[key].push(room);
-                        return acc;
-                    }, {})
-                    : rooms.reduce((acc, room) => {
-                        if (!acc[room.category]) acc[room.category] = [];
-                        acc[room.category].push(room);
-                        return acc;
-                    }, {});
-                
-                return React.createElement('div', {className: 'animate-fade'},
-                    // View Toggle - Centered
-                    React.createElement('div', {style: {display: 'flex', justifyContent: 'center', padding: '16px 20px'}},
-                        React.createElement('div', {className: 'view-toggle'},
-                            React.createElement('button', {
-                                className: calendarView === 'floor' ? 'active' : '',
-                                onClick: () => setCalendarView('floor')
-                            }, '🏢 By Floor'),
-                            React.createElement('button', {
-                                className: calendarView === 'category' ? 'active' : '',
-                                onClick: () => setCalendarView('category')
-                            }, '📁 By Category')
-                        )
-                    ),
-                    
-                    // Date Header - Sticky and Separated
-                    React.createElement('div', {className: 'date-header-wrapper'},
-                        React.createElement('div', {className: 'date-header-inner'},
-                            dateRange.map(date => {
-                                const fd = formatDateDisplay(date);
-                                return React.createElement('div', {
-                                    key: date,
-                                    className: 'date-cell ' + (date === selectedDate ? 'active' : ''),
-                                    onClick: () => setSelectedDate(date)
-                                },
-                                    React.createElement('div', {className: 'day-name'}, fd.day),
-                                    React.createElement('div', {className: 'day-num'}, fd.num)
-                                );
-                            })
-                        )
-                    ),
-                    
-                    // Room Grid by Group
-                    React.createElement('div', {style: {padding: '20px'}},
-                        Object.entries(groupedRooms).map(([group, groupRooms]) =>
-                            React.createElement('div', {key: group, style: {marginBottom: '24px'}},
-                                React.createElement('h3', {style: {fontSize: '17px', marginBottom: '14px', color: 'rgba(255,255,255,0.7)', fontWeight: '600'}}, group),
-                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px'}},
-                                    groupRooms.map(room => {
-                                        const rs = getRoomStatus(room.id, selectedDate);
-                                        const isSelected = selectedUnits.some(u => u.roomId === room.id && u.checkIn === selectedDate);
-                                        const hasRequest = requests.some(r => r.roomId === room.id && r.status === 'pending');
-                                        
-                                        return React.createElement('div', {
-                                            key: room.id,
-                                            className: 'room-card ' + rs.status + (isSelected ? ' unit-selected' : ''),
-                                            onClick: () => rs.booking ? setBookingModal(rs.booking) : handleUnitClick(room, selectedDate),
-                                            style: {flexDirection: 'column', alignItems: 'flex-start', minHeight: '90px', position: 'relative'}
-                                        },
-                                            hasRequest && React.createElement('div', {className: 'request-indicator'}),
-                                            React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center'}},
-                                                React.createElement('div', {className: 'room-num'}, room.id),
-                                                React.createElement('div', {className: 'info-icon', onClick: (e) => { e.stopPropagation(); setBookingModal(rs.booking || {roomId: room.id, room, isRoomInfo: true}); }}, 'ℹ️')
-                                            ),
-                                            React.createElement('div', {className: 'guest-name', style: {marginTop: '6px'}}, rs.booking?.guestName || 'Available'),
-                                            React.createElement('div', {className: 'room-type'}, room.name)
-                                        );
-                                    })
-                                )
-                            )
-                        )
-                    ),
-                    
-                    // Floating Book Button
-                    selectedUnits.length > 0 && React.createElement('div', {
-                        style: {position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}
-                    },
-                        React.createElement('button', {
-                            className: 'btn-primary',
-                            style: {padding: '18px 36px', fontSize: '17px'},
-                            onClick: () => setBookingModal({isNew: true, units: selectedUnits})
-                        }, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : ''))
-                    )
-                );
-            };
+const getBDDate = (offset = 0) => {
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const bd = new Date(utc + 6 * 3600000);
+    bd.setDate(bd.getDate() + offset);
+    return bd.toISOString().split('T')[0];
+};
 
-            // RENDER: Search & Book View - Centered, Colored, Auto Checkout
-            const renderSearchView = () => {
-                const availableRooms = rooms.filter(room => 
-                    !bookings.some(b => b.roomId === room.id && b.checkIn < searchDates.checkOut && b.checkOut > searchDates.checkIn)
-                );
-                const nights = Math.ceil((new Date(searchDates.checkOut) - new Date(searchDates.checkIn)) / (1000 * 60 * 60 * 24));
-                
-                return React.createElement('div', {className: 'animate-fade', style: {padding: '24px'}},
-                    // Date Selectors - Centered
-                    React.createElement('div', {style: {display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '28px', flexWrap: 'wrap'}},
-                        React.createElement('div', {
-                            className: 'date-selector ' + (dateSelectionMode === 'checkIn' ? 'active' : ''),
-                            onClick: () => setDateSelectionMode('checkIn')
-                        },
-                            React.createElement('div', {className: 'label'}, 'Check-in'),
-                            React.createElement('div', {className: 'date'}, searchDates.checkIn)
-                        ),
-                        React.createElement('div', {style: {display: 'flex', alignItems: 'center', fontSize: '24px', color: 'rgba(255,255,255,0.3)'}}, '→'),
-                        React.createElement('div', {
-                            className: 'date-selector ' + (dateSelectionMode === 'checkOut' ? 'active' : ''),
-                            onClick: () => setDateSelectionMode('checkOut')
-                        },
-                            React.createElement('div', {className: 'label'}, 'Check-out'),
-                            React.createElement('div', {className: 'date'}, searchDates.checkOut)
-                        ),
-                        React.createElement('div', {style: {display: 'flex', alignItems: 'center', padding: '10px 20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px'}},
-                            React.createElement('span', {style: {fontSize: '18px', fontWeight: '700'}}, nights + ' Night' + (nights > 1 ? 's' : ''))
-                        )
-                    ),
-                    
-                    // Instruction
-                    React.createElement('div', {style: {textAlign: 'center', marginBottom: '16px', color: 'rgba(255,255,255,0.5)', fontSize: '14px'}},
-                        dateSelectionMode === 'checkIn' ? '👆 Select check-in date below' : '👆 Now select check-out date'
-                    ),
-                    
-                    // Date Range Selector
-                    React.createElement('div', {className: 'date-header-wrapper', style: {position: 'relative', marginBottom: '28px', borderRadius: '14px'}},
-                        React.createElement('div', {className: 'date-header-inner'},
-                            Array.from({length: 14}, (_, i) => getBDDate(i)).map(date => {
-                                const fd = formatDateDisplay(date);
-                                const isCheckIn = date === searchDates.checkIn;
-                                const isCheckOut = date === searchDates.checkOut;
-                                const isInRange = date > searchDates.checkIn && date < searchDates.checkOut;
-                                
-                                return React.createElement('div', {
-                                    key: date,
-                                    className: 'date-cell ' + ((isCheckIn || isCheckOut) ? 'active' : ''),
-                                    style: {background: isInRange ? 'rgba(16,185,129,0.25)' : undefined},
-                                    onClick: () => handleSearchDateClick(date)
-                                },
-                                    React.createElement('div', {className: 'day-name'}, fd.day),
-                                    React.createElement('div', {className: 'day-num'}, fd.num),
-                                    (isCheckIn || isCheckOut) && React.createElement('div', {style: {fontSize: '10px', marginTop: '4px', fontWeight: '600'}}, isCheckIn ? 'IN' : 'OUT')
-                                );
-                            })
-                        )
-                    ),
-                    
-                    // Results Header
-                    React.createElement('h3', {style: {textAlign: 'center', marginBottom: '20px', fontSize: '20px', fontWeight: '700'}}, 
-                        availableRooms.length + ' Room' + (availableRooms.length !== 1 ? 's' : '') + ' Available'
-                    ),
-                    
-                    // Search Results - Centered and Colored
-                    React.createElement('div', {className: 'search-results'},
-                        rooms.map(room => {
-                            const isAvailable = availableRooms.includes(room);
-                            const isSelected = selectedUnits.some(u => u.roomId === room.id);
-                            
-                            return React.createElement('div', {
-                                key: room.id,
-                                className: 'search-result-card ' + (isAvailable ? 'available' : 'occupied') + (isSelected ? ' unit-selected' : ''),
-                                onClick: () => isAvailable && handleUnitClick(room, searchDates.checkIn, searchDates.checkOut)
-                            },
-                                React.createElement('div', {className: 'room-number'}, room.id),
-                                React.createElement('div', {className: 'room-status'}, isAvailable ? '✓ Available' : '✗ Occupied'),
-                                React.createElement('div', {style: {fontSize: '12px', marginTop: '6px', opacity: 0.85}}, room.name),
-                                isAvailable && React.createElement('div', {style: {fontSize: '13px', marginTop: '6px', fontWeight: '600'}}, '৳' + (room.rate * nights).toLocaleString())
-                            );
-                        })
-                    ),
-                    
-                    // Floating Book Button
-                    selectedUnits.length > 0 && React.createElement('div', {
-                        style: {position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}
-                    },
-                        React.createElement('button', {
-                            className: 'btn-primary',
-                            style: {padding: '18px 36px', fontSize: '17px'},
-                            onClick: () => setBookingModal({isNew: true, units: selectedUnits, checkIn: searchDates.checkIn, checkOut: searchDates.checkOut})
-                        }, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : ''))
-                    )
-                );
-            };
+const getBDTime = () => {
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    return new Date(utc + 6 * 3600000).toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: true});
+};
 
-            // RENDER: Housekeeping View with Today/Tomorrow tabs and Request indicators
-            const renderHousekeepingView = () => {
-                const today = getBDDate();
-                const tomorrow = getBDDate(1);
-                const targetDate = housekeepingTab === 'today' ? today : tomorrow;
-                
-                const checkOuts = bookings.filter(b => b.checkOut === targetDate);
-                const checkIns = bookings.filter(b => b.checkIn === targetDate);
-                const stayOvers = bookings.filter(b => b.checkIn < targetDate && b.checkOut > targetDate);
-                const turnovers = checkOuts.filter(co => checkIns.some(ci => ci.roomId === co.roomId));
-                const newCheckIns = checkIns.filter(ci => !turnovers.some(t => t.roomId === ci.roomId));
-                
-                const roomRequests = requests.reduce((acc, r) => {
-                    acc[r.roomId] = r;
-                    return acc;
-                }, {});
-                
-                const handleRequestAction = (reqId, action, staffName = '') => {
-                    setRequests(requests.map(r => {
-                        if (r.id === reqId) {
-                            return { ...r, status: action, staffName: staffName || r.staffName };
-                        }
-                        return r;
-                    }));
-                };
-                
-                const RoomCardWithRequest = ({ booking, type, bgClass }) => {
-                    const room = rooms.find(r => r.id === booking.roomId);
-                    const req = roomRequests[booking.roomId];
-                    
-                    return React.createElement('div', {
-                        className: 'room-card ' + bgClass,
-                        style: {position: 'relative'},
-                        onClick: () => setBookingModal(booking)
-                    },
-                        req && req.status === 'pending' && React.createElement('div', {className: 'request-indicator', title: req.type}),
-                        React.createElement('div', {className: 'room-num'}, booking.roomId),
-                        React.createElement('div', {className: 'room-info'},
-                            React.createElement('div', {className: 'guest-name'}, booking.guestName),
-                            React.createElement('div', {className: 'room-type'}, type),
-                            req && React.createElement('div', {style: {fontSize: '11px', marginTop: '4px', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', display: 'inline-block'}}, 
-                                '📋 ' + req.type + ' - ' + req.status
-                            )
-                        )
-                    );
-                };
-                
-                return React.createElement('div', {className: 'animate-fade', style: {padding: '16px'}},
-                    // Today/Tomorrow Toggle
-                    React.createElement('div', {style: {display: 'flex', justifyContent: 'center', marginBottom: '24px'}},
-                        React.createElement('div', {className: 'view-toggle'},
-                            React.createElement('button', {
-                                className: housekeepingTab === 'today' ? 'active' : '',
-                                onClick: () => setHousekeepingTab('today')
-                            }, '📅 Today'),
-                            React.createElement('button', {
-                                className: housekeepingTab === 'tomorrow' ? 'active' : '',
-                                onClick: () => setHousekeepingTab('tomorrow')
-                            }, '📆 Tomorrow')
-                        )
-                    ),
-                    
-                    // Date Header
-                    React.createElement('h2', {style: {textAlign: 'center', marginBottom: '24px', fontSize: '20px', fontWeight: '700'}}, 
-                        '🧹 Housekeeping - ' + (housekeepingTab === 'today' ? 'Today' : 'Tomorrow') + ' (' + formatDateDisplay(targetDate).day + ', ' + formatDateDisplay(targetDate).month + ' ' + formatDateDisplay(targetDate).num + ')'
-                    ),
-                    
-                    // Grid
-                    React.createElement('div', {className: 'housekeeping-grid'},
-                        // Check-out / Dirty
-                        React.createElement('div', {className: 'housekeeping-column'},
-                            React.createElement('h4', null, '🟠 Check-out (Dirty) ', React.createElement('span', {className: 'badge'}, checkOuts.length)),
-                            checkOuts.filter(co => !turnovers.some(t => t.roomId === co.roomId)).map(b => 
-                                React.createElement(RoomCardWithRequest, {key: b.id, booking: b, type: 'Check-out', bgClass: 'dirty'})
-                            ),
-                            checkOuts.filter(co => !turnovers.some(t => t.roomId === co.roomId)).length === 0 && 
-                                React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
-                        ),
-                        
-                        // Turnover
-                        React.createElement('div', {className: 'housekeeping-column'},
-                            React.createElement('h4', null, '🔄 Turnover ', React.createElement('span', {className: 'badge'}, turnovers.length)),
-                            turnovers.map(b => {
-                                const nextGuest = checkIns.find(ci => ci.roomId === b.roomId);
-                                return React.createElement('div', {key: b.id, className: 'room-card turnover', onClick: () => setBookingModal(b)},
-                                    React.createElement('div', {className: 'room-num'}, b.roomId),
-                                    React.createElement('div', {className: 'room-info'},
-                                        React.createElement('div', {style: {fontSize: '12px', opacity: 0.8}}, '⬆ OUT: ' + b.guestName),
-                                        React.createElement('div', {style: {fontSize: '14px', fontWeight: '600', marginTop: '4px'}}, '⬇ IN: ' + (nextGuest?.guestName || ''))
-                                    )
-                                );
-                            }),
-                            turnovers.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
-                        ),
-                        
-                        // Stay Over
-                        React.createElement('div', {className: 'housekeeping-column'},
-                            React.createElement('h4', null, '🔵 Stay Over ', React.createElement('span', {className: 'badge'}, stayOvers.length)),
-                            stayOvers.map(b => React.createElement(RoomCardWithRequest, {key: b.id, booking: b, type: 'Staying', bgClass: 'occupied'})),
-                            stayOvers.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
-                        ),
-                        
-                        // New Check-in
-                        React.createElement('div', {className: 'housekeeping-column'},
-                            React.createElement('h4', null, '🟢 New Check-in ', React.createElement('span', {className: 'badge'}, newCheckIns.length)),
-                            newCheckIns.map(b => React.createElement(RoomCardWithRequest, {key: b.id, booking: b, type: 'Arriving', bgClass: 'checkin'})),
-                            newCheckIns.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
-                        )
-                    )
-                );
-            };
+const formatDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+const shortDay = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
+const dayNum = (d) => new Date(d+"T00:00:00").getDate();
 
-            // RENDER: Requests View
-            const renderRequestsView = () => {
-                const pendingReqs = requests.filter(r => r.status === 'pending');
-                const receivedReqs = requests.filter(r => r.status === 'received');
-                const doneReqs = requests.filter(r => r.status === 'done');
-                const deniedReqs = requests.filter(r => r.status === 'denied');
-                
-                const handleAction = (reqId, action) => {
-                    if (action === 'done') {
-                        const staffName = prompt('Enter staff name who completed this request:');
-                        if (staffName) {
-                            setRequests(requests.map(r => r.id === reqId ? {...r, status: action, staffName, completedAt: new Date().toLocaleTimeString()} : r));
-                        }
-                    } else {
-                        setRequests(requests.map(r => r.id === reqId ? {...r, status: action} : r));
-                    }
-                };
-                
-                const RequestCard = ({ req }) => (
-                    React.createElement('div', {style: {background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', marginBottom: '12px'}},
-                        React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px'}},
-                            React.createElement('div', null,
-                                React.createElement('div', {style: {fontSize: '18px', fontWeight: '700'}}, 'Room ' + req.roomId),
-                                React.createElement('div', {style: {fontSize: '14px', color: 'rgba(255,255,255,0.6)'}}, req.type),
-                                React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}, '🕐 ' + req.time)
-                            ),
-                            React.createElement('div', {style: {
-                                padding: '4px 12px', 
-                                borderRadius: '20px', 
-                                fontSize: '12px', 
-                                fontWeight: '600',
-                                background: req.status === 'pending' ? '#f59e0b' : req.status === 'received' ? '#3b82f6' : req.status === 'done' ? '#22c55e' : '#ef4444'
-                            }}, req.status.toUpperCase())
-                        ),
-                        req.status === 'pending' && React.createElement('div', {style: {display: 'flex', gap: '8px'}},
-                            React.createElement('button', {onClick: () => handleAction(req.id, 'received'), style: {flex: 1, padding: '10px', background: '#3b82f6', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✓ Received'),
-                            React.createElement('button', {onClick: () => handleAction(req.id, 'denied'), style: {flex: 1, padding: '10px', background: '#ef4444', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✗ Deny')
-                        ),
-                        req.status === 'received' && React.createElement('button', {onClick: () => handleAction(req.id, 'done'), style: {width: '100%', padding: '10px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✓ Mark Done'),
-                        req.status === 'done' && req.staffName && React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, '✓ Completed by: ' + req.staffName + ' at ' + (req.completedAt || ''))
-                    )
-                );
-                
-                return React.createElement('div', {className: 'animate-fade', style: {padding: '24px'}},
-                    React.createElement('h2', {style: {textAlign: 'center', marginBottom: '24px', fontSize: '20px'}}, '🔔 Guest Requests'),
-                    
-                    React.createElement('div', {style: {display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}},
-                        // Pending
-                        React.createElement('div', null,
-                            React.createElement('h3', {style: {marginBottom: '16px', color: '#f59e0b'}}, '⏳ Pending (' + pendingReqs.length + ')'),
-                            pendingReqs.map(req => React.createElement(RequestCard, {key: req.id, req})),
-                            pendingReqs.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}, 'No pending requests')
-                        ),
-                        // Received / In Progress
-                        React.createElement('div', null,
-                            React.createElement('h3', {style: {marginBottom: '16px', color: '#3b82f6'}}, '🔄 In Progress (' + receivedReqs.length + ')'),
-                            receivedReqs.map(req => React.createElement(RequestCard, {key: req.id, req})),
-                            receivedReqs.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}, 'None in progress')
-                        ),
-                        // Completed
-                        React.createElement('div', null,
-                            React.createElement('h3', {style: {marginBottom: '16px', color: '#22c55e'}}, '✓ Completed (' + doneReqs.length + ')'),
-                            doneReqs.map(req => React.createElement(RequestCard, {key: req.id, req})),
-                            doneReqs.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}, 'None completed today')
-                        )
-                    )
-                );
-            };
+const ROOMS = [
+    {id:583459, name:"Royal Sea View Couple", short:"Royal Sea View", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
+    {id:583466, name:"Premium Sea View Couple", short:"Premium Sea View", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
+    {id:583467, name:"Deluxe Bay View Couple", short:"Deluxe Bay View", max:2, units:[{id:1,n:"402"},{id:2,n:"403"},{id:3,n:"502"},{id:4,n:"503"}]},
+    {id:583468, name:"Deluxe Hill View Couple", short:"Deluxe Hill View", max:2, units:[{id:1,n:"201"},{id:2,n:"204"},{id:3,n:"207"},{id:4,n:"301"},{id:5,n:"304"},{id:6,n:"307"},{id:7,n:"407"},{id:8,n:"507"}]},
+    {id:583469, name:"Deluxe Urban View Couple", short:"Deluxe Urban View", max:2, units:[{id:1,n:"101"},{id:2,n:"102"},{id:3,n:"103"},{id:4,n:"104"},{id:5,n:"107"},{id:6,n:"202"},{id:7,n:"203"},{id:8,n:"302"},{id:9,n:"303"}]},
+    {id:583470, name:"Premium Sea View Family", short:"Premium Sea Family", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
+    {id:583471, name:"Deluxe Hill View Family", short:"Deluxe Hill Family", max:4, units:[{id:1,n:"205"},{id:2,n:"206"},{id:3,n:"208"},{id:4,n:"305"},{id:5,n:"306"},{id:6,n:"308"}]},
+    {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban Family", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
+];
 
-            // RENDER: Accounting View
-            const renderAccountingView = () => {
-                const today = getBDDate();
-                
-                // Calculate financials
-                const todayCheckIns = bookings.filter(b => b.checkIn === today);
-                const todayCheckOuts = bookings.filter(b => b.checkOut === today);
-                const allActiveBookings = bookings.filter(b => b.checkIn <= today && b.checkOut >= today);
-                
-                const cashPayments = bookings.filter(b => b.paymentMethod === 'Cash').reduce((sum, b) => sum + (b.paidAmount || 0), 0);
-                const bkashPayments = bookings.filter(b => b.paymentMethod === 'bKash').reduce((sum, b) => sum + (b.paidAmount || 0), 0);
-                const bankPayments = bookings.filter(b => b.paymentMethod === 'Bank').reduce((sum, b) => sum + (b.paidAmount || 0), 0);
-                
-                const totalCollected = bookings.reduce((sum, b) => sum + (b.paidAmount || 0), 0);
-                const totalDues = bookings.reduce((sum, b) => sum + ((b.totalAmount || 0) - (b.paidAmount || 0)), 0);
-                const expectedFromCheckIns = todayCheckIns.reduce((sum, b) => sum + ((b.totalAmount || 0) - (b.paidAmount || 0)), 0);
-                const checkOutCollections = todayCheckOuts.reduce((sum, b) => sum + ((b.totalAmount || 0) - (b.paidAmount || 0)), 0);
-                
-                return React.createElement('div', {className: 'animate-fade', style: {padding: '24px'}},
-                    React.createElement('h2', {style: {textAlign: 'center', marginBottom: '28px', fontSize: '22px', fontWeight: '700'}}, '💰 Accounting Dashboard'),
-                    
-                    // Summary Cards
-                    React.createElement('div', {className: 'accounting-grid'},
-                        React.createElement('div', {className: 'accounting-card income'},
-                            React.createElement('h4', null, '💵 Total Collected Today'),
-                            React.createElement('div', {className: 'amount', style: {color: '#22c55e'}}, '৳' + totalCollected.toLocaleString())
-                        ),
-                        React.createElement('div', {className: 'accounting-card pending'},
-                            React.createElement('h4', null, '⏳ Expected from Check-ins'),
-                            React.createElement('div', {className: 'amount', style: {color: '#f59e0b'}}, '৳' + expectedFromCheckIns.toLocaleString())
-                        ),
-                        React.createElement('div', {className: 'accounting-card pending'},
-                            React.createElement('h4', null, '🔄 Check-out Bills Due'),
-                            React.createElement('div', {className: 'amount', style: {color: '#f59e0b'}}, '৳' + checkOutCollections.toLocaleString())
-                        ),
-                        React.createElement('div', {className: 'accounting-card expense'},
-                            React.createElement('h4', null, '📊 Total Outstanding Dues'),
-                            React.createElement('div', {className: 'amount', style: {color: '#ef4444'}}, '৳' + totalDues.toLocaleString())
-                        )
-                    ),
-                    
-                    // Payment Methods Breakdown
-                    React.createElement('h3', {style: {marginTop: '32px', marginBottom: '20px', fontSize: '18px'}}, '💳 Payment Methods'),
-                    React.createElement('div', {className: 'accounting-grid'},
-                        React.createElement('div', {className: 'accounting-card'},
-                            React.createElement('h4', null, '💵 Cash at Hand'),
-                            React.createElement('div', {className: 'amount'}, '৳' + cashPayments.toLocaleString()),
-                            React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, bookings.filter(b => b.paymentMethod === 'Cash').length + ' transactions')
-                        ),
-                        React.createElement('div', {className: 'accounting-card'},
-                            React.createElement('h4', null, '📱 bKash Collection'),
-                            React.createElement('div', {className: 'amount', style: {color: '#e91e8c'}}, '৳' + bkashPayments.toLocaleString()),
-                            React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, bookings.filter(b => b.paymentMethod === 'bKash').length + ' transactions')
-                        ),
-                        React.createElement('div', {className: 'accounting-card'},
-                            React.createElement('h4', null, '🏦 Bank Transfer'),
-                            React.createElement('div', {className: 'amount', style: {color: '#3b82f6'}}, '৳' + bankPayments.toLocaleString()),
-                            React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, bookings.filter(b => b.paymentMethod === 'Bank').length + ' transactions')
-                        )
-                    ),
-                    
-                    // Recent Transactions
-                    React.createElement('h3', {style: {marginTop: '32px', marginBottom: '20px', fontSize: '18px'}}, '📋 Recent Transactions'),
-                    React.createElement('div', {style: {background: 'rgba(255,255,255,0.03)', borderRadius: '16px', overflow: 'hidden'}},
-                        bookings.slice(0, 8).map((b, idx) => 
-                            React.createElement('div', {
-                                key: b.id,
-                                style: {
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
-                                    alignItems: 'center', 
-                                    padding: '16px 20px', 
-                                    borderBottom: idx < 7 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                                }
-                            },
-                                React.createElement('div', null,
-                                    React.createElement('div', {style: {fontWeight: '600', fontSize: '15px'}}, b.guestName),
-                                    React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)'}}, 'Room ' + b.roomId + ' • ' + b.checkIn)
-                                ),
-                                React.createElement('div', {style: {textAlign: 'right'}},
-                                    React.createElement('div', {style: {color: '#22c55e', fontWeight: '700', fontSize: '16px'}}, '+৳' + (b.paidAmount || 0).toLocaleString()),
-                                    React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.4)'}}, b.paymentMethod),
-                                    (b.totalAmount - b.paidAmount) > 0 && React.createElement('div', {style: {fontSize: '11px', color: '#ef4444'}}, 'Due: ৳' + (b.totalAmount - b.paidAmount).toLocaleString())
-                                )
-                            )
-                        )
-                    )
-                );
-            };
+const getFloor = (n) => Math.floor(parseInt(n) / 100);
+const FLOORS = [1, 2, 3, 4, 5, 6];
+const floorName = (f) => f === 1 ? "1st" : f === 2 ? "2nd" : f === 3 ? "3rd" : f + "th";
 
-            // Render content based on active tab
-            const renderContent = () => {
-                switch(activeTab) {
-                    case 'today': return renderTodayView();
-                    case 'calendar': return renderCalendarView();
-                    case 'search': return renderSearchView();
-                    case 'housekeeping': return renderHousekeepingView();
-                    case 'accounting': return renderAccountingView();
-                    case 'requests': return renderRequestsView();
-                    case 'movements': 
-                        return React.createElement('div', {className: 'animate-fade', style: {padding: '24px', textAlign: 'center'}},
-                            React.createElement('h2', {style: {fontSize: '20px', marginBottom: '20px'}}, '🚶 Room Movements'),
-                            React.createElement('div', {style: {color: 'rgba(255,255,255,0.5)'}}, 'No room changes today')
-                        );
-                    default: return renderTodayView();
-                }
-            };
+const getRoomInfo = (roomId, unitId) => {
+    const r = ROOMS.find(x => x.id === roomId);
+    const u = r?.units.find(x => x.id === unitId);
+    return {room: r, unit: u, num: u?.n || "?"};
+};
 
-            // Booking/Info Modal
-            const renderBookingModal = () => {
-                if (!bookingModal) return null;
-                const isNew = bookingModal.isNew;
-                const isRoomInfo = bookingModal.isRoomInfo;
-                
-                return React.createElement('div', {className: 'modal-overlay', onClick: () => { setBookingModal(null); setSelectedUnits([]); }},
-                    React.createElement('div', {className: 'modal', onClick: e => e.stopPropagation()},
-                        React.createElement('div', {className: 'modal-header'},
-                            React.createElement('h3', null, isNew ? '➕ New Booking' : isRoomInfo ? '🏨 Room Info' : '📋 Booking Details'),
-                            React.createElement('button', {className: 'modal-close', onClick: () => { setBookingModal(null); setSelectedUnits([]); }}, '×')
-                        ),
-                        
-                        isNew ? (
-                            // New Booking Form
-                            React.createElement('div', null,
-                                // Selected Units
-                                React.createElement('div', {style: {marginBottom: '20px', padding: '14px', background: 'rgba(16,185,129,0.1)', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.3)'}},
-                                    React.createElement('strong', {style: {fontSize: '14px'}}, 'Selected Units: ' + (bookingModal.units?.length || 0)),
-                                    React.createElement('div', {style: {marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px'}},
-                                        bookingModal.units?.map(u => 
-                                            React.createElement('span', {key: u.key, style: {padding: '6px 14px', background: '#10b981', borderRadius: '8px', fontSize: '14px', fontWeight: '600'}}, 
-                                                'Room ' + u.roomId
-                                            )
-                                        )
-                                    )
-                                ),
-                                
-                                // Guest Name
-                                React.createElement('div', {className: 'form-group'},
-                                    React.createElement('label', null, 'Guest Name *'),
-                                    React.createElement('input', {type: 'text', className: 'form-input', placeholder: 'Enter guest name'})
-                                ),
-                                React.createElement('div', {className: 'form-group'},
-                                    React.createElement('label', null, 'Phone Number'),
-                                    React.createElement('input', {type: 'tel', className: 'form-input', placeholder: '01XXXXXXXXX'})
-                                ),
-                                
-                                // Dates
-                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}},
-                                    React.createElement('div', {className: 'form-group'},
-                                        React.createElement('label', null, 'Check-in'),
-                                        React.createElement('input', {type: 'date', className: 'form-input', defaultValue: bookingModal.checkIn || searchDates.checkIn})
-                                    ),
-                                    React.createElement('div', {className: 'form-group'},
-                                        React.createElement('label', null, 'Check-out'),
-                                        React.createElement('input', {type: 'date', className: 'form-input', defaultValue: bookingModal.checkOut || searchDates.checkOut})
-                                    )
-                                ),
-                                
-                                // Guests
-                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}},
-                                    React.createElement('div', {className: 'form-group'},
-                                        React.createElement('label', null, 'Adults'),
-                                        React.createElement('input', {type: 'number', className: 'form-input', defaultValue: '2', min: '1'})
-                                    ),
-                                    React.createElement('div', {className: 'form-group'},
-                                        React.createElement('label', null, 'Children'),
-                                        React.createElement('input', {type: 'number', className: 'form-input', defaultValue: '0', min: '0'})
-                                    )
-                                ),
-                                
-                                // Payment
-                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}},
-                                    React.createElement('div', {className: 'form-group'},
-                                        React.createElement('label', null, 'Total Amount (৳)'),
-                                        React.createElement('input', {type: 'number', className: 'form-input', placeholder: '0'})
-                                    ),
-                                    React.createElement('div', {className: 'form-group'},
-                                        React.createElement('label', null, 'Advance Payment (৳)'),
-                                        React.createElement('input', {type: 'number', className: 'form-input', placeholder: '0'})
-                                    )
-                                ),
-                                
-                                React.createElement('div', {className: 'form-group'},
-                                    React.createElement('label', null, 'Payment Method'),
-                                    React.createElement('select', {className: 'form-input'},
-                                        React.createElement('option', {value: 'Cash'}, 'Cash'),
-                                        React.createElement('option', {value: 'bKash'}, 'bKash'),
-                                        React.createElement('option', {value: 'Bank'}, 'Bank Transfer')
-                                    )
-                                ),
-                                
-                                React.createElement('button', {className: 'btn-primary', style: {width: '100%', marginTop: '12px'}}, '✓ Confirm Booking & Sync to Beds24')
-                            )
-                        ) : isRoomInfo ? (
-                            // Room Info
-                            React.createElement('div', null,
-                                React.createElement('div', {style: {padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', textAlign: 'center'}},
-                                    React.createElement('div', {style: {fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}, 'Room ' + bookingModal.roomId),
-                                    React.createElement('div', {style: {color: 'rgba(255,255,255,0.6)', fontSize: '15px'}}, bookingModal.room?.name),
-                                    React.createElement('div', {style: {marginTop: '12px', fontSize: '22px', color: '#10b981', fontWeight: '700'}}, '৳' + (bookingModal.room?.rate || 0).toLocaleString() + '/night')
-                                )
-                            )
-                        ) : (
-                            // Existing Booking Details
-                            React.createElement('div', null,
-                                // Guest Info
-                                React.createElement('div', {style: {padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '14px', marginBottom: '20px'}},
-                                    React.createElement('div', {style: {fontSize: '26px', fontWeight: '800', marginBottom: '6px'}}, bookingModal.guestName),
-                                    React.createElement('div', {style: {color: 'rgba(255,255,255,0.6)', fontSize: '15px'}}, 'Room ' + bookingModal.roomId + ' • ' + (rooms.find(r => r.id === bookingModal.roomId)?.name || '')),
-                                    bookingModal.phone && React.createElement('div', {style: {marginTop: '8px', color: 'rgba(255,255,255,0.5)'}}, '📞 ' + bookingModal.phone)
-                                ),
-                                
-                                // Dates
-                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px'}},
-                                    React.createElement('div', {style: {padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px'}},
-                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}, 'Check-in'),
-                                        React.createElement('div', {style: {fontWeight: '700', fontSize: '16px'}}, bookingModal.checkIn)
-                                    ),
-                                    React.createElement('div', {style: {padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px'}},
-                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}, 'Check-out'),
-                                        React.createElement('div', {style: {fontWeight: '700', fontSize: '16px'}}, bookingModal.checkOut)
-                                    )
-                                ),
-                                
-                                // Payment Summary
-                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px'}},
-                                    React.createElement('div', {style: {textAlign: 'center', padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px'}},
-                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}, 'Total'),
-                                        React.createElement('div', {style: {fontWeight: '800', fontSize: '18px'}}, '৳' + (bookingModal.totalAmount || 0).toLocaleString())
-                                    ),
-                                    React.createElement('div', {style: {textAlign: 'center', padding: '14px', background: 'rgba(34,197,94,0.15)', borderRadius: '10px'}},
-                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}, 'Paid'),
-                                        React.createElement('div', {style: {fontWeight: '800', fontSize: '18px', color: '#22c55e'}}, '৳' + (bookingModal.paidAmount || 0).toLocaleString())
-                                    ),
-                                    React.createElement('div', {style: {textAlign: 'center', padding: '14px', background: 'rgba(239,68,68,0.15)', borderRadius: '10px'}},
-                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}, 'Due'),
-                                        React.createElement('div', {style: {fontWeight: '800', fontSize: '18px', color: '#ef4444'}}, '৳' + ((bookingModal.totalAmount || 0) - (bookingModal.paidAmount || 0)).toLocaleString())
-                                    )
-                                ),
-                                
-                                // Action Buttons
-                                React.createElement('div', {style: {display: 'flex', gap: '12px'}},
-                                    React.createElement('button', {className: 'btn-primary', style: {flex: 1}}, '💳 Add Payment'),
-                                    React.createElement('button', {style: {flex: 1, padding: '14px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✏️ Edit')
-                                )
-                            )
-                        )
-                    )
-                );
-            };
+const STORAGE_KEY = "miami_checkin_v2";
+const REQUEST_KEY = "miami_requests_v2";
+const loadStatus = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
+const saveStatus = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+const loadRequests = () => { try { return JSON.parse(localStorage.getItem(REQUEST_KEY) || "[]"); } catch { return []; } };
+const saveRequests = (d) => localStorage.setItem(REQUEST_KEY, JSON.stringify(d));
 
-            // Main App Return
-            return React.createElement('div', null,
-                // Top Bar - Fixed
-                React.createElement('div', {className: 'top-bar'},
-                    React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', alignItems: 'center'}},
-                        React.createElement('div', null,
-                            React.createElement('h1', {className: 'property-name'}, '🏨 Miami Beach Resort'),
-                            React.createElement('div', {className: 'property-time'}, 
-                                "Cox's Bazar • " + currentTime,
-                                React.createElement('span', {className: 'gmt-badge'}, 'GMT+6')
-                            )
-                        ),
-                        React.createElement('div', {style: {display: 'flex', gap: '14px', alignItems: 'center'}},
-                            React.createElement('button', {className: 'search-btn'}, '🔍 Search Guest'),
-                            React.createElement('button', {
-                                className: 'refresh-btn ' + (loading ? 'loading' : ''),
-                                onClick: handleRefresh
-                            }, 
-                                loading ? React.createElement('div', {className: 'spinner'}) : '🔄',
-                                ' Refresh'
-                            )
-                        )
-                    )
-                ),
-                
-                // Main Content
-                React.createElement('div', {className: 'main-content'},
-                    // Stats Row
-                    React.createElement('div', {className: 'stats-row'},
-                        React.createElement('div', {className: 'stat-card animate-fade'},
-                            React.createElement('div', {className: 'stat-num'}, stats.total),
-                            React.createElement('div', {className: 'stat-label'}, 'Total')
-                        ),
-                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.1s'}},
-                            React.createElement('div', {className: 'stat-num', style: {color: '#22c55e'}}, stats.available),
-                            React.createElement('div', {className: 'stat-label'}, 'Available')
-                        ),
-                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.2s'}},
-                            React.createElement('div', {className: 'stat-num', style: {color: '#2563eb'}}, stats.occupied),
-                            React.createElement('div', {className: 'stat-label'}, 'Occupied')
-                        ),
-                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.3s'}},
-                            React.createElement('div', {className: 'stat-num', style: {color: '#22c55e'}}, stats.checkIn),
-                            React.createElement('div', {className: 'stat-label'}, 'Check-in')
-                        ),
-                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.4s'}},
-                            React.createElement('div', {className: 'stat-num', style: {color: '#f97316'}}, stats.checkOut),
-                            React.createElement('div', {className: 'stat-label'}, 'Check-out')
-                        )
-                    ),
-                    
-                    // Tabs - Centered
-                    React.createElement('div', {className: 'tabs-container'},
-                        React.createElement('div', {className: 'tabs-row'},
-                            tabs.map(tab => 
-                                React.createElement('div', {key: tab.id, className: 'nav-btn-wrapper'},
-                                    React.createElement('button', {
-                                        className: 'nav-btn ' + (activeTab === tab.id ? 'active' : ''),
-                                        onClick: () => setActiveTab(tab.id)
-                                    }, tab.label),
-                                    tab.hasNotification && React.createElement('span', {className: 'notification-badge'}, tab.notificationCount || '!')
-                                )
-                            )
-                        )
-                    ),
-                    
-                    // Content
-                    renderContent()
-                ),
-                
-                // Modal
-                renderBookingModal(),
-                
-                // Version Tag
-                React.createElement('div', {className: 'version-tag'}, 'v20')
-            );
+const REQUEST_TYPES = ["Room Service", "Water Bottle", "Room Clean", "Towel Request", "Bedsheet Change", "Toiletries", "Extra Pillow", "AC/Heating Issue", "Maintenance", "Other"];
+
+function App() {
+    const [tab, setTab] = useState("floor");
+    const [calDays, setCalDays] = useState(7);
+    const [startDate, setStartDate] = useState(getBDDate());
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [selected, setSelected] = useState([]);
+    const [showBookModal, setShowBookModal] = useState(false);
+    const [showInfoModal, setShowInfoModal] = useState(null);
+    const [showSearchModal, setShowSearchModal] = useState(false);
+    const [time, setTime] = useState(getBDTime());
+    const [checkStatus, setCheckStatus] = useState(loadStatus());
+    const [requests, setRequests] = useState(loadRequests());
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [searchCheckIn, setSearchCheckIn] = useState(getBDDate());
+    const [searchCheckOut, setSearchCheckOut] = useState(getBDDate(1));
+    const [searchGroupBy, setSearchGroupBy] = useState("floor");
+    const [todayViewBy, setTodayViewBy] = useState("floor");
+
+    const today = getBDDate();
+
+    useEffect(() => {
+        const h = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', h);
+        return () => window.removeEventListener('resize', h);
+    }, []);
+
+    useEffect(() => { const t = setInterval(() => setTime(getBDTime()), 60000); return () => clearInterval(t); }, []);
+
+    const allRooms = useMemo(() => {
+        let arr = [];
+        ROOMS.forEach(r => r.units.forEach(u => arr.push({room: r, unit: u, floor: getFloor(u.n)})));
+        return arr.sort((a,b) => parseInt(a.unit.n) - parseInt(b.unit.n));
+    }, []);
+
+    const roomsByFloor = useMemo(() => {
+        const g = {};
+        FLOORS.forEach(f => g[f] = []);
+        allRooms.forEach(r => g[r.floor]?.push(r));
+        return g;
+    }, [allRooms]);
+
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch(`${PROXY}?endpoint=bookings&propertyId=${PROPERTY}&departureFrom=${getBDDate(-7)}`);
+            const data = await res.json();
+            if (data.success) setBookings(data.data.filter(b => b.status !== "cancelled"));
+            else setError(data.error || "Error");
+        } catch(e) { setError(e.message); }
+        setLoading(false);
+    }, []);
+
+    useEffect(() => { fetchData(); const i = setInterval(fetchData, 120000); return () => clearInterval(i); }, [fetchData]);
+
+    const getBooking = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure), [bookings]);
+    const getCheckout = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.departure === d), [bookings]);
+    const getCheckin = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.arrival === d), [bookings]);
+
+    const getDays = useCallback((count) => {
+        const days = [];
+        const start = new Date(startDate + "T00:00:00");
+        for (let i = 0; i < count; i++) {
+            const d = new Date(start);
+            d.setDate(d.getDate() + i);
+            days.push(d.toISOString().split('T')[0]);
         }
-        
-        ReactDOM.render(React.createElement(App), document.getElementById('root'));
-    </script>
+        return days;
+    }, [startDate]);
+
+    const days = useMemo(() => getDays(calDays), [getDays, calDays]);
+
+    const toggleSelect = (room, unit, date) => {
+        const key = `${room.id}-${unit.id}-${date}`;
+        setSelected(s => s.find(x => x.key === key) ? s.filter(x => x.key !== key) : [...s, {key, room, unit, date}]);
+    };
+
+    const toggle = (id, type) => {
+        const ns = {...checkStatus};
+        const key = type === "in" ? "checkedin" : "checkedout";
+        ns[id] = ns[id] === key ? null : key;
+        if (!ns[id]) delete ns[id];
+        setCheckStatus(ns);
+        saveStatus(ns);
+    };
+
+    const addRequest = (roomNum, guestName, bookingId, requestType, note) => {
+        const newReq = { id: Date.now(), roomNum, guestName, bookingId, requestType, note, timestamp: new Date().toISOString(), done: false };
+        const updated = [newReq, ...requests];
+        setRequests(updated);
+        saveRequests(updated);
+    };
+
+    const markRequestDone = (id) => {
+        const updated = requests.map(r => r.id === id ? {...r, done: true, doneAt: new Date().toISOString()} : r);
+        setRequests(updated);
+        saveRequests(updated);
+    };
+
+    const getRequestCounts = (bookingId) => {
+        const bookingRequests = requests.filter(r => r.bookingId === bookingId);
+        return { total: bookingRequests.length, pending: bookingRequests.filter(r => !r.done).length, done: bookingRequests.filter(r => r.done).length };
+    };
+
+    const stats = useMemo(() => {
+        let occ=0, avail=0, cin=0, cout=0;
+        allRooms.forEach(({room, unit}) => getBooking(room.id, unit.id, today) ? occ++ : avail++);
+        bookings.forEach(b => { if(b.arrival === today) cin++; if(b.departure === today) cout++; });
+        return {total: allRooms.length, occ, avail, cin, cout};
+    }, [allRooms, bookings, getBooking, today]);
+
+    const housekeeping = useMemo(() => {
+        const makeup = [], dirty = [], turnover = [];
+        allRooms.forEach(({room, unit}) => {
+            const co = getCheckout(room.id, unit.id, today);
+            const ci = getCheckin(room.id, unit.id, today);
+            const stay = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < today && b.departure > today);
+            if (co && ci) turnover.push({room, unit, out: co, in: ci});
+            else if (co && !ci) dirty.push({room, unit, booking: co});
+            else if (stay) makeup.push({room, unit, booking: stay});
+        });
+        return {makeup, dirty, turnover};
+    }, [allRooms, bookings, getCheckout, getCheckin, today]);
+
+    const movements = useMemo(() => {
+        const todayIn = bookings.filter(b => b.arrival === today);
+        const todayOut = bookings.filter(b => b.departure === today);
+        return {
+            pendingIn: todayIn.filter(b => checkStatus[b.id] !== "checkedin"),
+            doneIn: todayIn.filter(b => checkStatus[b.id] === "checkedin"),
+            pendingOut: todayOut.filter(b => checkStatus[b.id] !== "checkedout"),
+            doneOut: todayOut.filter(b => checkStatus[b.id] === "checkedout")
+        };
+    }, [bookings, checkStatus, today]);
+
+    const currentGuests = useMemo(() => {
+        return bookings.filter(b => b.arrival <= today && b.departure > today).map(b => {
+            const {room, unit, num} = getRoomInfo(b.roomId, b.unitId);
+            return {...b, room, unit, num};
+        }).sort((a,b) => parseInt(a.num) - parseInt(b.num));
+    }, [bookings, today]);
+
+    const globalSearchResults = useMemo(() => {
+        if (!searchQuery.trim()) return [];
+        const q = searchQuery.toLowerCase();
+        return bookings.filter(b => 
+            b.id?.toString().includes(q) || b.firstName?.toLowerCase().includes(q) || 
+            b.lastName?.toLowerCase().includes(q) || b.email?.toLowerCase().includes(q) || 
+            b.mobile?.includes(q) || getRoomInfo(b.roomId, b.unitId).num.includes(q)
+        ).slice(0, 15);
+    }, [bookings, searchQuery]);
+
+    const availableRooms = useMemo(() => {
+        if (!searchCheckIn || !searchCheckOut) return [];
+        return allRooms.filter(({room, unit}) => {
+            const hasConflict = bookings.some(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < searchCheckOut && b.departure > searchCheckIn);
+            return !hasConflict;
+        });
+    }, [allRooms, bookings, searchCheckIn, searchCheckOut]);
+
+    const getMultiUnitInfo = (booking) => {
+        if (!booking.masterId) return null;
+        const related = bookings.filter(b => b.masterId === booking.masterId || b.id === booking.masterId);
+        if (related.length <= 1) return null;
+        const totalAmount = related.reduce((sum, b) => sum + (parseFloat(b.price) || 0), 0);
+        const totalPaid = related.reduce((sum, b) => sum + (parseFloat(b.paid) || 0), 0);
+        return { count: related.length, rooms: related.map(b => getRoomInfo(b.roomId, b.unitId).num), totalAmount, totalPaid, totalDue: totalAmount - totalPaid };
+    };
+
+    const tabs = [
+        {id: "floor", label: "🏢 By Floor"},
+        {id: "category", label: "📁 By Category"},
+        {id: "today", label: "📅 Today"},
+        {id: "searchbook", label: "🔍 Search & Book"},
+        {id: "requests", label: "🛎️ Requests"},
+        {id: "housekeeping", label: "🧹 Housekeeping"},
+        {id: "movements", label: "↔️ Movements"},
+        {id: "dashboard", label: "📊 Dashboard"}
+    ];
+
+    const StatusCard = ({room, unit, date, showGuestName = true}) => {
+        const booking = getBooking(room.id, unit.id, date);
+        const checkout = getCheckout(room.id, unit.id, date);
+        const checkin = getCheckin(room.id, unit.id, date);
+        const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}-${date}`);
+        const isBooked = booking || checkout || checkin;
+        const cardClass = isBooked ? "card-booked" : "card-available";
+        const displayBooking = checkin || booking || checkout;
+        const canSelect = !isBooked;
+        return (
+            <div className={`status-card ${cardClass} ${isSelected ? 'card-selected' : ''}`} onClick={() => canSelect && toggleSelect(room, unit, date)}>
+                {isBooked && displayBooking && <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>}
+                <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
+                {showGuestName && isBooked && displayBooking && <div className="guest-name">{displayBooking.firstName}</div>}
+            </div>
+        );
+    };
+
+    const CalendarView = ({groupBy}) => {
+        const groups = groupBy === "floor" 
+            ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || [], count: (roomsByFloor[f] || []).length}))
+            : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u})), count: r.units.length}));
+        return (
+            <>
+                {/* Sticky Date Header */}
+                <div className="date-header-wrapper">
+                    <div className="date-header-inner">
+                        {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
+                    </div>
+                </div>
+                <div className="cal-container">
+                    {groups.map(group => {
+                        if (!group.rooms.length) return null;
+                        return (
+                            <div key={group.key}>
+                                <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.count} rooms</span></div>
+                                {group.rooms.map(({room, unit}) => (
+                                    <div key={`${room.id}-${unit.id}`} className="room-row">
+                                        <div className="room-label"><div className="room-num">{unit.n}</div><div className="room-type">{room.short}</div><div className="room-cap">👤 {room.max}A</div></div>
+                                        {days.map(d => <StatusCard key={d} room={room} unit={unit} date={d}/>)}
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })}
+                </div>
+            </>
+        );
+    };
+
+    const TodayView = () => {
+        const groups = todayViewBy === "floor" 
+            ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || []}))
+            : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u}))}));
+        return (
+            <div style={{padding: '16px'}}>
+                <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>📅 Today's Status - {formatDate(today)}</h2>
+                <div className="view-selector">
+                    <button className={`view-btn ${todayViewBy === 'floor' ? 'active' : ''}`} onClick={() => setTodayViewBy('floor')}>🏢 By Floor</button>
+                    <button className={`view-btn ${todayViewBy === 'category' ? 'active' : ''}`} onClick={() => setTodayViewBy('category')}>📁 By Category</button>
+                </div>
+                {groups.map(group => {
+                    if (!group.rooms.length) return null;
+                    return (
+                        <div key={group.key} style={{marginBottom: '20px'}}>
+                            <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px'}}>
+                                {group.rooms.map(({room, unit}) => {
+                                    const booking = getBooking(room.id, unit.id, today);
+                                    const isBooked = !!booking;
+                                    return (
+                                        <div key={`${room.id}-${unit.id}`} onClick={() => booking && setShowInfoModal(booking)} style={{background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #22c55e, #16a34a)', borderRadius: '10px', padding: '14px', cursor: isBooked ? 'pointer' : 'default', textAlign: 'center'}}>
+                                            <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
+                                            <div style={{fontSize: '11px', fontWeight: '600', marginTop: '4px'}}>{isBooked ? 'BOOKED' : 'AVAILABLE'}</div>
+                                            {isBooked && <div style={{fontSize: '10px', marginTop: '4px', opacity: 0.9}}>{booking.firstName}</div>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    return (
+        <div style={{minHeight: '100vh', paddingBottom: '100px'}}>
+            {/* Top Bar - Always Sticky */}
+            <div className="top-bar">
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
+                    <div>
+                        <h1 style={{fontSize: '18px', fontWeight: '700'}}>🏨 Miami Beach Resort</h1>
+                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)} • {time}</p>
+                    </div>
+                    <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                        <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
+                        <button onClick={fetchData} disabled={loading} style={{padding: '14px 20px', background: '#10b981', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>{loading ? '⏳' : '🔄'}</button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Controls Section - Scrolls Away */}
+            <div className="controls-section">
+                <div className="stats-row">
+                    <div className="stat-card"><div className="stat-num">{stats.total}</div><div className="stat-label">Total</div></div>
+                    <div className="stat-card"><div className="stat-num" style={{color: '#22c55e'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
+                    <div className="stat-card"><div className="stat-num" style={{color: '#ef4444'}}>{stats.occ}</div><div className="stat-label">Occupied</div></div>
+                    <div className="stat-card"><div className="stat-num" style={{color: '#3b82f6'}}>{stats.cin}</div><div className="stat-label">Check-in</div></div>
+                    <div className="stat-card"><div className="stat-num" style={{color: '#a855f7'}}>{stats.cout}</div><div className="stat-label">Check-out</div></div>
+                </div>
+                {isMobile ? (
+                    <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '12px'}}>
+                        {tabs.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                    </select>
+                ) : (
+                    <div className="tabs-row">{tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
+                )}
+                {(tab === "floor" || tab === "category") && (
+                    <div className="date-controls">
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
+                        <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
+                        <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
+                        {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
+                    </div>
+                )}
+            </div>
+
+            {error && <div style={{margin: '16px', padding: '12px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444', fontSize: '13px'}}>{error}</div>}
+            {loading && <div style={{display: 'flex', justifyContent: 'center', padding: '50px'}}><div className="loader"></div></div>}
+
+            {!loading && (
+                <>
+                    {tab === "floor" && <CalendarView groupBy="floor"/>}
+                    {tab === "category" && <CalendarView groupBy="category"/>}
+                    {tab === "today" && <TodayView/>}
+
+                    {tab === "searchbook" && (
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>🔍 Search & Book</h2>
+                            <div className="date-search-row">
+                                <div className="date-field"><label>Check-in</label><input type="date" value={searchCheckIn} onChange={e => setSearchCheckIn(e.target.value)} className="date-input"/></div>
+                                <div className="date-field"><label>Check-out</label><input type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input"/></div>
+                                <div className="date-field"><label>Group By</label><select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector"><option value="floor">By Floor</option><option value="category">By Category</option></select></div>
+                            </div>
+                            <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#22c55e', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
+                            {(() => {
+                                const groups = searchGroupBy === "floor"
+                                    ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: availableRooms.filter(r => r.floor === f)}))
+                                    : ROOMS.map(r => ({key: r.id, title: r.name, rooms: availableRooms.filter(ar => ar.room.id === r.id)}));
+                                return groups.map(group => {
+                                    if (!group.rooms.length) return null;
+                                    return (
+                                        <div key={group.key} style={{marginBottom: '20px'}}>
+                                            <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} available</span></div>
+                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px'}}>
+                                                {group.rooms.map(({room, unit}) => {
+                                                    const isSelected = selected.find(x => x.room.id === room.id && x.unit.id === unit.id);
+                                                    return (
+                                                        <div key={`${room.id}-${unit.id}`} onClick={() => {
+                                                            const key = `${room.id}-${unit.id}-${searchCheckIn}`;
+                                                            if (isSelected) setSelected(selected.filter(x => !(x.room.id === room.id && x.unit.id === unit.id)));
+                                                            else setSelected([...selected, {key, room, unit, date: searchCheckIn}]);
+                                                        }} style={{background: isSelected ? 'linear-gradient(145deg, #22c55e, #16a34a)' : 'rgba(255,255,255,0.03)', border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', cursor: 'pointer'}}>
+                                                            <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
+                                                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>{room.short}</div>
+                                                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>👤 {room.max}A</div>
+                                                            {isSelected && <div style={{marginTop: '6px', fontSize: '10px', fontWeight: '600', color: '#fff'}}>✓ Selected</div>}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
+                            {selected.length > 0 && (
+                                <div style={{marginTop: '24px', padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px', textAlign: 'center'}}>
+                                    <h4 style={{marginBottom: '12px'}}>Selected: {selected.length} room(s) - {selected.map(s => s.unit.n).join(', ')}</h4>
+                                    <button onClick={() => setShowBookModal(true)} style={{padding: '14px 30px', background: '#22c55e', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>📝 Book Now</button>
+                                    <button onClick={() => setSelected([])} style={{marginLeft: '12px', padding: '14px 20px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: 'white', cursor: 'pointer'}}>Clear</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {tab === "requests" && (
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>🛎️ Guest Requests</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px'}}>
+                                <div>
+                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>📋 Current Guests ({currentGuests.length})</h3>
+                                    {currentGuests.map(guest => <GuestRequestCard key={guest.id} guest={guest} onAddRequest={addRequest} requestCounts={getRequestCounts(guest.id)}/>)}
+                                    {!currentGuests.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No guests</div>}
+                                </div>
+                                <div>
+                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#f59e0b'}}>⏳ Pending ({requests.filter(r => !r.done).length})</h3>
+                                    {requests.filter(r => !r.done).map(req => (
+                                        <div key={req.id} className="request-item request-pending">
+                                            <div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.guestName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)'}}>{req.requestType}</div>{req.note && <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Note: {req.note}</div>}<div style={{fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px'}}>{new Date(req.timestamp).toLocaleTimeString()}</div></div>
+                                            <button className="done-btn" onClick={() => markRequestDone(req.id)}>✓ Done</button>
+                                        </div>
+                                    ))}
+                                    {!requests.filter(r => !r.done).length && <div style={{color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}>No pending</div>}
+                                </div>
+                                <div>
+                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>✅ Completed</h3>
+                                    {requests.filter(r => r.done).slice(0, 15).map(req => (
+                                        <div key={req.id} className="request-item request-done"><div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div><div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Done: {new Date(req.doneAt).toLocaleString()}</div></div><span style={{color: '#22c55e'}}>✓</span></div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === "housekeeping" && (
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>🧹 Housekeeping - {formatDate(today)}</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#0ea5e9', marginBottom: '12px', fontSize: '14px'}}>🛏️ Make-up ({housekeeping.makeup.length})</h3>
+                                    {housekeeping.makeup.map(({room, unit, booking}) => <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup"><div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div><div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div></div>)}
+                                    {!housekeeping.makeup.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
+                                </div>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#f97316', marginBottom: '12px', fontSize: '14px'}}>🧽 Dirty ({housekeeping.dirty.length})</h3>
+                                    {housekeeping.dirty.map(({room, unit, booking}) => <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty"><div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div><div><div style={{fontWeight: '600'}}>{booking.firstName}</div><div style={{fontSize: '11px', opacity: 0.8}}>{room.short}</div></div></div>)}
+                                    {!housekeeping.dirty.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
+                                </div>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#a855f7', marginBottom: '12px', fontSize: '14px'}}>🔄 Turnover ({housekeeping.turnover.length})</h3>
+                                    {housekeeping.turnover.map(({room, unit, out, in: ci}) => <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover"><div style={{fontSize: '20px', fontWeight: '700', minWidth: '50px'}}>{unit.n}</div><div><div style={{fontSize: '11px'}}>⬆ {out.firstName}</div><div style={{fontWeight: '600'}}>⬇ {ci.firstName}</div></div></div>)}
+                                    {!housekeeping.turnover.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === "movements" && (
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>↔️ Movements - {formatDate(today)}</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px'}}>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#3b82f6', marginBottom: '10px', fontSize: '13px'}}>⬇️ Pending In ({movements.pendingIn.length})</h3>
+                                    {movements.pendingIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "in")}>✓</button></div>
+                                    ); })}
+                                    {!movements.pendingIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
+                                </div>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#22c55e', marginBottom: '10px', fontSize: '13px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
+                                    {movements.doneIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "in")}>↩</button></div>
+                                    ); })}
+                                    {!movements.doneIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
+                                </div>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#a855f7', marginBottom: '10px', fontSize: '13px'}}>⬆️ Pending Out ({movements.pendingOut.length})</h3>
+                                    {movements.pendingOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "out")}>✓</button></div>
+                                    ); })}
+                                    {!movements.pendingOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
+                                </div>
+                                <div className="hk-section">
+                                    <h3 style={{color: '#f59e0b', marginBottom: '10px', fontSize: '13px'}}>👋 Checked-out ({movements.doneOut.length})</h3>
+                                    {movements.doneOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
+                                        <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "out")}>↩</button></div>
+                                    ); })}
+                                    {!movements.doneOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === "dashboard" && (
+                        <div style={{padding: '16px'}}>
+                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>📊 Dashboard</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'}}>
+                                <div className="hk-section">
+                                    <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Room Type</h3>
+                                    {ROOMS.map(r => { const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length; const pct = Math.round(booked / r.units.length * 100); return (<div key={r.id} style={{marginBottom: '12px'}}><div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px'}}><span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length}</span></div><div style={{height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden'}}><div style={{height: '100%', width: pct+'%', background: pct > 70 ? '#ef4444' : '#22c55e', borderRadius: '4px'}}></div></div></div>); })}
+                                </div>
+                                <div className="hk-section">
+                                    <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Floor</h3>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px'}}>
+                                        {FLOORS.map(f => { const rooms = roomsByFloor[f] || []; const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length; const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0; return (<div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px', textAlign: 'center'}}><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '11px'}}>Floor {f}</div><div style={{fontSize: '26px', fontWeight: '700', color: pct > 70 ? '#ef4444' : '#22c55e'}}>{pct}%</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{booked}/{rooms.length}</div></div>); })}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {selected.length > 0 && tab !== "searchbook" && (
+                <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '500px', margin: '0 auto'}}>
+                    <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '16px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 25px rgba(34,197,94,0.4)'}}>➕ Book {selected.length} Room(s): {selected.map(s => s.unit.n).join(', ')}</button>
+                </div>
+            )}
+
+            {showSearchModal && (
+                <div className="modal-overlay" onClick={() => setShowSearchModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '550px'}}>
+                        <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>🔍 Search Guest</h3><button className="modal-close" onClick={() => setShowSearchModal(false)}>×</button></div>
+                        <input type="text" placeholder="Search by ID, phone, email, or name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="search-input" autoFocus/>
+                        <div style={{marginTop: '16px', maxHeight: '400px', overflowY: 'auto'}}>
+                            {globalSearchResults.map(b => { const {num, room} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="search-result" onClick={() => {setShowInfoModal(b); setShowSearchModal(false);}}><div style={{display: 'flex', justifyContent: 'space-between'}}><div><div style={{fontWeight: '600'}}>{b.firstName} {b.lastName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.name}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>📞 {b.mobile || 'N/A'} • ID: {b.id}</div></div><div style={{textAlign: 'right'}}><div style={{fontWeight: '700', color: '#22c55e', fontSize: '18px'}}>{num}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{formatDate(b.arrival)}</div></div></div></div>); })}
+                            {searchQuery && !globalSearchResults.length && <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '30px'}}>No results</div>}
+                            {!searchQuery && <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '30px'}}>Type to search...</div>}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests}/>}
+            {showBookModal && <BookingModal selected={selected} checkIn={searchCheckIn} checkOut={searchCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData();}}/>}
+        </div>
+    );
+}
+
+function GuestRequestCard({guest, onAddRequest, requestCounts}) {
+    const [requestType, setRequestType] = useState("");
+    const [note, setNote] = useState("");
+    const [expanded, setExpanded] = useState(false);
+    const handleSubmit = () => { if (!requestType) return; onAddRequest(guest.num, guest.firstName, guest.id, requestType, note); setRequestType(""); setNote(""); setExpanded(false); };
+    return (
+        <div className="request-card">
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        <span style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>{guest.num}</span>
+                        {requestCounts.total > 0 && <span style={{fontSize: '11px'}}>{requestCounts.pending > 0 && <span className="request-count pending">⏳ {requestCounts.pending}</span>}{requestCounts.done > 0 && <span className="request-count done" style={{marginLeft: '4px'}}>✓ {requestCounts.done}</span>}</span>}
+                    </div>
+                    <div style={{fontWeight: '600', marginTop: '2px'}}>{guest.firstName}</div>
+                </div>
+                <button onClick={() => setExpanded(!expanded)} style={{padding: '8px 14px', background: expanded ? 'rgba(255,255,255,0.1)' : '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>{expanded ? '✕' : '+ Request'}</button>
+            </div>
+            {expanded && (<div style={{marginTop: '12px'}}><select value={requestType} onChange={e => setRequestType(e.target.value)} className="request-select"><option value="">Select...</option>{REQUEST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select><textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Note..." className="request-note" rows={2}/><button onClick={handleSubmit} disabled={!requestType} className="request-btn" style={{opacity: requestType ? 1 : 0.5}}>Submit</button></div>)}
+        </div>
+    );
+}
+
+function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, requests}) {
+    const {num, room} = getRoomInfo(booking.roomId, booking.unitId);
+    const multiUnit = getMultiUnitInfo(booking);
+    const price = parseFloat(booking.price) || 0, paid = parseFloat(booking.paid) || 0, due = price - paid;
+    const counts = getRequestCounts(booking.id);
+    const bookingRequests = requests.filter(r => r.bookingId === booking.id);
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>ℹ️ Booking Details</h3><button className="modal-close" onClick={onClose}>×</button></div>
+                <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px'}}>
+                    <div style={{width: '70px', height: '70px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: '700'}}>{num}</div>
+                    <div><div style={{fontSize: '20px', fontWeight: '700'}}>{booking.firstName} {booking.lastName}</div><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '13px'}}>{room?.name}</div><div style={{color: 'rgba(255,255,255,0.4)', fontSize: '12px'}}>ID: {booking.id}</div></div>
+                </div>
+                <div className="info-section"><div className="info-grid"><div><div className="info-label">Check-in</div><div className="info-value">{formatDate(booking.arrival)}</div></div><div><div className="info-label">Check-out</div><div className="info-value">{formatDate(booking.departure)}</div></div></div></div>
+                <div className="info-section"><div className="info-label">Contact</div><div className="info-value">{booking.mobile || "No phone"}</div>{booking.email && <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>{booking.email}</div>}</div>
+                <div className="info-section"><div className="info-label">Payment</div><div className="info-grid" style={{marginTop: '8px'}}><div><div className="info-label">Total</div><div className="info-value">৳{price.toLocaleString()}</div></div><div><div className="info-label">Paid</div><div className="info-value" style={{color: '#22c55e'}}>৳{paid.toLocaleString()}</div></div></div><div style={{marginTop: '12px', padding: '12px', background: due > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Due</div><div style={{fontSize: '28px', fontWeight: '700', color: due > 0 ? '#ef4444' : '#22c55e'}}>৳{due.toLocaleString()}</div></div></div>
+                {counts.total > 0 && (
+                    <div className="info-section">
+                        <div className="info-label">Requests ({counts.total})</div>
+                        <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>{counts.pending > 0 && <span className="request-count pending" style={{padding: '4px 10px'}}>⏳ {counts.pending} Pending</span>}{counts.done > 0 && <span className="request-count done" style={{padding: '4px 10px'}}>✓ {counts.done} Done</span>}</div>
+                        <div style={{marginTop: '10px', maxHeight: '150px', overflowY: 'auto'}}>
+                            {bookingRequests.map(r => (<div key={r.id} style={{padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '6px', fontSize: '12px', borderLeft: r.done ? '3px solid #22c55e' : '3px solid #f59e0b'}}><div style={{fontWeight: '600'}}>{r.requestType}</div>{r.note && <div style={{color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>{r.note}</div>}<div style={{color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{r.done ? `✓ Done ${new Date(r.doneAt).toLocaleTimeString()}` : `⏳ ${new Date(r.timestamp).toLocaleTimeString()}`}</div></div>))}
+                        </div>
+                    </div>
+                )}
+                {multiUnit && (<div className="info-section" style={{background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)'}}><div className="info-label" style={{color: '#3b82f6'}}>🔗 Multi-Room ({multiUnit.count})</div><div style={{fontSize: '13px', marginTop: '6px'}}>Rooms: {multiUnit.rooms.join(", ")}</div><div style={{marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Total Due</div><div style={{fontSize: '24px', fontWeight: '700', color: multiUnit.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{multiUnit.totalDue.toLocaleString()}</div></div></div>)}
+                {booking.custom4 && booking.custom4 !== 'default' && <div className="info-section"><div className="info-label">NID</div><div className="info-value">{booking.custom4}</div></div>}
+            </div>
+        </div>
+    );
+}
+
+function BookingModal({selected, checkIn, checkOut, onClose}) {
+    const [form, setForm] = useState({guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "", checkIn: checkIn || getBDDate(), checkOut: checkOut || getBDDate(1)});
+    const [status, setStatus] = useState("");
+    const add = (f) => form[f].length < 3 && setForm({...form, [f]: [...form[f], f === 'guests' ? {name: ""} : ""]});
+    const upd = (f, i, v) => { const a = [...form[f]]; f === 'guests' ? a[i].name = v : a[i] = v; setForm({...form, [f]: a}); };
+    const rem = (f, i) => form[f].length > 1 && setForm({...form, [f]: form[f].filter((_, idx) => idx !== i)});
+    const submit = async (e) => {
+        e.preventDefault(); setStatus("loading");
+        try {
+            const names = form.guests.map(g => g.name).filter(Boolean).join(", ");
+            const phones = form.phones.filter(Boolean).join(", ");
+            const data = selected.map(s => ({propertyId: PROPERTY, roomId: s.room.id, unitId: s.unit.id, arrival: form.checkIn, departure: form.checkOut, numAdult: s.room.max, numChild: 0, status: "confirmed", firstName: names, email: form.email || "default", mobile: phones, custom4: form.nid || "default", custom5: form.dob || "default", referer: "miami_frontdesk"}));
+            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+            const result = await res.json();
+            if (result.success) { setStatus("success"); setTimeout(onClose, 1500); } else setStatus("error: " + (result.error || "Failed"));
+        } catch(e) { setStatus("error: " + e.message); }
+    };
+    if (status === "success") return (<div className="modal-overlay"><div className="modal" style={{textAlign: 'center', padding: '50px'}}><div style={{fontSize: '56px', marginBottom: '16px'}}>✅</div><div style={{fontSize: '20px', fontWeight: '700'}}>Booking Created!</div></div></div>);
+    const inputStyle = {width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '14px'};
+    return (
+        <div className="modal-overlay">
+            <div className="modal">
+                <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>➕ New Booking</h3><button className="modal-close" onClick={onClose}>×</button></div>
+                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px'}}>{selected.map(s => <span key={s.key} style={{padding: '8px 14px', background: '#22c55e', borderRadius: '8px', fontSize: '13px', fontWeight: '600'}}>{s.unit.n}</span>)}</div>
+                <form onSubmit={submit}>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} style={inputStyle}/></div><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} style={inputStyle}/></div></div>
+                    <div style={{marginBottom: '16px'}}><div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Guests *</label>{form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'none', border: 'none', color: '#22c55e', fontSize: '11px', cursor: 'pointer'}}>+ Add</button>}</div>{form.guests.map((g, i) => (<div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}><input type="text" required value={g.name} onChange={e => upd('guests', i, e.target.value)} placeholder={`Guest ${i+1}`} style={{...inputStyle, flex: 1}}/>{form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer'}}>×</button>}</div>))}</div>
+                    <div style={{marginBottom: '16px'}}><div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Phone *</label>{form.phones.length < 3 && <button type="button" onClick={() => add('phones')} style={{background: 'none', border: 'none', color: '#22c55e', fontSize: '11px', cursor: 'pointer'}}>+ Add</button>}</div>{form.phones.map((p, i) => (<div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}><input type="tel" required value={p} onChange={e => upd('phones', i, e.target.value)} placeholder={`Phone ${i+1}`} style={{...inputStyle, flex: 1}}/>{form.phones.length > 1 && <button type="button" onClick={() => rem('phones', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer'}}>×</button>}</div>))}</div>
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" style={{...inputStyle, marginBottom: '12px'}}/>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}><input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" style={inputStyle}/><input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" style={inputStyle}/></div>
+                    {status.startsWith("error") && <div style={{padding: '10px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444', fontSize: '12px', marginBottom: '14px'}}>{status}</div>}
+                    <div style={{display: 'flex', gap: '12px'}}><button type="button" onClick={onClose} style={{flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>Cancel</button><button type="submit" disabled={status === "loading"} style={{flex: 1, padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: status === "loading" ? 0.6 : 1}}>{status === "loading" ? "..." : "Book"}</button></div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+ReactDOM.render(<App/>, document.getElementById("root"));
+</script>
 </body>
 </html>
