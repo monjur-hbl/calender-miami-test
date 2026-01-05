@@ -9,125 +9,106 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; min-height: 100vh; color: #e6edf3; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1d23; min-height: 100vh; color: #fff; }
         
         /* Header */
-        .header { background: #161b22; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 100; }
+        .header { background: #12151a; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 100; }
         
         /* Navigation */
-        .nav-btn { padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: transparent; color: #8b949e; }
-        .nav-btn:hover { background: #21262d; color: #e6edf3; }
-        .nav-btn.active { background: #238636; color: white; }
+        .nav-btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-btn.active { background: #10b981; color: white; }
         
         /* Day buttons */
-        .day-btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; border: 1px solid #30363d; cursor: pointer; transition: all 0.2s; background: #21262d; color: #8b949e; }
-        .day-btn:hover { border-color: #8b949e; color: #e6edf3; }
-        .day-btn.active { background: #238636; border-color: #238636; color: white; }
+        .day-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
+        .day-btn:hover { background: rgba(255,255,255,0.1); }
+        .day-btn.active { background: #10b981; color: white; }
         
         /* Date input */
-        .date-input { background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 14px; }
-        .date-input:focus { outline: none; border-color: #58a6ff; }
+        .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; }
+        .date-input:focus { outline: none; border-color: #10b981; }
         
         /* Stats */
-        .stat-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 14px; text-align: center; }
-        .stat-num { font-size: 26px; font-weight: 700; }
-        .stat-label { font-size: 11px; color: #8b949e; margin-top: 2px; text-transform: uppercase; }
-        
-        /* Calendar Grid */
-        .calendar-grid { display: flex; flex-direction: column; }
-        
-        /* Calendar Header Row */
-        .cal-header-row { display: flex; background: #161b22; border-bottom: 1px solid #30363d; position: sticky; top: 165px; z-index: 90; }
-        
-        /* Room Label Column - Fixed Width */
-        .room-label { width: 120px; min-width: 120px; max-width: 120px; padding: 12px 10px; display: flex; flex-direction: column; justify-content: center; background: #161b22; border-right: 1px solid #30363d; }
-        .room-label .room-num { font-size: 20px; font-weight: 700; color: #e6edf3; }
-        .room-label .room-type { font-size: 10px; color: #8b949e; line-height: 1.3; margin-top: 2px; word-wrap: break-word; }
-        
-        /* Calendar Date Headers */
-        .cal-date-header { flex: 1; min-width: 70px; padding: 10px 4px; text-align: center; border-right: 1px solid #30363d; }
-        .cal-date-header:last-child { border-right: none; }
-        .cal-date-header .day-name { font-size: 11px; color: #8b949e; text-transform: uppercase; }
-        .cal-date-header .day-num { font-size: 18px; font-weight: 600; color: #e6edf3; }
-        .cal-date-header.today { background: rgba(56, 139, 253, 0.15); }
-        .cal-date-header.today .day-num { color: #58a6ff; }
-        
-        /* Room Row */
-        .room-row { display: flex; border-bottom: 1px solid #21262d; transition: background 0.2s; }
-        .room-row:hover { background: #161b22; }
-        
-        /* Status Cell - All Same Size */
-        .status-cell { flex: 1; min-width: 70px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #21262d; cursor: pointer; transition: all 0.15s; position: relative; }
-        .status-cell:last-child { border-right: none; }
-        .status-cell:hover { filter: brightness(1.1); transform: scale(1.02); z-index: 5; }
-        .status-cell.today-col { box-shadow: inset 0 0 0 2px rgba(56, 139, 253, 0.4); }
-        .status-cell.selected { box-shadow: inset 0 0 0 3px #58a6ff !important; }
-        
-        /* Status Colors - Clean & Professional */
-        .st-available { background: #238636; }
-        .st-available-checkout { background: #238636; }
-        .st-occupied { background: #6e7681; }
-        .st-checkin { background: #1f6feb; }
-        .st-checkout { background: #8957e5; }
-        .st-turnover { background: linear-gradient(135deg, #8957e5 50%, #1f6feb 50%); }
-        
-        .status-icon { font-size: 14px; }
-        .status-text { font-size: 9px; color: rgba(255,255,255,0.8); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .guest-name { font-size: 11px; font-weight: 600; color: white; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .stat-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-num { font-size: 28px; font-weight: 700; }
+        .stat-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
         
         /* Floor Header */
-        .floor-header { background: #21262d; padding: 10px 16px; font-weight: 600; color: #e6edf3; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #30363d; }
-        .floor-header .floor-icon { font-size: 16px; }
-        .floor-header .floor-count { color: #8b949e; font-weight: 400; font-size: 13px; }
+        .floor-header { background: rgba(0,0,0,0.3); padding: 10px 16px; margin: 20px 16px 12px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 10px; }
+        .floor-title { font-weight: 600; font-size: 14px; }
+        .floor-count { color: rgba(255,255,255,0.5); font-size: 13px; }
         
-        /* Legend */
-        .legend { display: flex; gap: 12px; flex-wrap: wrap; }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8b949e; }
-        .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+        /* Room Grid */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 0 16px; }
+        
+        /* Room Card */
+        .room-card { border-radius: 12px; padding: 14px; transition: all 0.2s; cursor: pointer; position: relative; min-height: 130px; }
+        .room-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        
+        /* Card Colors */
+        .card-available { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .card-occupied { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .card-checkin { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .card-checkout { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .card-turnover { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        
+        .room-number { font-size: 28px; font-weight: 700; color: white; }
+        .room-type { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 2px; line-height: 1.3; }
+        .room-capacity { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+        .room-guest { font-size: 13px; font-weight: 600; color: white; margin-top: 10px; }
+        .room-date { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+        .room-badge { display: inline-block; padding: 4px 12px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 11px; font-weight: 600; color: white; margin-top: 10px; }
+        .room-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #10b981; }
+        
+        /* Calendar Row - for each room showing 7 days */
+        .cal-row { display: flex; gap: 4px; margin-top: 10px; }
+        .cal-cell { flex: 1; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
+        .cal-cell.avail { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); }
+        .cal-cell.booked { background: rgba(0,0,0,0.3); color: rgba(255,255,255,0.6); }
+        .cal-cell.today { border: 2px solid #fbbf24; }
         
         /* Mobile Select */
-        .mobile-select { width: 100%; padding: 12px; background: #21262d; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; }
+        .mobile-select { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; }
         
         /* Housekeeping Cards */
-        .hk-section { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; }
-        .hk-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
-        .hk-makeup { background: #0d419d; }
-        .hk-dirty { background: #9a6700; }
-        .hk-turnover { background: #8957e5; }
-        .hk-room { font-size: 20px; font-weight: 700; min-width: 50px; }
-        .hk-info { flex: 1; }
-        .hk-guest { font-weight: 500; }
-        .hk-type { font-size: 12px; color: rgba(255,255,255,0.7); }
+        .hk-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; }
+        .hk-card { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 10px; margin-bottom: 10px; }
+        .hk-makeup { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+        .hk-dirty { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .hk-turnover { background: linear-gradient(135deg, #a855f7, #9333ea); }
+        .hk-room { font-size: 24px; font-weight: 700; min-width: 55px; }
+        .hk-guest { font-weight: 600; }
+        .hk-type { font-size: 12px; opacity: 0.8; }
         
         /* Movement Cards */
-        .mv-card { background: #21262d; border: 1px solid #30363d; border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .mv-card:hover { border-color: #8b949e; }
-        .mv-guest { font-weight: 600; }
-        .mv-room { font-size: 13px; color: #8b949e; }
-        .mv-btn { width: 44px; height: 44px; border-radius: 8px; border: none; cursor: pointer; font-size: 18px; transition: all 0.2s; }
-        .mv-btn-pending { background: #21262d; border: 1px solid #30363d; color: #8b949e; }
-        .mv-btn-pending:hover { background: #238636; border-color: #238636; color: white; }
-        .mv-btn-done { background: #238636; color: white; }
+        .mv-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .mv-card:hover { background: rgba(255,255,255,0.08); }
+        .mv-guest { font-weight: 600; font-size: 15px; }
+        .mv-room { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .mv-btn { width: 46px; height: 46px; border-radius: 10px; border: none; cursor: pointer; font-size: 18px; transition: all 0.2s; }
+        .mv-btn-pending { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+        .mv-btn-pending:hover { background: #10b981; color: white; }
+        .mv-btn-done { background: #10b981; color: white; }
+        
+        /* Legend */
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,0.6); }
+        .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
         
         /* Loader */
-        .loader { width: 40px; height: 40px; border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 1s linear infinite; }
+        .loader { width: 44px; height: 44px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
         /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0d1117; }
-        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #8b949e; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
         
         /* Responsive */
-        @media (max-width: 768px) {
-            .room-label { width: 90px; min-width: 90px; max-width: 90px; padding: 8px 6px; }
-            .room-label .room-num { font-size: 16px; }
-            .room-label .room-type { font-size: 9px; }
-            .status-cell { min-width: 55px; height: 55px; }
-            .cal-date-header { min-width: 55px; }
-            .stat-box { padding: 10px 8px; }
-            .stat-num { font-size: 20px; }
+        @media (max-width: 640px) {
+            .room-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .room-card { padding: 12px; min-height: 120px; }
+            .room-number { font-size: 24px; }
         }
     </style>
 </head>
@@ -152,18 +133,18 @@ const getBDTime = () => {
     return new Date(utc + 6 * 3600000).toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: true});
 };
 const formatDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
-const dayName = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
-const dayNum = (d) => new Date(d+"T00:00:00").getDate();
+const shortDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+const dayLetter = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"narrow"});
 
 const ROOMS = [
-    {id:583459, name:"Royal Sea View Couple", short:"Royal SV", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
-    {id:583466, name:"Premium Sea View Couple", short:"Premium SV", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
-    {id:583467, name:"Deluxe Bay View Couple", short:"Deluxe Bay", max:2, units:[{id:1,n:"402"},{id:2,n:"403"},{id:3,n:"502"},{id:4,n:"503"}]},
-    {id:583468, name:"Deluxe Hill View Couple", short:"Deluxe Hill", max:2, units:[{id:1,n:"201"},{id:2,n:"204"},{id:3,n:"207"},{id:4,n:"301"},{id:5,n:"304"},{id:6,n:"307"},{id:7,n:"407"},{id:8,n:"507"}]},
-    {id:583469, name:"Deluxe Urban View Couple", short:"Deluxe Urban", max:2, units:[{id:1,n:"101"},{id:2,n:"102"},{id:3,n:"103"},{id:4,n:"104"},{id:5,n:"107"},{id:6,n:"202"},{id:7,n:"203"},{id:8,n:"302"},{id:9,n:"303"}]},
-    {id:583470, name:"Premium Sea View Family", short:"Premium SV Fam", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
-    {id:583471, name:"Deluxe Hill View Family", short:"Deluxe Hill Fam", max:4, units:[{id:1,n:"205"},{id:2,n:"206"},{id:3,n:"208"},{id:4,n:"305"},{id:5,n:"306"},{id:6,n:"308"}]},
-    {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban Fam", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
+    {id:583459, name:"Royal Sea View Couple", short:"Royal Sea View", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
+    {id:583466, name:"Premium Sea View Couple", short:"Premium Sea View", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
+    {id:583467, name:"Deluxe Bay View Couple", short:"Deluxe Bay View", max:2, units:[{id:1,n:"402"},{id:2,n:"403"},{id:3,n:"502"},{id:4,n:"503"}]},
+    {id:583468, name:"Deluxe Hill View Couple", short:"Deluxe Hill View", max:2, units:[{id:1,n:"201"},{id:2,n:"204"},{id:3,n:"207"},{id:4,n:"301"},{id:5,n:"304"},{id:6,n:"307"},{id:7,n:"407"},{id:8,n:"507"}]},
+    {id:583469, name:"Deluxe Urban View Couple", short:"Deluxe Urban View", max:2, units:[{id:1,n:"101"},{id:2,n:"102"},{id:3,n:"103"},{id:4,n:"104"},{id:5,n:"107"},{id:6,n:"202"},{id:7,n:"203"},{id:8,n:"302"},{id:9,n:"303"}]},
+    {id:583470, name:"Premium Sea View Family", short:"Premium Sea View Family", max:4, units:[{id:1,n:"405"},{id:2,n:"406"},{id:3,n:"408"},{id:4,n:"505"},{id:5,n:"506"},{id:6,n:"508"},{id:7,n:"606"}]},
+    {id:583471, name:"Deluxe Hill View Family", short:"Deluxe Hill View Family", max:4, units:[{id:1,n:"205"},{id:2,n:"206"},{id:3,n:"208"},{id:4,n:"305"},{id:5,n:"306"},{id:6,n:"308"}]},
+    {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban View Family", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
 ];
 
 const getFloor = (n) => Math.floor(parseInt(n) / 100);
@@ -246,9 +227,9 @@ function App() {
     const days = useMemo(() => getDays(calDays), [getDays, calDays]);
     const today = getBDDate();
 
-    const toggleSelect = (room, unit, date) => {
-        const key = `${room.id}-${unit.id}-${date}`;
-        setSelected(s => s.find(x => x.key === key) ? s.filter(x => x.key !== key) : [...s, {key, room, unit, date}]);
+    const toggleSelect = (room, unit) => {
+        const key = `${room.id}-${unit.id}`;
+        setSelected(s => s.find(x => x.key === key) ? s.filter(x => x.key !== key) : [...s, {key, room, unit}]);
     };
 
     const toggle = (id, type) => {
@@ -301,109 +282,105 @@ function App() {
         {id: "dashboard", label: "📊 Dashboard"}
     ];
 
-    const StatusCell = ({room, unit, date}) => {
-        const booking = getBooking(room.id, unit.id, date);
-        const checkout = getCheckout(room.id, unit.id, date);
-        const checkin = getCheckin(room.id, unit.id, date);
-        const isToday = date === today;
-        const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}-${date}`);
+    // Room Card Component
+    const RoomCard = ({room, unit}) => {
+        const booking = getBooking(room.id, unit.id, today);
+        const checkout = getCheckout(room.id, unit.id, today);
+        const checkin = getCheckin(room.id, unit.id, today);
+        const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}`);
         
-        // Determine status
-        let cls = "st-available", icon = "✓", text = "", guest = "";
+        let cardClass = "card-available";
+        let statusBadge = "Available";
+        let guestName = "";
+        let guestDate = "";
         
         if (checkout && checkin) {
-            // TURNOVER: Check-out AND Check-in same day
-            cls = "st-turnover";
-            icon = "⬆️⬇️";
-            text = "";
-            guest = checkin.firstName?.substring(0,7);
+            cardClass = "card-turnover";
+            statusBadge = "Turnover";
+            guestName = checkin.firstName;
+            guestDate = "→ " + shortDate(checkin.departure);
         } else if (booking) {
-            // OCCUPIED or CHECK-IN
-            if (booking.arrival === date) {
-                cls = "st-checkin";
-                icon = "⬇️";
-                text = "IN";
+            if (booking.arrival === today) {
+                cardClass = "card-checkin";
+                statusBadge = "Check-in";
             } else {
-                cls = "st-occupied";
-                icon = "";
+                cardClass = "card-occupied";
+                statusBadge = null;
             }
-            guest = booking.firstName?.substring(0,7);
+            guestName = booking.firstName;
+            guestDate = "→ " + shortDate(booking.departure);
         } else if (checkout) {
-            // CHECK-OUT only (room becomes available)
-            cls = "st-available-checkout";
-            icon = "⬆️";
-            text = "OUT";
+            cardClass = "card-available";
+            statusBadge = "C/O Today";
         }
         
-        const canSelect = !booking && !checkout;
-
+        const canSelect = !booking;
+        
         return (
-            <div className={`status-cell ${cls} ${isToday ? 'today-col' : ''} ${isSelected ? 'selected' : ''}`}
-                 onClick={() => canSelect && toggleSelect(room, unit, date)}>
-                {icon && <span className="status-icon">{icon}</span>}
-                {guest && <span className="guest-name">{guest}</span>}
-                {text && !guest && <span className="status-text">{text}</span>}
+            <div className={`room-card ${cardClass} ${isSelected ? 'room-selected' : ''}`}
+                 onClick={() => canSelect && toggleSelect(room, unit)}>
+                <div className="room-number">{unit.n}</div>
+                <div className="room-type">{room.short}</div>
+                <div className="room-capacity">👤 {room.max}A</div>
+                
+                {guestName ? (
+                    <>
+                        <div className="room-guest">{guestName}</div>
+                        <div className="room-date">{guestDate}</div>
+                    </>
+                ) : (
+                    <div className="room-badge">{statusBadge}</div>
+                )}
+                
+                {/* Mini calendar for next days */}
+                <div className="cal-row">
+                    {days.slice(0, 7).map(d => {
+                        const hasBooking = getBooking(room.id, unit.id, d);
+                        const isToday = d === today;
+                        return (
+                            <div key={d} className={`cal-cell ${hasBooking ? 'booked' : 'avail'} ${isToday ? 'today' : ''}`}>
+                                {dayLetter(d)}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         );
     };
 
-    const CalendarHeader = () => (
-        <div className="cal-header-row">
-            <div className="room-label" style={{background: '#161b22'}}>
-                <span className="room-num" style={{color: '#8b949e', fontSize: '12px'}}>ROOM</span>
-            </div>
-            {days.map(d => (
-                <div key={d} className={`cal-date-header ${d === today ? 'today' : ''}`}>
-                    <div className="day-name">{dayName(d)}</div>
-                    <div className="day-num">{dayNum(d)}</div>
-                </div>
-            ))}
-        </div>
-    );
-
-    const RoomRow = ({room, unit}) => (
-        <div className="room-row">
-            <div className="room-label">
-                <span className="room-num">{unit.n}</span>
-                <span className="room-type">{room.short}</span>
-            </div>
-            {days.map(d => <StatusCell key={d} room={room} unit={unit} date={d}/>)}
-        </div>
-    );
-
     return (
-        <div style={{minHeight: '100vh', paddingBottom: '80px'}}>
+        <div style={{minHeight: '100vh', paddingBottom: '100px'}}>
             {/* Header */}
             <div className="header">
                 <div style={{maxWidth: '100%', padding: '16px'}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px'}}>
                         <div>
-                            <h1 style={{fontSize: '20px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px'}}>🏨 Miami Beach Resort</h1>
-                            <p style={{fontSize: '13px', color: '#8b949e', marginTop: '4px'}}>{formatDate(today)} • {time} • {bookings.length} bookings</p>
+                            <h1 style={{fontSize: '22px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px'}}>🏨 Miami Beach Resort</h1>
+                            <p style={{fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>Cox's Bazar • {formatDate(today)} • {time}</p>
                         </div>
-                        <button onClick={fetchData} disabled={loading} style={{padding: '10px 20px', background: '#238636', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        <button onClick={fetchData} disabled={loading} style={{padding: '12px 24px', background: '#10b981', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px'}}>
                             {loading ? '⏳' : '🔄'} Refresh
                         </button>
                     </div>
 
                     {/* Navigation */}
                     {isMobile ? (
-                        <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '12px'}}>
+                        <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '14px'}}>
                             {tabs.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                         </select>
                     ) : (
-                        <div style={{display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto'}}>
+                        <div style={{display: 'flex', gap: '8px', marginBottom: '14px', overflowX: 'auto'}}>
                             {tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>{t.label}</button>)}
                         </div>
                     )}
 
                     {/* Stats */}
-                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '12px'}}>
-                        <div className="stat-box"><div className="stat-num" style={{color: '#e6edf3'}}>{stats.total}</div><div className="stat-label">Total</div></div>
-                        <div className="stat-box"><div className="stat-num" style={{color: '#3fb950'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
-                        <div className="stat-box"><div className="stat-num" style={{color: '#f85149'}}>{stats.occ}</div><div className="stat-label">Occupied</div></div>
-                        <div className="stat-box"><div className="stat-num" style={{color: '#58a6ff'}}>{stats.cin}</div><div className="stat-label">Check-in</div></div>
-                        <div className="stat-box"><div className="stat-num" style={{color: '#a371f7'}}>{stats.cout}</div><div className="stat-label">Check-out</div></div>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '14px'}}>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#fff'}}>{stats.total}</div><div className="stat-label">Total</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#10b981'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#ef4444'}}>{stats.occ}</div><div className="stat-label">Occupied</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#3b82f6'}}>{stats.cin}</div><div className="stat-label">Check-ins</div></div>
+                        <div className="stat-box"><div className="stat-num" style={{color: '#8b5cf6'}}>{stats.cout}</div><div className="stat-label">Check-outs</div></div>
                     </div>
 
                     {/* Calendar Controls */}
@@ -411,40 +388,40 @@ function App() {
                         <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px'}}>
                             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
                             <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
-                            <div style={{width: '1px', height: '24px', background: '#30363d'}}></div>
-                            {[1, 3, 7, 15].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}D</button>)}
+                            <div style={{width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)'}}></div>
+                            {[1, 3, 7, 15].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d} Days</button>)}
                             <div style={{flex: 1}}></div>
                             <div className="legend">
-                                <span className="legend-item"><span className="legend-dot" style={{background: '#238636'}}></span>Available</span>
-                                <span className="legend-item"><span className="legend-dot" style={{background: '#6e7681'}}></span>Occupied</span>
-                                <span className="legend-item"><span className="legend-dot" style={{background: '#1f6feb'}}></span>Check-in</span>
-                                <span className="legend-item"><span className="legend-dot" style={{background: '#8957e5'}}></span>Check-out</span>
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#10b981'}}></span>Available</span>
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#ef4444'}}></span>Occupied</span>
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#3b82f6'}}></span>Check-in</span>
+                                <span className="legend-item"><span className="legend-dot" style={{background: '#8b5cf6'}}></span>Check-out</span>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {error && <div style={{margin: '16px', padding: '12px', background: 'rgba(248,81,73,0.1)', border: '1px solid #f85149', borderRadius: '8px', color: '#f85149'}}>{error}</div>}
+            {error && <div style={{margin: '16px', padding: '14px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '10px', color: '#ef4444'}}>{error}</div>}
             {loading && <div style={{display: 'flex', justifyContent: 'center', padding: '60px'}}><div className="loader"></div></div>}
 
             {!loading && (
                 <>
                     {/* BY FLOOR */}
                     {tab === "floor" && (
-                        <div className="calendar-grid">
-                            <CalendarHeader/>
+                        <div>
                             {FLOORS.map(floor => {
                                 const rooms = roomsByFloor[floor];
                                 if (!rooms?.length) return null;
                                 return (
                                     <div key={floor}>
                                         <div className="floor-header">
-                                            <span className="floor-icon">🏢</span>
-                                            <span>{floorName(floor)} Floor</span>
+                                            <span className="floor-title">🏢 {floorName(floor)} Floor</span>
                                             <span className="floor-count">{rooms.length} rooms</span>
                                         </div>
-                                        {rooms.map(({room, unit}) => <RoomRow key={`${room.id}-${unit.id}`} room={room} unit={unit}/>)}
+                                        <div className="room-grid">
+                                            {rooms.map(({room, unit}) => <RoomCard key={`${room.id}-${unit.id}`} room={room} unit={unit}/>)}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -453,16 +430,16 @@ function App() {
 
                     {/* BY CATEGORY */}
                     {tab === "category" && (
-                        <div className="calendar-grid">
-                            <CalendarHeader/>
+                        <div>
                             {ROOMS.map(roomType => (
                                 <div key={roomType.id}>
-                                    <div className="floor-header" style={{borderLeft: '4px solid #8957e5'}}>
-                                        <span className="floor-icon">📁</span>
-                                        <span>{roomType.name}</span>
+                                    <div className="floor-header">
+                                        <span className="floor-title">📁 {roomType.name}</span>
                                         <span className="floor-count">{roomType.units.length} rooms • {roomType.max}A</span>
                                     </div>
-                                    {roomType.units.map(unit => <RoomRow key={`${roomType.id}-${unit.id}`} room={roomType} unit={unit}/>)}
+                                    <div className="room-grid">
+                                        {roomType.units.map(unit => <RoomCard key={`${roomType.id}-${unit.id}`} room={roomType} unit={unit}/>)}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -471,37 +448,37 @@ function App() {
                     {/* HOUSEKEEPING */}
                     {tab === "housekeeping" && (
                         <div style={{padding: '16px'}}>
-                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>🧹 Housekeeping - {formatDate(today)}</h2>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
+                            <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '20px'}}>🧹 Housekeeping - {formatDate(today)}</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#58a6ff', marginBottom: '12px'}}>🛏️ Make-up ({housekeeping.makeup.length})</h3>
+                                    <h3 style={{color: '#0ea5e9', marginBottom: '14px', fontSize: '16px'}}>🛏️ Make-up ({housekeeping.makeup.length})</h3>
                                     {housekeeping.makeup.map(({room, unit, booking}) => (
                                         <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup">
                                             <div className="hk-room">{unit.n}</div>
-                                            <div className="hk-info"><div className="hk-guest">{booking.firstName}</div><div className="hk-type">{room.short}</div></div>
+                                            <div><div className="hk-guest">{booking.firstName}</div><div className="hk-type">{room.short}</div></div>
                                         </div>
                                     ))}
-                                    {!housekeeping.makeup.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>No rooms</div>}
+                                    {!housekeeping.makeup.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '30px'}}>No rooms</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#d29922', marginBottom: '12px'}}>🧽 Dirty ({housekeeping.dirty.length})</h3>
+                                    <h3 style={{color: '#f97316', marginBottom: '14px', fontSize: '16px'}}>🧽 Dirty ({housekeeping.dirty.length})</h3>
                                     {housekeeping.dirty.map(({room, unit, booking}) => (
                                         <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty">
                                             <div className="hk-room">{unit.n}</div>
-                                            <div className="hk-info"><div className="hk-guest">{booking.firstName}</div><div className="hk-type">{room.short}</div></div>
+                                            <div><div className="hk-guest">{booking.firstName}</div><div className="hk-type">{room.short}</div></div>
                                         </div>
                                     ))}
-                                    {!housekeeping.dirty.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>No rooms</div>}
+                                    {!housekeeping.dirty.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '30px'}}>No rooms</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#a371f7', marginBottom: '12px'}}>🔄 Turnover ({housekeeping.turnover.length})</h3>
+                                    <h3 style={{color: '#a855f7', marginBottom: '14px', fontSize: '16px'}}>🔄 Turnover ({housekeeping.turnover.length})</h3>
                                     {housekeeping.turnover.map(({room, unit, out, in: ci}) => (
                                         <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover">
                                             <div className="hk-room">{unit.n}</div>
-                                            <div className="hk-info"><div className="hk-guest">{out.firstName} → {ci.firstName}</div><div className="hk-type">{room.short}</div></div>
+                                            <div><div className="hk-guest">{out.firstName} → {ci.firstName}</div><div className="hk-type">{room.short}</div></div>
                                         </div>
                                     ))}
-                                    {!housekeeping.turnover.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>No rooms</div>}
+                                    {!housekeeping.turnover.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '30px'}}>No rooms</div>}
                                 </div>
                             </div>
                         </div>
@@ -510,10 +487,10 @@ function App() {
                     {/* MOVEMENTS */}
                     {tab === "movements" && (
                         <div style={{padding: '16px'}}>
-                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>↔️ Movements - {formatDate(today)}</h2>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+                            <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '20px'}}>↔️ Movements - {formatDate(today)}</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px'}}>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#58a6ff', marginBottom: '12px'}}>⬇️ Pending Check-in ({movements.pendingIn.length})</h3>
+                                    <h3 style={{color: '#3b82f6', marginBottom: '14px'}}>⬇️ Pending Check-in ({movements.pendingIn.length})</h3>
                                     {movements.pendingIn.map(b => {
                                         const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                         return (
@@ -523,10 +500,10 @@ function App() {
                                             </div>
                                         );
                                     })}
-                                    {!movements.pendingIn.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
+                                    {!movements.pendingIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '30px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#3fb950', marginBottom: '12px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
+                                    <h3 style={{color: '#10b981', marginBottom: '14px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
                                     {movements.doneIn.map(b => {
                                         const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                         return (
@@ -536,10 +513,10 @@ function App() {
                                             </div>
                                         );
                                     })}
-                                    {!movements.doneIn.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
+                                    {!movements.doneIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '30px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#a371f7', marginBottom: '12px'}}>⬆️ Pending Check-out ({movements.pendingOut.length})</h3>
+                                    <h3 style={{color: '#8b5cf6', marginBottom: '14px'}}>⬆️ Pending Check-out ({movements.pendingOut.length})</h3>
                                     {movements.pendingOut.map(b => {
                                         const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                         return (
@@ -549,10 +526,10 @@ function App() {
                                             </div>
                                         );
                                     })}
-                                    {!movements.pendingOut.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
+                                    {!movements.pendingOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '30px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#d29922', marginBottom: '12px'}}>👋 Checked-out ({movements.doneOut.length})</h3>
+                                    <h3 style={{color: '#f59e0b', marginBottom: '14px'}}>👋 Checked-out ({movements.doneOut.length})</h3>
                                     {movements.doneOut.map(b => {
                                         const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                         return (
@@ -562,18 +539,18 @@ function App() {
                                             </div>
                                         );
                                     })}
-                                    {!movements.doneOut.length && <div style={{color: '#8b949e', textAlign: 'center', padding: '24px'}}>None</div>}
+                                    {!movements.doneOut.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '30px'}}>None</div>}
                                 </div>
                             </div>
                             <div className="hk-section">
-                                <h3 style={{marginBottom: '12px'}}>🏠 Current Guests ({movements.guests.length})</h3>
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px'}}>
+                                <h3 style={{marginBottom: '14px'}}>🏠 Current Guests ({movements.guests.length})</h3>
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px'}}>
                                     {movements.guests.map(b => {
                                         const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                         return (
-                                            <div key={b.id} style={{background: '#21262d', borderRadius: '8px', padding: '12px'}}>
-                                                <div style={{display: 'flex', justifyContent: 'space-between'}}><span style={{fontWeight: '600'}}>{b.firstName}</span><span style={{color: '#58a6ff', fontWeight: '700'}}>{num}</span></div>
-                                                <div style={{fontSize: '12px', color: '#8b949e'}}>{room?.short}</div>
+                                            <div key={b.id} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px'}}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start'}}><span style={{fontWeight: '600'}}>{b.firstName}</span><span style={{color: '#3b82f6', fontWeight: '700', fontSize: '18px'}}>{num}</span></div>
+                                                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>{room?.short}</div>
                                             </div>
                                         );
                                     })}
@@ -585,37 +562,37 @@ function App() {
                     {/* DASHBOARD */}
                     {tab === "dashboard" && (
                         <div style={{padding: '16px'}}>
-                            <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>📊 Dashboard</h2>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'}}>
+                            <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '20px'}}>📊 Dashboard</h2>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px'}}>
                                 <div className="hk-section">
-                                    <h3 style={{marginBottom: '16px'}}>Occupancy by Room Type</h3>
+                                    <h3 style={{marginBottom: '18px'}}>Occupancy by Room Type</h3>
                                     {ROOMS.map(r => {
                                         const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
                                         const pct = Math.round(booked / r.units.length * 100);
                                         return (
-                                            <div key={r.id} style={{marginBottom: '12px'}}>
-                                                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px'}}>
-                                                    <span>{r.short}</span><span style={{color: '#8b949e'}}>{booked}/{r.units.length} ({pct}%)</span>
+                                            <div key={r.id} style={{marginBottom: '14px'}}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px'}}>
+                                                    <span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length} ({pct}%)</span>
                                                 </div>
-                                                <div style={{height: '8px', background: '#21262d', borderRadius: '4px', overflow: 'hidden'}}>
-                                                    <div style={{height: '100%', width: pct+'%', background: 'linear-gradient(90deg, #238636, #3fb950)', borderRadius: '4px', transition: 'width 0.5s'}}></div>
+                                                <div style={{height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden'}}>
+                                                    <div style={{height: '100%', width: pct+'%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '5px', transition: 'width 0.5s'}}></div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{marginBottom: '16px'}}>Occupancy by Floor</h3>
-                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px'}}>
+                                    <h3 style={{marginBottom: '18px'}}>Occupancy by Floor</h3>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px'}}>
                                         {FLOORS.map(f => {
                                             const rooms = roomsByFloor[f] || [];
                                             const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
                                             const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0;
                                             return (
-                                                <div key={f} style={{background: '#21262d', borderRadius: '10px', padding: '16px', textAlign: 'center'}}>
-                                                    <div style={{color: '#8b949e', fontSize: '12px'}}>Floor {f}</div>
-                                                    <div style={{fontSize: '28px', fontWeight: '700', color: pct > 70 ? '#f85149' : pct > 40 ? '#d29922' : '#3fb950'}}>{pct}%</div>
-                                                    <div style={{fontSize: '12px', color: '#8b949e'}}>{booked}/{rooms.length}</div>
+                                                <div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '18px', textAlign: 'center'}}>
+                                                    <div style={{color: 'rgba(255,255,255,0.5)', fontSize: '12px'}}>Floor {f}</div>
+                                                    <div style={{fontSize: '32px', fontWeight: '700', color: pct > 70 ? '#ef4444' : pct > 40 ? '#f59e0b' : '#10b981', marginTop: '4px'}}>{pct}%</div>
+                                                    <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px'}}>{booked}/{rooms.length}</div>
                                                 </div>
                                             );
                                         })}
@@ -629,10 +606,10 @@ function App() {
 
             {/* Floating Book Button */}
             {selected.length > 0 && (
-                <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '500px', margin: '0 auto'}}>
-                    <button onClick={() => setShowModal(true)} style={{width: '100%', padding: '16px', background: '#238636', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 4px 20px rgba(35,134,54,0.4)'}}>
-                        ➕ Book {selected.length} Room{selected.length > 1 ? 's' : ''}
-                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} style={{marginLeft: 'auto', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>✕</span>
+                <div style={{position: 'fixed', bottom: '24px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '500px', margin: '0 auto'}}>
+                    <button onClick={() => setShowModal(true)} style={{width: '100%', padding: '18px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '700', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 8px 30px rgba(16,185,129,0.4)'}}>
+                        ➕ Book {selected.length} Room{selected.length > 1 ? 's' : ''} ({selected.map(s => s.unit.n).join(', ')})
+                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} style={{marginLeft: 'auto', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>✕</span>
                     </button>
                 </div>
             )}
@@ -643,7 +620,7 @@ function App() {
 }
 
 function BookingModal({selected, onClose}) {
-    const [form, setForm] = useState({guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "", checkIn: selected[0]?.date || getBDDate(), checkOut: getBDDate(1)});
+    const [form, setForm] = useState({guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "", checkIn: getBDDate(), checkOut: getBDDate(1)});
     const [status, setStatus] = useState("");
 
     const add = (f) => form[f].length < 3 && setForm({...form, [f]: [...form[f], f === 'guests' ? {name: ""} : ""]});
@@ -672,58 +649,58 @@ function BookingModal({selected, onClose}) {
     };
 
     if (status === "success") return (
-        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000}}>
-            <div style={{background: '#161b22', border: '1px solid #30363d', borderRadius: '16px', padding: '40px', textAlign: 'center'}}>
-                <div style={{fontSize: '48px', marginBottom: '16px'}}>✅</div>
-                <div style={{fontSize: '20px', fontWeight: '700'}}>Booking Created!</div>
+        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000}}>
+            <div style={{background: '#1a1d23', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '50px', textAlign: 'center'}}>
+                <div style={{fontSize: '56px', marginBottom: '16px'}}>✅</div>
+                <div style={{fontSize: '22px', fontWeight: '700'}}>Booking Created!</div>
             </div>
         </div>
     );
 
-    const inputStyle = {width: '100%', padding: '10px 12px', background: '#21262d', border: '1px solid #30363d', borderRadius: '8px', color: '#e6edf3', fontSize: '14px'};
+    const inputStyle = {width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontSize: '14px'};
 
     return (
-        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 1000, overflowY: 'auto'}}>
-            <div style={{background: '#161b22', border: '1px solid #30363d', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-                    <h3 style={{fontSize: '18px', fontWeight: '700'}}>➕ New Booking</h3>
-                    <button onClick={onClose} style={{background: 'none', border: 'none', color: '#8b949e', fontSize: '24px', cursor: 'pointer'}}>×</button>
+        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 1000, overflowY: 'auto'}}>
+            <div style={{background: '#1a1d23', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '440px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px'}}>
+                    <h3 style={{fontSize: '20px', fontWeight: '700'}}>➕ New Booking</h3>
+                    <button onClick={onClose} style={{background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '28px', cursor: 'pointer'}}>×</button>
                 </div>
-                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px'}}>
-                    {selected.map(s => <span key={s.key} style={{padding: '6px 12px', background: '#238636', borderRadius: '6px', fontSize: '13px', fontWeight: '600'}}>{s.unit.n}</span>)}
+                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px'}}>
+                    {selected.map(s => <span key={s.key} style={{padding: '8px 14px', background: 'linear-gradient(135deg, #10b981, #059669)', borderRadius: '8px', fontSize: '14px', fontWeight: '600'}}>{s.unit.n}</span>)}
                 </div>
                 <form onSubmit={submit}>
-                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
-                        <div><label style={{fontSize: '12px', color: '#8b949e', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} style={inputStyle}/></div>
-                        <div><label style={{fontSize: '12px', color: '#8b949e', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} style={inputStyle}/></div>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '18px'}}>
+                        <div><label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Check-in</label><input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} style={inputStyle}/></div>
+                        <div><label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Check-out</label><input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} style={inputStyle}/></div>
                     </div>
-                    <div style={{marginBottom: '16px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}><label style={{fontSize: '12px', color: '#8b949e'}}>Guests *</label>{form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'none', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer'}}>+ Add</button>}</div>
+                    <div style={{marginBottom: '18px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}><label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Guests *</label>{form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'none', border: 'none', color: '#10b981', fontSize: '12px', cursor: 'pointer'}}>+ Add</button>}</div>
                         {form.guests.map((g, i) => (
-                            <div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                            <div key={i} style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
                                 <input type="text" required value={g.name} onChange={e => upd('guests', i, e.target.value)} placeholder={`Guest ${i+1}`} style={{...inputStyle, flex: 1}}/>
-                                {form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'none', border: 'none', color: '#f85149', fontSize: '18px', cursor: 'pointer', padding: '0 8px'}}>×</button>}
+                                {form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '20px', cursor: 'pointer', padding: '0 10px'}}>×</button>}
                             </div>
                         ))}
                     </div>
-                    <div style={{marginBottom: '16px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}><label style={{fontSize: '12px', color: '#8b949e'}}>Phone *</label>{form.phones.length < 3 && <button type="button" onClick={() => add('phones')} style={{background: 'none', border: 'none', color: '#58a6ff', fontSize: '12px', cursor: 'pointer'}}>+ Add</button>}</div>
+                    <div style={{marginBottom: '18px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}><label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Phone *</label>{form.phones.length < 3 && <button type="button" onClick={() => add('phones')} style={{background: 'none', border: 'none', color: '#10b981', fontSize: '12px', cursor: 'pointer'}}>+ Add</button>}</div>
                         {form.phones.map((p, i) => (
-                            <div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                            <div key={i} style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
                                 <input type="tel" required value={p} onChange={e => upd('phones', i, e.target.value)} placeholder={`Phone ${i+1}`} style={{...inputStyle, flex: 1}}/>
-                                {form.phones.length > 1 && <button type="button" onClick={() => rem('phones', i)} style={{background: 'none', border: 'none', color: '#f85149', fontSize: '18px', cursor: 'pointer', padding: '0 8px'}}>×</button>}
+                                {form.phones.length > 1 && <button type="button" onClick={() => rem('phones', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '20px', cursor: 'pointer', padding: '0 10px'}}>×</button>}
                             </div>
                         ))}
                     </div>
-                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" style={{...inputStyle, marginBottom: '12px'}}/>
-                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" style={{...inputStyle, marginBottom: '14px'}}/>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px'}}>
                         <input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" style={inputStyle}/>
                         <input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" style={inputStyle}/>
                     </div>
-                    {status.startsWith("error") && <div style={{padding: '10px', background: 'rgba(248,81,73,0.15)', border: '1px solid #f85149', borderRadius: '8px', color: '#f85149', fontSize: '13px', marginBottom: '16px'}}>{status}</div>}
-                    <div style={{display: 'flex', gap: '12px'}}>
-                        <button type="button" onClick={onClose} style={{flex: 1, padding: '12px', background: '#21262d', border: '1px solid #30363d', borderRadius: '8px', color: '#e6edf3', fontWeight: '600', cursor: 'pointer'}}>Cancel</button>
-                        <button type="submit" disabled={status === "loading"} style={{flex: 1, padding: '12px', background: '#238636', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: status === "loading" ? 0.6 : 1}}>{status === "loading" ? "..." : "Book"}</button>
+                    {status.startsWith("error") && <div style={{padding: '12px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '10px', color: '#ef4444', fontSize: '13px', marginBottom: '18px'}}>{status}</div>}
+                    <div style={{display: 'flex', gap: '14px'}}>
+                        <button type="button" onClick={onClose} style={{flex: 1, padding: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>Cancel</button>
+                        <button type="submit" disabled={status === "loading"} style={{flex: 1, padding: '14px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: status === "loading" ? 0.6 : 1}}>{status === "loading" ? "..." : "Book"}</button>
                     </div>
                 </form>
             </div>
