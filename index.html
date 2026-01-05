@@ -189,18 +189,11 @@ const getBDDate = (offset = 0) => {
 };
 
 const getBDTime = () => {
-    return new Date().toLocaleTimeString("en-US", { 
-        timeZone: 'Asia/Dhaka',
-        hour: "2-digit", 
-        minute: "2-digit", 
-        hour12: true 
-    });
+    return new Date().toLocaleTimeString("en-US", { timeZone: 'Asia/Dhaka', hour: "2-digit", minute: "2-digit", hour12: true });
 };
 
-const formatDate = (d) => {
-    const date = new Date(d + 'T12:00:00');
-    return date.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"});
-};
+const formatDate = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+const shortDay = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
 const dayNum = (d) => new Date(d+"T00:00:00").getDate();
 
 const ROOMS = [
