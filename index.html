@@ -6,117 +6,537 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v19</title>
+    <title>Miami Beach Resort v20</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Segoe UI, system-ui, sans-serif; background: #1a1f2e; min-height: 100vh; color: #fff; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #1a1f2e 0%, #0f1318 100%); min-height: 100vh; color: #fff; }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-        .animate-fade { animation: fadeIn 0.4s ease-out; }
-        .animate-slide { animation: slideIn 0.3s ease-out; }
-        .top-bar { background: #141824; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 300; padding: 12px 16px; }
-        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; padding: 16px; }
-        @media (max-width: 768px) { .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; } }
-        @media (max-width: 480px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
-        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px 10px; text-align: center; transition: all 0.3s ease; }
-        .stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.06); }
-        .stat-num { font-size: 32px; font-weight: 700; }
-        .stat-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .search-btn { display: flex; align-items: center; gap: 10px; padding: 16px 28px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 15px; transition: all 0.3s ease; }
-        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #10b981; }
-        .tabs-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 14px; padding: 0 16px; }
-        @media (max-width: 900px) { .tabs-row { grid-template-columns: repeat(4, 1fr); } }
-        @media (max-width: 600px) { .tabs-row { grid-template-columns: repeat(3, 1fr); } }
-        .nav-btn { padding: 14px 8px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s ease; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); white-space: nowrap; }
-        .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-        .nav-btn.active { background: #10b981; color: white; }
-        .date-header-wrapper { position: sticky; top: 58px; z-index: 200; background: #1a1f2e; padding: 12px 16px; margin-left: 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .date-header-inner { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-        .date-cell { flex: 1; min-width: 110px; text-align: center; padding: 12px 8px; background: rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; transition: all 0.3s ease; }
-        .date-cell:hover { background: rgba(255,255,255,0.1); }
-        .date-cell.active { background: #10b981; }
-        .date-cell .day-name { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .animate-fade { animation: fadeIn 0.5s ease-out; }
+        .animate-slide { animation: slideIn 0.4s ease-out; }
+        
+        /* Top Bar - Fixed height */
+        .top-bar { 
+            background: linear-gradient(180deg, #141824 0%, #1a1f2e 100%); 
+            border-bottom: 1px solid rgba(255,255,255,0.08); 
+            position: fixed; 
+            top: 0; 
+            left: 0;
+            right: 0;
+            z-index: 300; 
+            padding: 14px 20px; 
+            height: 70px;
+            backdrop-filter: blur(10px);
+        }
+        .property-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .property-time { font-size: 14px; color: rgba(255,255,255,0.6); }
+        .property-time .gmt-badge { 
+            display: inline-block;
+            background: rgba(16,185,129,0.2); 
+            color: #10b981;
+            padding: 2px 8px; 
+            border-radius: 6px; 
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        /* Main content with top padding */
+        .main-content { padding-top: 80px; }
+        
+        /* Stats Row - Bigger */
+        .stats-row { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 14px; 
+            margin-bottom: 20px; 
+            padding: 20px; 
+        }
+        @media (max-width: 900px) { .stats-row { grid-template-columns: repeat(3, 1fr); gap: 10px; } }
+        @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+        .stat-card { 
+            background: rgba(255,255,255,0.04); 
+            border: 1px solid rgba(255,255,255,0.08); 
+            border-radius: 16px; 
+            padding: 20px 14px; 
+            text-align: center; 
+            transition: all 0.3s ease; 
+        }
+        .stat-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .stat-num { font-size: 38px; font-weight: 800; line-height: 1; }
+        .stat-label { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
+        
+        /* Tabs Row - Bigger and Centered */
+        .tabs-container { 
+            display: flex; 
+            justify-content: center; 
+            padding: 0 20px; 
+            margin-bottom: 20px; 
+        }
+        .tabs-row { 
+            display: flex; 
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px; 
+        }
+        .nav-btn { 
+            padding: 16px 20px; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            font-weight: 600; 
+            border: none; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            background: rgba(255,255,255,0.06); 
+            color: rgba(255,255,255,0.7); 
+            white-space: nowrap; 
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); }
+        .nav-btn.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 15px rgba(16,185,129,0.4); }
+        .nav-btn-wrapper { position: relative; }
+        .notification-badge { 
+            position: absolute; top: -6px; right: -6px; 
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+            color: white; font-size: 11px; font-weight: 700; 
+            min-width: 20px; height: 20px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            animation: pulse 2s infinite; 
+            box-shadow: 0 2px 8px rgba(239,68,68,0.5);
+        }
+        
+        /* Date Header - Properly Separated */
+        .date-header-wrapper { 
+            position: sticky; 
+            top: 70px; 
+            z-index: 200; 
+            background: linear-gradient(180deg, #1a1f2e 0%, rgba(26,31,46,0.95) 100%);
+            padding: 16px 20px; 
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+        }
+        .date-header-inner { 
+            display: flex; 
+            gap: 10px; 
+            overflow-x: auto; 
+            padding-bottom: 6px;
+            justify-content: center;
+        }
+        .date-header-inner::-webkit-scrollbar { height: 4px; }
+        .date-header-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+        .date-cell { 
+            min-width: 90px; 
+            text-align: center; 
+            padding: 14px 12px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 14px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            flex-shrink: 0;
+        }
+        .date-cell:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+        .date-cell.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+        .date-cell .day-name { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 4px; font-weight: 500; }
         .date-cell.active .day-name { color: rgba(255,255,255,0.9); }
-        .date-cell .day-num { font-size: 22px; font-weight: 700; }
-        .room-card { background: #2563eb; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .room-card:hover { transform: translateX(4px); filter: brightness(1.1); }
-        .room-card.available { background: #22c55e; }
-        .room-card.checkout { background: #f97316; }
+        .date-cell .day-num { font-size: 26px; font-weight: 800; }
+        
+        /* Room Cards */
+        .room-card { 
+            background: #2563eb; 
+            border-radius: 12px; 
+            padding: 14px 16px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            display: flex; 
+            align-items: center; 
+            gap: 14px; 
+            margin-bottom: 10px; 
+        }
+        .room-card:hover { transform: translateX(5px); filter: brightness(1.15); }
+        .room-card.available { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+        .room-card.checkout, .room-card.dirty { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
         .room-card.turnover { background: linear-gradient(135deg, #8b5cf6 50%, #2563eb 50%); }
-        .room-card.dirty { background: #f97316; }
-        .room-num { font-size: 18px; font-weight: 700; min-width: 45px; }
+        .room-card.checkin { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+        .room-card.occupied { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .room-num { font-size: 20px; font-weight: 800; min-width: 50px; }
         .room-info { flex: 1; }
-        .guest-name { font-size: 15px; font-weight: 600; }
-        .room-type { font-size: 12px; opacity: 0.85; }
-        .today-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 20px; animation: fadeIn 0.4s ease-out; }
-        .today-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 20px; min-width: 280px; max-width: 400px; flex: 1 1 300px; transition: all 0.3s ease; }
-        .today-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .today-card h3 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-        .today-card .count { font-size: 13px; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; }
-        .view-toggle { display: flex; gap: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 16px; }
-        .view-toggle button { padding: 10px 20px; border: none; border-radius: 8px; background: transparent; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s ease; }
-        .view-toggle button.active { background: #10b981; color: white; }
-        .view-toggle button:hover:not(.active) { background: rgba(255,255,255,0.1); }
-        .search-results { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 20px; }
-        .search-result-card { border-radius: 12px; padding: 16px 20px; min-width: 140px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
-        .search-result-card:hover { transform: scale(1.05); }
-        .search-result-card.available { background: #22c55e; }
-        .search-result-card.occupied { background: #ef4444; }
-        .search-result-card .room-number { font-size: 24px; font-weight: 700; }
-        .search-result-card .room-status { font-size: 12px; opacity: 0.9; margin-top: 4px; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s ease; }
-        .modal { background: #1e2433; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; animation: slideIn 0.3s ease; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-header h3 { font-size: 20px; font-weight: 700; }
-        .modal-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; opacity: 0.6; }
+        .guest-name { font-size: 16px; font-weight: 600; }
+        .room-type { font-size: 13px; opacity: 0.85; }
+        
+        /* Today Grid - Centered and Responsive */
+        .today-grid { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 16px; 
+            padding: 24px; 
+            animation: fadeIn 0.5s ease-out; 
+        }
+        .today-card { 
+            background: rgba(255,255,255,0.04); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 18px; 
+            padding: 24px; 
+            width: 100%;
+            max-width: 380px;
+            min-width: 300px;
+            flex: 1 1 340px;
+            transition: all 0.3s ease; 
+        }
+        .today-card:hover { transform: translateY(-4px); box-shadow: 0 15px 40px rgba(0,0,0,0.35); border-color: rgba(255,255,255,0.15); }
+        .today-card h3 { 
+            font-size: 18px; 
+            margin-bottom: 18px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+        }
+        .today-card .count { 
+            font-size: 14px; 
+            background: rgba(255,255,255,0.12); 
+            padding: 5px 14px; 
+            border-radius: 20px; 
+            font-weight: 600;
+        }
+        
+        /* Search Results - Centered and Colored */
+        .search-results { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 14px; 
+            padding: 24px; 
+        }
+        .search-result-card { 
+            border-radius: 14px; 
+            padding: 20px 24px; 
+            min-width: 160px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        .search-result-card:hover { transform: scale(1.08); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .search-result-card.available { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+        .search-result-card.occupied { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .search-result-card .room-number { font-size: 28px; font-weight: 800; }
+        .search-result-card .room-status { font-size: 13px; opacity: 0.9; margin-top: 6px; font-weight: 500; }
+        
+        /* View Toggle */
+        .view-toggle { 
+            display: flex; 
+            gap: 8px; 
+            padding: 8px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+        }
+        .view-toggle button { 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 10px; 
+            background: transparent; 
+            color: rgba(255,255,255,0.6); 
+            cursor: pointer; 
+            font-size: 15px; 
+            font-weight: 600; 
+            transition: all 0.3s ease; 
+        }
+        .view-toggle button.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .view-toggle button:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; }
+        
+        /* Search Date Selectors */
+        .date-selector { 
+            padding: 20px 28px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 14px; 
+            cursor: pointer; 
+            min-width: 180px; 
+            text-align: center; 
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .date-selector:hover { background: rgba(255,255,255,0.1); }
+        .date-selector.active { 
+            background: rgba(16,185,129,0.15); 
+            border-color: #10b981; 
+        }
+        .date-selector .label { font-size: 13px; opacity: 0.7; margin-bottom: 6px; }
+        .date-selector .date { font-size: 22px; font-weight: 700; }
+        
+        /* Housekeeping Grid */
+        .housekeeping-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 20px; 
+            padding: 24px; 
+        }
+        .housekeeping-column { 
+            background: rgba(255,255,255,0.04); 
+            border-radius: 16px; 
+            padding: 20px; 
+        }
+        .housekeeping-column h4 { 
+            font-size: 16px; 
+            margin-bottom: 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        .housekeeping-column .badge { 
+            font-size: 13px; 
+            background: rgba(255,255,255,0.15); 
+            padding: 4px 12px; 
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .request-indicator {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Accounting */
+        .accounting-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 18px; 
+            padding: 24px; 
+        }
+        .accounting-card { 
+            background: rgba(255,255,255,0.04); 
+            border: 1px solid rgba(255,255,255,0.08); 
+            border-radius: 16px; 
+            padding: 24px; 
+        }
+        .accounting-card h4 { font-size: 15px; color: rgba(255,255,255,0.6); margin-bottom: 10px; }
+        .accounting-card .amount { font-size: 32px; font-weight: 800; }
+        .accounting-card.income { border-left: 5px solid #22c55e; }
+        .accounting-card.expense { border-left: 5px solid #ef4444; }
+        .accounting-card.pending { border-left: 5px solid #f59e0b; }
+        
+        /* Modal */
+        .modal-overlay { 
+            position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.8); 
+            display: flex; align-items: center; justify-content: center; 
+            z-index: 1000; 
+            animation: fadeIn 0.2s ease; 
+            backdrop-filter: blur(5px);
+        }
+        .modal { 
+            background: linear-gradient(180deg, #1e2433 0%, #171c28 100%); 
+            border-radius: 20px; 
+            padding: 28px; 
+            max-width: 540px; 
+            width: 92%; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            animation: slideIn 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header h3 { font-size: 22px; font-weight: 700; }
+        .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; opacity: 0.6; }
         .modal-close:hover { opacity: 1; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
-        .form-input { width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-size: 15px; }
-        .form-input:focus { outline: none; border-color: #10b981; }
-        .btn-primary { background: #10b981; color: white; border: none; padding: 14px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
-        .btn-primary:hover { background: #0d9668; transform: translateY(-1px); }
-        .refresh-btn { padding: 10px 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px; font-weight: 500; }
+        .form-input { 
+            width: 100%; padding: 14px 16px; 
+            background: rgba(255,255,255,0.06); 
+            border: 1px solid rgba(255,255,255,0.12); 
+            border-radius: 12px; 
+            color: #fff; font-size: 16px; 
+        }
+        .form-input:focus { outline: none; border-color: #10b981; background: rgba(255,255,255,0.08); }
+        
+        /* Buttons */
+        .btn-primary { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+            color: white; border: none; 
+            padding: 16px 28px; border-radius: 12px; 
+            font-size: 16px; font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
+        
+        .search-btn { 
+            display: flex; align-items: center; gap: 10px; 
+            padding: 14px 24px; 
+            background: rgba(255,255,255,0.06); 
+            border: 1px solid rgba(255,255,255,0.15); 
+            border-radius: 12px; 
+            color: rgba(255,255,255,0.8); 
+            cursor: pointer; font-size: 15px; 
+            transition: all 0.3s ease; 
+        }
+        .search-btn:hover { background: rgba(255,255,255,0.12); color: #fff; border-color: #10b981; }
+        
+        .refresh-btn { 
+            padding: 14px 24px; 
+            background: rgba(255,255,255,0.08); 
+            border: 1px solid rgba(255,255,255,0.15); 
+            border-radius: 12px; 
+            color: #fff; font-size: 15px; font-weight: 600; 
+            cursor: pointer; transition: all 0.3s ease; 
+            display: flex; align-items: center; gap: 10px; 
+        }
         .refresh-btn:hover { background: #10b981; border-color: #10b981; }
         .refresh-btn.loading { animation: pulse 1s infinite; }
-        .housekeeping-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 20px; }
-        .housekeeping-column { background: rgba(255,255,255,0.03); border-radius: 14px; padding: 16px; }
-        .housekeeping-column h4 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-        .housekeeping-column .badge { font-size: 12px; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 20px; }
-        .notification-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: pulse 2s infinite; }
-        .nav-btn-wrapper { position: relative; display: inline-block; }
-        .accounting-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; padding: 20px; }
-        .accounting-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 20px; }
-        .accounting-card h4 { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
-        .accounting-card .amount { font-size: 28px; font-weight: 700; }
-        .accounting-card.income { border-left: 4px solid #22c55e; }
-        .accounting-card.expense { border-left: 4px solid #ef4444; }
-        .accounting-card.pending { border-left: 4px solid #f59e0b; }
-        .info-icon { width: 24px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: all 0.3s ease; }
-        .info-icon:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
-        .unit-selected { box-shadow: 0 0 0 3px #10b981, 0 0 20px rgba(16,185,129,0.3); }
-        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: #10b981; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+        
+        /* Info Icon */
+        .info-icon { 
+            width: 28px; height: 28px; 
+            background: rgba(255,255,255,0.15); 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 14px; cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        .info-icon:hover { background: rgba(255,255,255,0.3); transform: scale(1.15); }
+        
+        /* Unit Selection */
+        .unit-selected { box-shadow: 0 0 0 4px #10b981, 0 0 25px rgba(16,185,129,0.4); }
+        
+        /* Spinner */
+        .spinner { 
+            border: 3px solid rgba(255,255,255,0.1); 
+            border-top-color: #10b981; 
+            border-radius: 50%; 
+            width: 22px; height: 22px; 
+            animation: spin 0.8s linear infinite; 
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .version-tag { position: fixed; bottom: 10px; right: 10px; font-size: 11px; color: rgba(255,255,255,0.3); }
-        @media (max-width: 768px) { .stat-num { font-size: 24px; } .top-bar { padding: 10px 12px; } .nav-btn { padding: 12px 6px; font-size: 12px; } .room-card { padding: 10px 12px; } .today-card { min-width: 100%; } }
+        
+        /* Version Tag */
+        .version-tag { position: fixed; bottom: 12px; right: 12px; font-size: 12px; color: rgba(255,255,255,0.3); }
+        
+        /* Responsive */
+        @media (max-width: 768px) { 
+            .stat-num { font-size: 28px; } 
+            .top-bar { padding: 12px 14px; height: 64px; }
+            .main-content { padding-top: 74px; }
+            .date-header-wrapper { top: 64px; }
+            .nav-btn { padding: 14px 14px; font-size: 14px; } 
+            .room-card { padding: 12px 14px; } 
+            .today-card { min-width: 100%; max-width: 100%; }
+            .property-name { font-size: 17px; }
+        }
+        @media (max-width: 480px) {
+            .tabs-row { gap: 6px; }
+            .nav-btn { padding: 12px 10px; font-size: 13px; }
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
+        
+        // Beds24 API Configuration
         const PROPERTY = "miamibr";
         const PROXY = "https://beds24-api.vercel.app/api/proxy";
-        const getBDTime = () => { const now = new Date(); return new Date(now.getTime() + (6 * 60 * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000)); };
-        const formatBDDateTime = () => { const bd = getBDTime(); const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; const hours = bd.getUTCHours(); const minutes = bd.getUTCMinutes().toString().padStart(2, '0'); const ampm = hours >= 12 ? 'PM' : 'AM'; const hour12 = hours % 12 || 12; return days[bd.getUTCDay()] + ', ' + months[bd.getUTCMonth()] + ' ' + bd.getUTCDate() + ' • ' + hour12 + ':' + minutes + ' ' + ampm; };
-        const getBDDate = (offset = 0) => { const bd = getBDTime(); bd.setUTCDate(bd.getUTCDate() + offset); return bd.toISOString().split('T')[0]; };
-        const formatDateDisplay = (dateStr) => { const date = new Date(dateStr + 'T00:00:00Z'); const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; return { day: days[date.getUTCDay()], num: date.getUTCDate() }; };
-        const sampleRooms = [ { id: '101', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe' }, { id: '102', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe' }, { id: '201', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe' }, { id: '202', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe' }, { id: '301', name: 'Premium Sea View', floor: 3, category: 'Premium' }, { id: '302', name: 'Premium Sea View', floor: 3, category: 'Premium' }, { id: '401', name: 'Royal Suite', floor: 4, category: 'Suite' }, { id: '402', name: 'Royal Suite', floor: 4, category: 'Suite' }, { id: '501', name: 'Penthouse', floor: 5, category: 'Suite' } ];
-        const generateSampleBookings = () => { const bookings = []; const guests = ['Misty', 'Karif', 'Trisha', 'Mahim', 'Imam', 'Foyez', 'Hossain', 'Mobarak', 'Rajo', 'Shamim', 'Yeasin', 'Pritom', 'Imran', 'Rafin', 'Mahedi']; sampleRooms.forEach((room, idx) => { if (Math.random() > 0.2) { const checkIn = getBDDate(Math.floor(Math.random() * 3) - 1); const nights = Math.floor(Math.random() * 4) + 1; const checkOutDate = new Date(checkIn); checkOutDate.setDate(checkOutDate.getDate() + nights); bookings.push({ id: 'BK' + (1000 + idx), roomId: room.id, unitId: room.id, guestName: guests[idx % guests.length], checkIn, checkOut: checkOutDate.toISOString().split('T')[0], status: 'confirmed', numAdults: Math.floor(Math.random() * 2) + 1, numChildren: Math.floor(Math.random() * 2), totalAmount: (Math.floor(Math.random() * 5) + 3) * 1000, paidAmount: Math.floor(Math.random() * 3) * 1000 }); } }); return bookings; };
+        
+        // FIXED: Bangladesh GMT+6 Time - Using Intl API for accurate timezone
+        const formatBDDateTime = () => {
+            const options = { 
+                timeZone: 'Asia/Dhaka',
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            };
+            return new Date().toLocaleString('en-US', options).replace(',', ' •');
+        };
+        
+        const getBDDate = (offset = 0) => {
+            const now = new Date();
+            // Get Bangladesh date using Intl
+            const bdDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+            const bdDate = new Date(bdDateStr + 'T00:00:00');
+            bdDate.setDate(bdDate.getDate() + offset);
+            return bdDate.toISOString().split('T')[0];
+        };
+        
+        const formatDateDisplay = (dateStr) => {
+            const date = new Date(dateStr + 'T00:00:00');
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return { 
+                day: days[date.getDay()], 
+                num: date.getDate(),
+                month: months[date.getMonth()]
+            };
+        };
+        
+        // Sample room data (will be replaced with Beds24 API)
+        const sampleRooms = [
+            { id: '101', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe', rate: 5000 },
+            { id: '102', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe', rate: 5000 },
+            { id: '201', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe', rate: 5500 },
+            { id: '202', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe', rate: 5500 },
+            { id: '301', name: 'Premium Sea View', floor: 3, category: 'Premium', rate: 7000 },
+            { id: '302', name: 'Premium Sea View', floor: 3, category: 'Premium', rate: 7000 },
+            { id: '401', name: 'Royal Suite', floor: 4, category: 'Suite', rate: 12000 },
+            { id: '402', name: 'Royal Suite', floor: 4, category: 'Suite', rate: 12000 },
+            { id: '501', name: 'Penthouse', floor: 5, category: 'Suite', rate: 20000 },
+        ];
+        
+        // Generate sample bookings
+        const generateSampleBookings = () => {
+            const bookings = [];
+            const guests = ['Misty', 'Karif', 'Trisha', 'Mahim', 'Imam', 'Foyez', 'Hossain', 'Mobarak', 'Rajo', 'Shamim'];
+            const phones = ['01711234567', '01812345678', '01912345678', '01612345678', '01512345678'];
+            
+            sampleRooms.forEach((room, idx) => {
+                if (Math.random() > 0.35) {
+                    const checkInOffset = Math.floor(Math.random() * 3) - 1;
+                    const checkIn = getBDDate(checkInOffset);
+                    const nights = Math.floor(Math.random() * 4) + 1;
+                    const checkOutDate = new Date(checkIn);
+                    checkOutDate.setDate(checkOutDate.getDate() + nights);
+                    const totalAmount = room.rate * nights;
+                    const paidAmount = Math.floor(Math.random() * 2) === 0 ? totalAmount : Math.floor(totalAmount * 0.5);
+                    
+                    bookings.push({
+                        id: 'BK' + (1000 + idx),
+                        roomId: room.id,
+                        unitId: room.id,
+                        guestName: guests[idx % guests.length],
+                        phone: phones[idx % phones.length],
+                        checkIn,
+                        checkOut: checkOutDate.toISOString().split('T')[0],
+                        status: 'confirmed',
+                        numAdults: Math.floor(Math.random() * 2) + 1,
+                        numChildren: Math.floor(Math.random() * 2),
+                        totalAmount,
+                        paidAmount,
+                        paymentMethod: ['Cash', 'bKash', 'Bank'][Math.floor(Math.random() * 3)]
+                    });
+                }
+            });
+            return bookings;
+        };
+        
+        // Housekeeping requests
+        const generateRequests = () => [
+            { id: 1, roomId: '102', type: 'Extra Towels', status: 'pending', time: '09:30 AM' },
+            { id: 2, roomId: '301', type: 'Room Cleaning', status: 'pending', time: '10:15 AM' },
+        ];
+        
         function App() {
             const [currentTime, setCurrentTime] = useState(formatBDDateTime());
             const [activeTab, setActiveTab] = useState('today');
@@ -130,25 +550,887 @@
             const [searchDates, setSearchDates] = useState({ checkIn: getBDDate(), checkOut: getBDDate(1) });
             const [dateSelectionMode, setDateSelectionMode] = useState('checkIn');
             const [housekeepingTab, setHousekeepingTab] = useState('today');
-            const [notifications] = useState({ housekeeping: 2 });
-            useEffect(() => { const timer = setInterval(() => setCurrentTime(formatBDDateTime()), 60000); return () => clearInterval(timer); }, []);
+            const [requests, setRequests] = useState(generateRequests());
+            
+            // Update time every minute
+            useEffect(() => {
+                const timer = setInterval(() => setCurrentTime(formatBDDateTime()), 60000);
+                return () => clearInterval(timer);
+            }, []);
+            
             const dateRange = Array.from({ length: 7 }, (_, i) => getBDDate(i));
-            const getStats = () => { const today = getBDDate(); const occupied = bookings.filter(b => b.checkIn <= today && b.checkOut > today).length; return { total: rooms.length, available: rooms.length - occupied, occupied, checkIn: bookings.filter(b => b.checkIn === today).length, checkOut: bookings.filter(b => b.checkOut === today).length }; };
+            
+            // Get today's stats
+            const getStats = () => {
+                const today = getBDDate();
+                const occupied = bookings.filter(b => b.checkIn <= today && b.checkOut > today).length;
+                return {
+                    total: rooms.length,
+                    available: rooms.length - occupied,
+                    occupied,
+                    checkIn: bookings.filter(b => b.checkIn === today).length,
+                    checkOut: bookings.filter(b => b.checkOut === today).length
+                };
+            };
             const stats = getStats();
-            const tabs = [ { id: 'today', label: '📅 Today' }, { id: 'calendar', label: '🗓️ Calendar' }, { id: 'search', label: '🔍 Search & Book' }, { id: 'requests', label: '🔔 Requests' }, { id: 'housekeeping', label: '🧹 Housekeeping', hasNotification: notifications.housekeeping > 0 }, { id: 'movements', label: '🚶 Movements' }, { id: 'accounting', label: '💰 Accounting' } ];
-            const handleRefresh = async () => { setLoading(true); await new Promise(r => setTimeout(r, 1000)); setBookings(generateSampleBookings()); setLoading(false); };
-            const getRoomStatus = (roomId, date) => { const booking = bookings.find(b => b.roomId === roomId && b.checkIn <= date && b.checkOut > date); if (!booking) return { status: 'available', booking: null }; return { status: booking.checkIn === date ? 'checkin' : 'occupied', booking }; };
-            const handleSearchDateClick = (date) => { if (dateSelectionMode === 'checkIn') { setSearchDates({ ...searchDates, checkIn: date }); setDateSelectionMode('checkOut'); } else if (date > searchDates.checkIn) { setSearchDates({ ...searchDates, checkOut: date }); setDateSelectionMode('checkIn'); } };
-            const handleUnitClick = (room, date) => { const key = room.id + '-' + date; const existing = selectedUnits.find(u => u.key === key); if (existing) setSelectedUnits(selectedUnits.filter(u => u.key !== key)); else setSelectedUnits([...selectedUnits, { key, roomId: room.id, date, room }]); };
-            const renderTodayView = () => { const today = getBDDate(); const checkIns = bookings.filter(b => b.checkIn === today); const checkOuts = bookings.filter(b => b.checkOut === today); const stayOvers = bookings.filter(b => b.checkIn < today && b.checkOut > today); const available = rooms.filter(r => !bookings.some(b => b.roomId === r.id && b.checkIn <= today && b.checkOut > today)); return React.createElement('div', {className: 'today-grid animate-fade'}, React.createElement('div', {className: 'today-card'}, React.createElement('h3', null, '🟢 Check-ins ', React.createElement('span', {className: 'count'}, checkIns.length)), checkIns.map(b => React.createElement('div', {key: b.id, className: 'room-card available', onClick: () => setBookingModal(b)}, React.createElement('div', {className: 'room-num'}, b.roomId), React.createElement('div', {className: 'room-info'}, React.createElement('div', {className: 'guest-name'}, b.guestName), React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)), React.createElement('div', {className: 'info-icon'}, 'ℹ️'))), checkIns.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'No check-ins today')), React.createElement('div', {className: 'today-card'}, React.createElement('h3', null, '🟠 Check-outs ', React.createElement('span', {className: 'count'}, checkOuts.length)), checkOuts.map(b => React.createElement('div', {key: b.id, className: 'room-card checkout', onClick: () => setBookingModal(b)}, React.createElement('div', {className: 'room-num'}, b.roomId), React.createElement('div', {className: 'room-info'}, React.createElement('div', {className: 'guest-name'}, b.guestName), React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)), React.createElement('div', {className: 'info-icon'}, 'ℹ️'))), checkOuts.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'No check-outs today')), React.createElement('div', {className: 'today-card'}, React.createElement('h3', null, '🔵 Stay Over ', React.createElement('span', {className: 'count'}, stayOvers.length)), stayOvers.slice(0,5).map(b => React.createElement('div', {key: b.id, className: 'room-card', onClick: () => setBookingModal(b)}, React.createElement('div', {className: 'room-num'}, b.roomId), React.createElement('div', {className: 'room-info'}, React.createElement('div', {className: 'guest-name'}, b.guestName), React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name))))), React.createElement('div', {className: 'today-card'}, React.createElement('h3', null, '⚪ Available ', React.createElement('span', {className: 'count'}, available.length)), available.map(room => React.createElement('div', {key: room.id, className: 'room-card', style: {background: 'rgba(255,255,255,0.1)'}, onClick: () => handleUnitClick(room, today)}, React.createElement('div', {className: 'room-num'}, room.id), React.createElement('div', {className: 'room-info'}, React.createElement('div', {className: 'guest-name'}, 'Available'), React.createElement('div', {className: 'room-type'}, room.name)))))); };
-            const renderCalendarView = () => { const groupedRooms = calendarView === 'floor' ? rooms.reduce((acc, room) => { const key = 'Floor ' + room.floor; if (!acc[key]) acc[key] = []; acc[key].push(room); return acc; }, {}) : rooms.reduce((acc, room) => { if (!acc[room.category]) acc[room.category] = []; acc[room.category].push(room); return acc; }, {}); return React.createElement('div', {className: 'animate-fade', style: {padding: '16px'}}, React.createElement('div', {style: {display: 'flex', justifyContent: 'center', marginBottom: '16px'}}, React.createElement('div', {className: 'view-toggle'}, React.createElement('button', {className: calendarView === 'floor' ? 'active' : '', onClick: () => setCalendarView('floor')}, '🏢 By Floor'), React.createElement('button', {className: calendarView === 'category' ? 'active' : '', onClick: () => setCalendarView('category')}, '📁 By Category'))), React.createElement('div', {className: 'date-header-wrapper'}, React.createElement('div', {className: 'date-header-inner'}, dateRange.map(date => { const fd = formatDateDisplay(date); return React.createElement('div', {key: date, className: 'date-cell ' + (date === selectedDate ? 'active' : ''), onClick: () => setSelectedDate(date)}, React.createElement('div', {className: 'day-name'}, fd.day), React.createElement('div', {className: 'day-num'}, fd.num)); }))), Object.entries(groupedRooms).map(([group, groupRooms]) => React.createElement('div', {key: group, style: {marginBottom: '20px'}}, React.createElement('h3', {style: {fontSize: '16px', marginBottom: '12px', color: 'rgba(255,255,255,0.7)'}}, group), React.createElement('div', {style: {display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px'}}, groupRooms.map(room => { const rs = getRoomStatus(room.id, selectedDate); const isSelected = selectedUnits.some(u => u.roomId === room.id && u.date === selectedDate); return React.createElement('div', {key: room.id, className: 'room-card ' + rs.status + (isSelected ? ' unit-selected' : ''), onClick: () => rs.booking ? setBookingModal(rs.booking) : handleUnitClick(room, selectedDate), style: {flexDirection: 'column', alignItems: 'flex-start', minHeight: '80px'}}, React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', width: '100%'}}, React.createElement('div', {className: 'room-num'}, room.id), React.createElement('div', {className: 'info-icon'}, 'ℹ️')), React.createElement('div', {className: 'guest-name'}, rs.booking?.guestName || 'Available'), React.createElement('div', {className: 'room-type'}, room.name)); })))), selectedUnits.length > 0 && React.createElement('div', {style: {position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}}, React.createElement('button', {className: 'btn-primary', style: {padding: '16px 32px', fontSize: '16px'}, onClick: () => setBookingModal({isNew: true, units: selectedUnits})}, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : '')))); };
-            const renderSearchView = () => { const availableRooms = rooms.filter(room => !bookings.some(b => b.roomId === room.id && b.checkIn < searchDates.checkOut && b.checkOut > searchDates.checkIn)); return React.createElement('div', {className: 'animate-fade', style: {padding: '20px'}}, React.createElement('div', {style: {display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '24px', flexWrap: 'wrap'}}, React.createElement('div', {style: {padding: '16px 24px', background: dateSelectionMode === 'checkIn' ? '#10b981' : 'rgba(255,255,255,0.05)', borderRadius: '12px', cursor: 'pointer', minWidth: '150px', textAlign: 'center'}, onClick: () => setDateSelectionMode('checkIn')}, React.createElement('div', {style: {fontSize: '12px', opacity: 0.7}}, 'Check-in'), React.createElement('div', {style: {fontSize: '20px', fontWeight: '700'}}, searchDates.checkIn)), React.createElement('div', {style: {padding: '16px 24px', background: dateSelectionMode === 'checkOut' ? '#10b981' : 'rgba(255,255,255,0.05)', borderRadius: '12px', cursor: 'pointer', minWidth: '150px', textAlign: 'center'}, onClick: () => setDateSelectionMode('checkOut')}, React.createElement('div', {style: {fontSize: '12px', opacity: 0.7}}, 'Check-out'), React.createElement('div', {style: {fontSize: '20px', fontWeight: '700'}}, searchDates.checkOut))), React.createElement('div', {className: 'date-header-wrapper', style: {position: 'relative', marginBottom: '24px'}}, React.createElement('div', {className: 'date-header-inner'}, Array.from({length: 14}, (_, i) => getBDDate(i)).map(date => { const fd = formatDateDisplay(date); const isSelected = date === searchDates.checkIn || date === searchDates.checkOut; const isInRange = date > searchDates.checkIn && date < searchDates.checkOut; return React.createElement('div', {key: date, className: 'date-cell ' + (isSelected ? 'active' : ''), style: {background: isInRange ? 'rgba(16,185,129,0.3)' : undefined}, onClick: () => handleSearchDateClick(date)}, React.createElement('div', {className: 'day-name'}, fd.day), React.createElement('div', {className: 'day-num'}, fd.num)); }))), React.createElement('h3', {style: {textAlign: 'center', marginBottom: '16px', fontSize: '18px'}}, availableRooms.length + ' Rooms Available'), React.createElement('div', {className: 'search-results'}, rooms.map(room => { const isAvailable = availableRooms.includes(room); const isSelected = selectedUnits.some(u => u.roomId === room.id); return React.createElement('div', {key: room.id, className: 'search-result-card ' + (isAvailable ? 'available' : 'occupied') + (isSelected ? ' unit-selected' : ''), onClick: () => isAvailable && handleUnitClick(room, searchDates.checkIn)}, React.createElement('div', {className: 'room-number'}, room.id), React.createElement('div', {className: 'room-status'}, isAvailable ? 'Available' : 'Occupied'), React.createElement('div', {style: {fontSize: '11px', marginTop: '4px', opacity: 0.8}}, room.name)); })), selectedUnits.length > 0 && React.createElement('div', {style: {position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}}, React.createElement('button', {className: 'btn-primary', style: {padding: '16px 32px', fontSize: '16px'}, onClick: () => setBookingModal({isNew: true, units: selectedUnits, checkIn: searchDates.checkIn, checkOut: searchDates.checkOut})}, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : '')))); };
-            const renderHousekeepingView = () => { const today = getBDDate(); const tomorrow = getBDDate(1); const targetDate = housekeepingTab === 'today' ? today : tomorrow; const checkOuts = bookings.filter(b => b.checkOut === targetDate); const checkIns = bookings.filter(b => b.checkIn === targetDate); const stayOvers = bookings.filter(b => b.checkIn < targetDate && b.checkOut > targetDate); const turnovers = checkOuts.filter(co => checkIns.some(ci => ci.roomId === co.roomId)); return React.createElement('div', {className: 'animate-fade', style: {padding: '16px'}}, React.createElement('div', {style: {display: 'flex', justifyContent: 'center', marginBottom: '20px'}}, React.createElement('div', {className: 'view-toggle'}, React.createElement('button', {className: housekeepingTab === 'today' ? 'active' : '', onClick: () => setHousekeepingTab('today')}, '📅 Today'), React.createElement('button', {className: housekeepingTab === 'tomorrow' ? 'active' : '', onClick: () => setHousekeepingTab('tomorrow')}, '📆 Tomorrow'))), React.createElement('h2', {style: {textAlign: 'center', marginBottom: '20px', fontSize: '18px'}}, 'Housekeeping - ' + (housekeepingTab === 'today' ? 'Today' : 'Tomorrow') + ' (' + targetDate + ')'), React.createElement('div', {className: 'housekeeping-grid'}, React.createElement('div', {className: 'housekeeping-column'}, React.createElement('h4', null, '🟠 Check-out / Dirty ', React.createElement('span', {className: 'badge'}, checkOuts.length)), checkOuts.map(b => React.createElement('div', {key: b.id, className: 'room-card dirty'}, React.createElement('div', {className: 'room-num'}, b.roomId), React.createElement('div', {className: 'room-info'}, React.createElement('div', {className: 'guest-name'}, b.guestName), React.createElement('div', {className: 'room-type'}, 'Check-out'))))), React.createElement('div', {className: 'housekeeping-column'}, React.createElement('h4', null, '🔄 Turnover ', React.createElement('span', {className: 'badge'}, turnovers.length)), turnovers.map(b => { const nextGuest = checkIns.find(ci => ci.roomId === b.roomId); return React.createElement('div', {key: b.id, className: 'room-card turnover'}, React.createElement('div', {className: 'room-num'}, b.roomId), React.createElement('div', {className: 'room-info'}, React.createElement('div', {style: {fontSize: '11px'}}, '⬆ ' + b.guestName), React.createElement('div', {style: {fontSize: '13px', fontWeight: '600'}}, '⬇ ' + (nextGuest?.guestName || '')))); })), React.createElement('div', {className: 'housekeeping-column'}, React.createElement('h4', null, '🔵 Stay Over ', React.createElement('span', {className: 'badge'}, stayOvers.length)), stayOvers.map(b => React.createElement('div', {key: b.id, className: 'room-card'}, React.createElement('div', {className: 'room-num'}, b.roomId), React.createElement('div', {className: 'room-info'}, React.createElement('div', {className: 'guest-name'}, b.guestName), React.createElement('div', {className: 'room-type'}, 'Staying'))))), React.createElement('div', {className: 'housekeeping-column'}, React.createElement('h4', null, '🟢 Check-in ', React.createElement('span', {className: 'badge'}, checkIns.filter(ci => !turnovers.some(t => t.roomId === ci.roomId)).length)), checkIns.filter(ci => !turnovers.some(t => t.roomId === ci.roomId)).map(b => React.createElement('div', {key: b.id, className: 'room-card available'}, React.createElement('div', {className: 'room-num'}, b.roomId), React.createElement('div', {className: 'room-info'}, React.createElement('div', {className: 'guest-name'}, b.guestName), React.createElement('div', {className: 'room-type'}, 'Arriving'))))))); };
-            const renderAccountingView = () => { const todayPayments = bookings.reduce((sum, b) => sum + (b.paidAmount || 0), 0); const totalDues = bookings.reduce((sum, b) => sum + ((b.totalAmount || 0) - (b.paidAmount || 0)), 0); const expectedCheckIn = bookings.filter(b => b.checkIn === getBDDate()).reduce((sum, b) => sum + (b.totalAmount - b.paidAmount), 0); return React.createElement('div', {className: 'animate-fade', style: {padding: '20px'}}, React.createElement('h2', {style: {textAlign: 'center', marginBottom: '24px', fontSize: '20px'}}, '💰 Accounting Dashboard'), React.createElement('div', {className: 'accounting-grid'}, React.createElement('div', {className: 'accounting-card income'}, React.createElement('h4', null, 'Cash Collected Today'), React.createElement('div', {className: 'amount', style: {color: '#22c55e'}}, '৳' + todayPayments.toLocaleString())), React.createElement('div', {className: 'accounting-card pending'}, React.createElement('h4', null, 'Expected from Check-ins'), React.createElement('div', {className: 'amount', style: {color: '#f59e0b'}}, '৳' + expectedCheckIn.toLocaleString())), React.createElement('div', {className: 'accounting-card expense'}, React.createElement('h4', null, 'Total Outstanding Dues'), React.createElement('div', {className: 'amount', style: {color: '#ef4444'}}, '৳' + totalDues.toLocaleString())), React.createElement('div', {className: 'accounting-card'}, React.createElement('h4', null, 'Cash at Hand'), React.createElement('div', {className: 'amount'}, '৳' + (todayPayments * 0.6).toLocaleString())), React.createElement('div', {className: 'accounting-card'}, React.createElement('h4', null, 'bKash Collection'), React.createElement('div', {className: 'amount'}, '৳' + (todayPayments * 0.3).toLocaleString())), React.createElement('div', {className: 'accounting-card'}, React.createElement('h4', null, 'Bank Transfer'), React.createElement('div', {className: 'amount'}, '৳' + (todayPayments * 0.1).toLocaleString()))), React.createElement('div', {style: {marginTop: '24px'}}, React.createElement('h3', {style: {marginBottom: '16px'}}, 'Recent Transactions'), React.createElement('div', {style: {background: 'rgba(255,255,255,0.03)', borderRadius: '12px', overflow: 'hidden'}}, bookings.slice(0, 5).map((b, idx) => React.createElement('div', {key: b.id, style: {display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: idx < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none'}}, React.createElement('div', null, React.createElement('div', {style: {fontWeight: '600'}}, b.guestName), React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}, 'Room ' + b.roomId + ' • ' + b.checkIn)), React.createElement('div', {style: {textAlign: 'right'}}, React.createElement('div', {style: {color: '#22c55e', fontWeight: '600'}}, '+৳' + (b.paidAmount || 0).toLocaleString()), React.createElement('div', {style: {fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}, 'Cash'))))))); };
-            const renderContent = () => { switch(activeTab) { case 'today': return renderTodayView(); case 'calendar': return renderCalendarView(); case 'search': return renderSearchView(); case 'housekeeping': return renderHousekeepingView(); case 'accounting': return renderAccountingView(); case 'requests': return React.createElement('div', {className: 'animate-fade', style: {padding: '20px', textAlign: 'center'}}, React.createElement('h2', null, '🔔 Guest Requests'), React.createElement('div', {style: {color: 'rgba(255,255,255,0.5)', marginTop: '20px'}}, 'No pending requests')); case 'movements': return React.createElement('div', {className: 'animate-fade', style: {padding: '20px', textAlign: 'center'}}, React.createElement('h2', null, '🚶 Room Movements'), React.createElement('div', {style: {color: 'rgba(255,255,255,0.5)', marginTop: '20px'}}, 'No movements today')); default: return renderTodayView(); } };
-            const renderBookingModal = () => { if (!bookingModal) return null; const isNew = bookingModal.isNew; return React.createElement('div', {className: 'modal-overlay', onClick: () => setBookingModal(null)}, React.createElement('div', {className: 'modal', onClick: e => e.stopPropagation()}, React.createElement('div', {className: 'modal-header'}, React.createElement('h3', null, isNew ? '➕ New Booking' : '📋 Booking Details'), React.createElement('button', {className: 'modal-close', onClick: () => setBookingModal(null)}, '×')), isNew ? React.createElement('div', null, React.createElement('div', {style: {marginBottom: '16px', padding: '12px', background: 'rgba(16,185,129,0.1)', borderRadius: '10px'}}, React.createElement('strong', null, 'Selected Units:'), React.createElement('div', {style: {marginTop: '8px'}}, bookingModal.units?.map(u => React.createElement('span', {key: u.key, style: {display: 'inline-block', padding: '4px 10px', background: '#10b981', borderRadius: '6px', marginRight: '8px', marginBottom: '8px', fontSize: '13px'}}, 'Room ' + u.roomId)))), React.createElement('div', {className: 'form-group'}, React.createElement('label', null, 'Guest Name *'), React.createElement('input', {type: 'text', className: 'form-input', placeholder: 'Enter guest name'})), React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}, React.createElement('div', {className: 'form-group'}, React.createElement('label', null, 'Check-in'), React.createElement('input', {type: 'date', className: 'form-input', defaultValue: bookingModal.checkIn || searchDates.checkIn})), React.createElement('div', {className: 'form-group'}, React.createElement('label', null, 'Check-out'), React.createElement('input', {type: 'date', className: 'form-input', defaultValue: bookingModal.checkOut || searchDates.checkOut}))), React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}, React.createElement('div', {className: 'form-group'}, React.createElement('label', null, 'Adults'), React.createElement('input', {type: 'number', className: 'form-input', defaultValue: '2', min: '1'})), React.createElement('div', {className: 'form-group'}, React.createElement('label', null, 'Children'), React.createElement('input', {type: 'number', className: 'form-input', defaultValue: '0', min: '0'}))), React.createElement('div', {className: 'form-group'}, React.createElement('label', null, 'Total Amount (৳)'), React.createElement('input', {type: 'number', className: 'form-input', placeholder: '0'})), React.createElement('div', {className: 'form-group'}, React.createElement('label', null, 'Advance Payment (৳)'), React.createElement('input', {type: 'number', className: 'form-input', placeholder: '0'})), React.createElement('button', {className: 'btn-primary', style: {width: '100%', marginTop: '8px'}}, 'Confirm Booking & Sync to Beds24')) : React.createElement('div', null, React.createElement('div', {style: {padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', marginBottom: '16px'}}, React.createElement('div', {style: {fontSize: '24px', fontWeight: '700', marginBottom: '8px'}}, bookingModal.guestName), React.createElement('div', {style: {color: 'rgba(255,255,255,0.6)'}}, 'Room ' + bookingModal.roomId)), React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}, React.createElement('div', {style: {padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px'}}, React.createElement('div', {style: {fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}, 'Check-in'), React.createElement('div', {style: {fontWeight: '600'}}, bookingModal.checkIn)), React.createElement('div', {style: {padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px'}}, React.createElement('div', {style: {fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}, 'Check-out'), React.createElement('div', {style: {fontWeight: '600'}}, bookingModal.checkOut))), React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px'}}, React.createElement('div', {style: {textAlign: 'center', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px'}}, React.createElement('div', {style: {fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}, 'Total'), React.createElement('div', {style: {fontWeight: '700'}}, '৳' + (bookingModal.totalAmount || 0).toLocaleString())), React.createElement('div', {style: {textAlign: 'center', padding: '12px', background: 'rgba(34,197,94,0.1)', borderRadius: '8px'}}, React.createElement('div', {style: {fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}, 'Paid'), React.createElement('div', {style: {fontWeight: '700', color: '#22c55e'}}, '৳' + (bookingModal.paidAmount || 0).toLocaleString())), React.createElement('div', {style: {textAlign: 'center', padding: '12px', background: 'rgba(239,68,68,0.1)', borderRadius: '8px'}}, React.createElement('div', {style: {fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}, 'Due'), React.createElement('div', {style: {fontWeight: '700', color: '#ef4444'}}, '৳' + ((bookingModal.totalAmount || 0) - (bookingModal.paidAmount || 0)).toLocaleString()))), React.createElement('div', {style: {display: 'flex', gap: '10px'}}, React.createElement('button', {className: 'btn-primary', style: {flex: 1}}, '💳 Add Payment'), React.createElement('button', {style: {flex: 1, padding: '12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: '#fff', cursor: 'pointer'}}, '✏️ Edit'))))); };
-            return React.createElement('div', null, React.createElement('div', {className: 'top-bar'}, React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}, React.createElement('div', null, React.createElement('h1', {style: {fontSize: '18px', fontWeight: '700', marginBottom: '2px'}}, '🏨 Miami Beach Resort'), React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)'}}, "Cox's Bazar • " + currentTime)), React.createElement('div', {style: {display: 'flex', gap: '12px', alignItems: 'center'}}, React.createElement('button', {className: 'search-btn'}, '🔍 Search Guest'), React.createElement('button', {className: 'refresh-btn ' + (loading ? 'loading' : ''), onClick: handleRefresh}, loading ? React.createElement('div', {className: 'spinner'}) : '🔄', ' Refresh')))), React.createElement('div', {className: 'stats-row'}, React.createElement('div', {className: 'stat-card animate-fade'}, React.createElement('div', {className: 'stat-num'}, stats.total), React.createElement('div', {className: 'stat-label'}, 'Total')), React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.1s'}}, React.createElement('div', {className: 'stat-num', style: {color: '#22c55e'}}, stats.available), React.createElement('div', {className: 'stat-label'}, 'Available')), React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.2s'}}, React.createElement('div', {className: 'stat-num', style: {color: '#2563eb'}}, stats.occupied), React.createElement('div', {className: 'stat-label'}, 'Occupied')), React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.3s'}}, React.createElement('div', {className: 'stat-num', style: {color: '#22c55e'}}, stats.checkIn), React.createElement('div', {className: 'stat-label'}, 'Check-in')), React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.4s'}}, React.createElement('div', {className: 'stat-num', style: {color: '#f97316'}}, stats.checkOut), React.createElement('div', {className: 'stat-label'}, 'Check-out'))), React.createElement('div', {className: 'tabs-row'}, tabs.map(tab => React.createElement('div', {key: tab.id, className: 'nav-btn-wrapper'}, React.createElement('button', {className: 'nav-btn ' + (activeTab === tab.id ? 'active' : ''), onClick: () => setActiveTab(tab.id)}, tab.label), tab.hasNotification && React.createElement('span', {className: 'notification-badge'}, notifications.housekeeping)))), renderContent(), renderBookingModal(), React.createElement('div', {className: 'version-tag'}, 'v19'));
+            
+            // Notification count for housekeeping
+            const pendingRequests = requests.filter(r => r.status === 'pending').length;
+            
+            // Tab configuration
+            const tabs = [
+                { id: 'today', label: '📅 Today' },
+                { id: 'calendar', label: '🗓️ Calendar' },
+                { id: 'search', label: '🔍 Search & Book' },
+                { id: 'requests', label: '🔔 Requests' },
+                { id: 'housekeeping', label: '🧹 Housekeeping', hasNotification: pendingRequests > 0, notificationCount: pendingRequests },
+                { id: 'movements', label: '🚶 Movements' },
+                { id: 'accounting', label: '💰 Accounting' }
+            ];
+            
+            // Refresh handler
+            const handleRefresh = async () => {
+                setLoading(true);
+                await new Promise(r => setTimeout(r, 1000));
+                setBookings(generateSampleBookings());
+                setRequests(generateRequests());
+                setLoading(false);
+            };
+            
+            // Get room status for a specific date
+            const getRoomStatus = (roomId, date) => {
+                const booking = bookings.find(b => b.roomId === roomId && b.checkIn <= date && b.checkOut > date);
+                if (!booking) return { status: 'available', booking: null };
+                if (booking.checkIn === date) return { status: 'checkin', booking };
+                if (booking.checkOut === date) return { status: 'checkout', booking };
+                return { status: 'occupied', booking };
+            };
+            
+            // Search date click handler - AUTO CHECKOUT DATE SELECTION
+            const handleSearchDateClick = (date) => {
+                if (dateSelectionMode === 'checkIn') {
+                    setSearchDates({ checkIn: date, checkOut: getBDDate(1) }); // Reset checkout
+                    setDateSelectionMode('checkOut');
+                } else {
+                    if (date > searchDates.checkIn) {
+                        setSearchDates({ ...searchDates, checkOut: date });
+                        setDateSelectionMode('checkIn');
+                    } else {
+                        // If selected date is before or same as check-in, make it new check-in
+                        setSearchDates({ checkIn: date, checkOut: searchDates.checkOut });
+                    }
+                }
+            };
+            
+            // Unit click handler for multi-select
+            const handleUnitClick = (room, date, checkOut = null) => {
+                const key = room.id + '-' + date;
+                const existing = selectedUnits.find(u => u.key === key);
+                if (existing) {
+                    setSelectedUnits(selectedUnits.filter(u => u.key !== key));
+                } else {
+                    setSelectedUnits([...selectedUnits, { 
+                        key, 
+                        roomId: room.id, 
+                        checkIn: date,
+                        checkOut: checkOut || getBDDate(1),
+                        room 
+                    }]);
+                }
+            };
+
+            // RENDER: Today View - Centered and Responsive
+            const renderTodayView = () => {
+                const today = getBDDate();
+                const checkIns = bookings.filter(b => b.checkIn === today);
+                const checkOuts = bookings.filter(b => b.checkOut === today);
+                const stayOvers = bookings.filter(b => b.checkIn < today && b.checkOut > today);
+                const available = rooms.filter(r => !bookings.some(b => b.roomId === r.id && b.checkIn <= today && b.checkOut > today));
+                
+                return React.createElement('div', {className: 'today-grid animate-fade'},
+                    // Check-ins Card
+                    React.createElement('div', {className: 'today-card'},
+                        React.createElement('h3', null, '🟢 Check-ins ', React.createElement('span', {className: 'count'}, checkIns.length)),
+                        checkIns.map(b => React.createElement('div', {
+                            key: b.id, 
+                            className: 'room-card checkin',
+                            onClick: () => setBookingModal(b)
+                        },
+                            React.createElement('div', {className: 'room-num'}, b.roomId),
+                            React.createElement('div', {className: 'room-info'},
+                                React.createElement('div', {className: 'guest-name'}, b.guestName),
+                                React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)
+                            ),
+                            React.createElement('div', {className: 'info-icon'}, 'ℹ️')
+                        )),
+                        checkIns.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No check-ins today')
+                    ),
+                    
+                    // Check-outs Card
+                    React.createElement('div', {className: 'today-card'},
+                        React.createElement('h3', null, '🟠 Check-outs ', React.createElement('span', {className: 'count'}, checkOuts.length)),
+                        checkOuts.map(b => React.createElement('div', {
+                            key: b.id, 
+                            className: 'room-card checkout',
+                            onClick: () => setBookingModal(b)
+                        },
+                            React.createElement('div', {className: 'room-num'}, b.roomId),
+                            React.createElement('div', {className: 'room-info'},
+                                React.createElement('div', {className: 'guest-name'}, b.guestName),
+                                React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)
+                            ),
+                            React.createElement('div', {className: 'info-icon'}, 'ℹ️')
+                        )),
+                        checkOuts.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No check-outs today')
+                    ),
+                    
+                    // Stay Over Card
+                    React.createElement('div', {className: 'today-card'},
+                        React.createElement('h3', null, '🔵 Stay Over ', React.createElement('span', {className: 'count'}, stayOvers.length)),
+                        stayOvers.slice(0, 6).map(b => React.createElement('div', {
+                            key: b.id, 
+                            className: 'room-card occupied',
+                            onClick: () => setBookingModal(b)
+                        },
+                            React.createElement('div', {className: 'room-num'}, b.roomId),
+                            React.createElement('div', {className: 'room-info'},
+                                React.createElement('div', {className: 'guest-name'}, b.guestName),
+                                React.createElement('div', {className: 'room-type'}, rooms.find(r => r.id === b.roomId)?.name)
+                            )
+                        )),
+                        stayOvers.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No stay-overs')
+                    ),
+                    
+                    // Available Card
+                    React.createElement('div', {className: 'today-card'},
+                        React.createElement('h3', null, '⚪ Available ', React.createElement('span', {className: 'count'}, available.length)),
+                        available.map(room => {
+                            const isSelected = selectedUnits.some(u => u.roomId === room.id && u.checkIn === today);
+                            return React.createElement('div', {
+                                key: room.id, 
+                                className: 'room-card' + (isSelected ? ' unit-selected' : ''),
+                                style: {background: 'rgba(255,255,255,0.1)'},
+                                onClick: () => handleUnitClick(room, today)
+                            },
+                                React.createElement('div', {className: 'room-num'}, room.id),
+                                React.createElement('div', {className: 'room-info'},
+                                    React.createElement('div', {className: 'guest-name'}, 'Available'),
+                                    React.createElement('div', {className: 'room-type'}, room.name)
+                                )
+                            );
+                        }),
+                        available.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '24px', textAlign: 'center', fontSize: '15px'}}, 'No rooms available')
+                    ),
+                    
+                    // Floating Book Button
+                    selectedUnits.length > 0 && React.createElement('div', {
+                        style: {position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}
+                    },
+                        React.createElement('button', {
+                            className: 'btn-primary',
+                            style: {padding: '18px 36px', fontSize: '17px'},
+                            onClick: () => setBookingModal({isNew: true, units: selectedUnits})
+                        }, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : ''))
+                    )
+                );
+            };
+
+            // RENDER: Calendar View with Floor/Category Toggle
+            const renderCalendarView = () => {
+                const groupedRooms = calendarView === 'floor' 
+                    ? rooms.reduce((acc, room) => {
+                        const key = 'Floor ' + room.floor;
+                        if (!acc[key]) acc[key] = [];
+                        acc[key].push(room);
+                        return acc;
+                    }, {})
+                    : rooms.reduce((acc, room) => {
+                        if (!acc[room.category]) acc[room.category] = [];
+                        acc[room.category].push(room);
+                        return acc;
+                    }, {});
+                
+                return React.createElement('div', {className: 'animate-fade'},
+                    // View Toggle - Centered
+                    React.createElement('div', {style: {display: 'flex', justifyContent: 'center', padding: '16px 20px'}},
+                        React.createElement('div', {className: 'view-toggle'},
+                            React.createElement('button', {
+                                className: calendarView === 'floor' ? 'active' : '',
+                                onClick: () => setCalendarView('floor')
+                            }, '🏢 By Floor'),
+                            React.createElement('button', {
+                                className: calendarView === 'category' ? 'active' : '',
+                                onClick: () => setCalendarView('category')
+                            }, '📁 By Category')
+                        )
+                    ),
+                    
+                    // Date Header - Sticky and Separated
+                    React.createElement('div', {className: 'date-header-wrapper'},
+                        React.createElement('div', {className: 'date-header-inner'},
+                            dateRange.map(date => {
+                                const fd = formatDateDisplay(date);
+                                return React.createElement('div', {
+                                    key: date,
+                                    className: 'date-cell ' + (date === selectedDate ? 'active' : ''),
+                                    onClick: () => setSelectedDate(date)
+                                },
+                                    React.createElement('div', {className: 'day-name'}, fd.day),
+                                    React.createElement('div', {className: 'day-num'}, fd.num)
+                                );
+                            })
+                        )
+                    ),
+                    
+                    // Room Grid by Group
+                    React.createElement('div', {style: {padding: '20px'}},
+                        Object.entries(groupedRooms).map(([group, groupRooms]) =>
+                            React.createElement('div', {key: group, style: {marginBottom: '24px'}},
+                                React.createElement('h3', {style: {fontSize: '17px', marginBottom: '14px', color: 'rgba(255,255,255,0.7)', fontWeight: '600'}}, group),
+                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px'}},
+                                    groupRooms.map(room => {
+                                        const rs = getRoomStatus(room.id, selectedDate);
+                                        const isSelected = selectedUnits.some(u => u.roomId === room.id && u.checkIn === selectedDate);
+                                        const hasRequest = requests.some(r => r.roomId === room.id && r.status === 'pending');
+                                        
+                                        return React.createElement('div', {
+                                            key: room.id,
+                                            className: 'room-card ' + rs.status + (isSelected ? ' unit-selected' : ''),
+                                            onClick: () => rs.booking ? setBookingModal(rs.booking) : handleUnitClick(room, selectedDate),
+                                            style: {flexDirection: 'column', alignItems: 'flex-start', minHeight: '90px', position: 'relative'}
+                                        },
+                                            hasRequest && React.createElement('div', {className: 'request-indicator'}),
+                                            React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center'}},
+                                                React.createElement('div', {className: 'room-num'}, room.id),
+                                                React.createElement('div', {className: 'info-icon', onClick: (e) => { e.stopPropagation(); setBookingModal(rs.booking || {roomId: room.id, room, isRoomInfo: true}); }}, 'ℹ️')
+                                            ),
+                                            React.createElement('div', {className: 'guest-name', style: {marginTop: '6px'}}, rs.booking?.guestName || 'Available'),
+                                            React.createElement('div', {className: 'room-type'}, room.name)
+                                        );
+                                    })
+                                )
+                            )
+                        )
+                    ),
+                    
+                    // Floating Book Button
+                    selectedUnits.length > 0 && React.createElement('div', {
+                        style: {position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}
+                    },
+                        React.createElement('button', {
+                            className: 'btn-primary',
+                            style: {padding: '18px 36px', fontSize: '17px'},
+                            onClick: () => setBookingModal({isNew: true, units: selectedUnits})
+                        }, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : ''))
+                    )
+                );
+            };
+
+            // RENDER: Search & Book View - Centered, Colored, Auto Checkout
+            const renderSearchView = () => {
+                const availableRooms = rooms.filter(room => 
+                    !bookings.some(b => b.roomId === room.id && b.checkIn < searchDates.checkOut && b.checkOut > searchDates.checkIn)
+                );
+                const nights = Math.ceil((new Date(searchDates.checkOut) - new Date(searchDates.checkIn)) / (1000 * 60 * 60 * 24));
+                
+                return React.createElement('div', {className: 'animate-fade', style: {padding: '24px'}},
+                    // Date Selectors - Centered
+                    React.createElement('div', {style: {display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '28px', flexWrap: 'wrap'}},
+                        React.createElement('div', {
+                            className: 'date-selector ' + (dateSelectionMode === 'checkIn' ? 'active' : ''),
+                            onClick: () => setDateSelectionMode('checkIn')
+                        },
+                            React.createElement('div', {className: 'label'}, 'Check-in'),
+                            React.createElement('div', {className: 'date'}, searchDates.checkIn)
+                        ),
+                        React.createElement('div', {style: {display: 'flex', alignItems: 'center', fontSize: '24px', color: 'rgba(255,255,255,0.3)'}}, '→'),
+                        React.createElement('div', {
+                            className: 'date-selector ' + (dateSelectionMode === 'checkOut' ? 'active' : ''),
+                            onClick: () => setDateSelectionMode('checkOut')
+                        },
+                            React.createElement('div', {className: 'label'}, 'Check-out'),
+                            React.createElement('div', {className: 'date'}, searchDates.checkOut)
+                        ),
+                        React.createElement('div', {style: {display: 'flex', alignItems: 'center', padding: '10px 20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px'}},
+                            React.createElement('span', {style: {fontSize: '18px', fontWeight: '700'}}, nights + ' Night' + (nights > 1 ? 's' : ''))
+                        )
+                    ),
+                    
+                    // Instruction
+                    React.createElement('div', {style: {textAlign: 'center', marginBottom: '16px', color: 'rgba(255,255,255,0.5)', fontSize: '14px'}},
+                        dateSelectionMode === 'checkIn' ? '👆 Select check-in date below' : '👆 Now select check-out date'
+                    ),
+                    
+                    // Date Range Selector
+                    React.createElement('div', {className: 'date-header-wrapper', style: {position: 'relative', marginBottom: '28px', borderRadius: '14px'}},
+                        React.createElement('div', {className: 'date-header-inner'},
+                            Array.from({length: 14}, (_, i) => getBDDate(i)).map(date => {
+                                const fd = formatDateDisplay(date);
+                                const isCheckIn = date === searchDates.checkIn;
+                                const isCheckOut = date === searchDates.checkOut;
+                                const isInRange = date > searchDates.checkIn && date < searchDates.checkOut;
+                                
+                                return React.createElement('div', {
+                                    key: date,
+                                    className: 'date-cell ' + ((isCheckIn || isCheckOut) ? 'active' : ''),
+                                    style: {background: isInRange ? 'rgba(16,185,129,0.25)' : undefined},
+                                    onClick: () => handleSearchDateClick(date)
+                                },
+                                    React.createElement('div', {className: 'day-name'}, fd.day),
+                                    React.createElement('div', {className: 'day-num'}, fd.num),
+                                    (isCheckIn || isCheckOut) && React.createElement('div', {style: {fontSize: '10px', marginTop: '4px', fontWeight: '600'}}, isCheckIn ? 'IN' : 'OUT')
+                                );
+                            })
+                        )
+                    ),
+                    
+                    // Results Header
+                    React.createElement('h3', {style: {textAlign: 'center', marginBottom: '20px', fontSize: '20px', fontWeight: '700'}}, 
+                        availableRooms.length + ' Room' + (availableRooms.length !== 1 ? 's' : '') + ' Available'
+                    ),
+                    
+                    // Search Results - Centered and Colored
+                    React.createElement('div', {className: 'search-results'},
+                        rooms.map(room => {
+                            const isAvailable = availableRooms.includes(room);
+                            const isSelected = selectedUnits.some(u => u.roomId === room.id);
+                            
+                            return React.createElement('div', {
+                                key: room.id,
+                                className: 'search-result-card ' + (isAvailable ? 'available' : 'occupied') + (isSelected ? ' unit-selected' : ''),
+                                onClick: () => isAvailable && handleUnitClick(room, searchDates.checkIn, searchDates.checkOut)
+                            },
+                                React.createElement('div', {className: 'room-number'}, room.id),
+                                React.createElement('div', {className: 'room-status'}, isAvailable ? '✓ Available' : '✗ Occupied'),
+                                React.createElement('div', {style: {fontSize: '12px', marginTop: '6px', opacity: 0.85}}, room.name),
+                                isAvailable && React.createElement('div', {style: {fontSize: '13px', marginTop: '6px', fontWeight: '600'}}, '৳' + (room.rate * nights).toLocaleString())
+                            );
+                        })
+                    ),
+                    
+                    // Floating Book Button
+                    selectedUnits.length > 0 && React.createElement('div', {
+                        style: {position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', zIndex: 100}
+                    },
+                        React.createElement('button', {
+                            className: 'btn-primary',
+                            style: {padding: '18px 36px', fontSize: '17px'},
+                            onClick: () => setBookingModal({isNew: true, units: selectedUnits, checkIn: searchDates.checkIn, checkOut: searchDates.checkOut})
+                        }, '📝 Book ' + selectedUnits.length + ' Unit' + (selectedUnits.length > 1 ? 's' : ''))
+                    )
+                );
+            };
+
+            // RENDER: Housekeeping View with Today/Tomorrow tabs and Request indicators
+            const renderHousekeepingView = () => {
+                const today = getBDDate();
+                const tomorrow = getBDDate(1);
+                const targetDate = housekeepingTab === 'today' ? today : tomorrow;
+                
+                const checkOuts = bookings.filter(b => b.checkOut === targetDate);
+                const checkIns = bookings.filter(b => b.checkIn === targetDate);
+                const stayOvers = bookings.filter(b => b.checkIn < targetDate && b.checkOut > targetDate);
+                const turnovers = checkOuts.filter(co => checkIns.some(ci => ci.roomId === co.roomId));
+                const newCheckIns = checkIns.filter(ci => !turnovers.some(t => t.roomId === ci.roomId));
+                
+                const roomRequests = requests.reduce((acc, r) => {
+                    acc[r.roomId] = r;
+                    return acc;
+                }, {});
+                
+                const handleRequestAction = (reqId, action, staffName = '') => {
+                    setRequests(requests.map(r => {
+                        if (r.id === reqId) {
+                            return { ...r, status: action, staffName: staffName || r.staffName };
+                        }
+                        return r;
+                    }));
+                };
+                
+                const RoomCardWithRequest = ({ booking, type, bgClass }) => {
+                    const room = rooms.find(r => r.id === booking.roomId);
+                    const req = roomRequests[booking.roomId];
+                    
+                    return React.createElement('div', {
+                        className: 'room-card ' + bgClass,
+                        style: {position: 'relative'},
+                        onClick: () => setBookingModal(booking)
+                    },
+                        req && req.status === 'pending' && React.createElement('div', {className: 'request-indicator', title: req.type}),
+                        React.createElement('div', {className: 'room-num'}, booking.roomId),
+                        React.createElement('div', {className: 'room-info'},
+                            React.createElement('div', {className: 'guest-name'}, booking.guestName),
+                            React.createElement('div', {className: 'room-type'}, type),
+                            req && React.createElement('div', {style: {fontSize: '11px', marginTop: '4px', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', display: 'inline-block'}}, 
+                                '📋 ' + req.type + ' - ' + req.status
+                            )
+                        )
+                    );
+                };
+                
+                return React.createElement('div', {className: 'animate-fade', style: {padding: '16px'}},
+                    // Today/Tomorrow Toggle
+                    React.createElement('div', {style: {display: 'flex', justifyContent: 'center', marginBottom: '24px'}},
+                        React.createElement('div', {className: 'view-toggle'},
+                            React.createElement('button', {
+                                className: housekeepingTab === 'today' ? 'active' : '',
+                                onClick: () => setHousekeepingTab('today')
+                            }, '📅 Today'),
+                            React.createElement('button', {
+                                className: housekeepingTab === 'tomorrow' ? 'active' : '',
+                                onClick: () => setHousekeepingTab('tomorrow')
+                            }, '📆 Tomorrow')
+                        )
+                    ),
+                    
+                    // Date Header
+                    React.createElement('h2', {style: {textAlign: 'center', marginBottom: '24px', fontSize: '20px', fontWeight: '700'}}, 
+                        '🧹 Housekeeping - ' + (housekeepingTab === 'today' ? 'Today' : 'Tomorrow') + ' (' + formatDateDisplay(targetDate).day + ', ' + formatDateDisplay(targetDate).month + ' ' + formatDateDisplay(targetDate).num + ')'
+                    ),
+                    
+                    // Grid
+                    React.createElement('div', {className: 'housekeeping-grid'},
+                        // Check-out / Dirty
+                        React.createElement('div', {className: 'housekeeping-column'},
+                            React.createElement('h4', null, '🟠 Check-out (Dirty) ', React.createElement('span', {className: 'badge'}, checkOuts.length)),
+                            checkOuts.filter(co => !turnovers.some(t => t.roomId === co.roomId)).map(b => 
+                                React.createElement(RoomCardWithRequest, {key: b.id, booking: b, type: 'Check-out', bgClass: 'dirty'})
+                            ),
+                            checkOuts.filter(co => !turnovers.some(t => t.roomId === co.roomId)).length === 0 && 
+                                React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
+                        ),
+                        
+                        // Turnover
+                        React.createElement('div', {className: 'housekeeping-column'},
+                            React.createElement('h4', null, '🔄 Turnover ', React.createElement('span', {className: 'badge'}, turnovers.length)),
+                            turnovers.map(b => {
+                                const nextGuest = checkIns.find(ci => ci.roomId === b.roomId);
+                                return React.createElement('div', {key: b.id, className: 'room-card turnover', onClick: () => setBookingModal(b)},
+                                    React.createElement('div', {className: 'room-num'}, b.roomId),
+                                    React.createElement('div', {className: 'room-info'},
+                                        React.createElement('div', {style: {fontSize: '12px', opacity: 0.8}}, '⬆ OUT: ' + b.guestName),
+                                        React.createElement('div', {style: {fontSize: '14px', fontWeight: '600', marginTop: '4px'}}, '⬇ IN: ' + (nextGuest?.guestName || ''))
+                                    )
+                                );
+                            }),
+                            turnovers.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
+                        ),
+                        
+                        // Stay Over
+                        React.createElement('div', {className: 'housekeeping-column'},
+                            React.createElement('h4', null, '🔵 Stay Over ', React.createElement('span', {className: 'badge'}, stayOvers.length)),
+                            stayOvers.map(b => React.createElement(RoomCardWithRequest, {key: b.id, booking: b, type: 'Staying', bgClass: 'occupied'})),
+                            stayOvers.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
+                        ),
+                        
+                        // New Check-in
+                        React.createElement('div', {className: 'housekeeping-column'},
+                            React.createElement('h4', null, '🟢 New Check-in ', React.createElement('span', {className: 'badge'}, newCheckIns.length)),
+                            newCheckIns.map(b => React.createElement(RoomCardWithRequest, {key: b.id, booking: b, type: 'Arriving', bgClass: 'checkin'})),
+                            newCheckIns.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}, 'None')
+                        )
+                    )
+                );
+            };
+
+            // RENDER: Requests View
+            const renderRequestsView = () => {
+                const pendingReqs = requests.filter(r => r.status === 'pending');
+                const receivedReqs = requests.filter(r => r.status === 'received');
+                const doneReqs = requests.filter(r => r.status === 'done');
+                const deniedReqs = requests.filter(r => r.status === 'denied');
+                
+                const handleAction = (reqId, action) => {
+                    if (action === 'done') {
+                        const staffName = prompt('Enter staff name who completed this request:');
+                        if (staffName) {
+                            setRequests(requests.map(r => r.id === reqId ? {...r, status: action, staffName, completedAt: new Date().toLocaleTimeString()} : r));
+                        }
+                    } else {
+                        setRequests(requests.map(r => r.id === reqId ? {...r, status: action} : r));
+                    }
+                };
+                
+                const RequestCard = ({ req }) => (
+                    React.createElement('div', {style: {background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', marginBottom: '12px'}},
+                        React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px'}},
+                            React.createElement('div', null,
+                                React.createElement('div', {style: {fontSize: '18px', fontWeight: '700'}}, 'Room ' + req.roomId),
+                                React.createElement('div', {style: {fontSize: '14px', color: 'rgba(255,255,255,0.6)'}}, req.type),
+                                React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}, '🕐 ' + req.time)
+                            ),
+                            React.createElement('div', {style: {
+                                padding: '4px 12px', 
+                                borderRadius: '20px', 
+                                fontSize: '12px', 
+                                fontWeight: '600',
+                                background: req.status === 'pending' ? '#f59e0b' : req.status === 'received' ? '#3b82f6' : req.status === 'done' ? '#22c55e' : '#ef4444'
+                            }}, req.status.toUpperCase())
+                        ),
+                        req.status === 'pending' && React.createElement('div', {style: {display: 'flex', gap: '8px'}},
+                            React.createElement('button', {onClick: () => handleAction(req.id, 'received'), style: {flex: 1, padding: '10px', background: '#3b82f6', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✓ Received'),
+                            React.createElement('button', {onClick: () => handleAction(req.id, 'denied'), style: {flex: 1, padding: '10px', background: '#ef4444', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✗ Deny')
+                        ),
+                        req.status === 'received' && React.createElement('button', {onClick: () => handleAction(req.id, 'done'), style: {width: '100%', padding: '10px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✓ Mark Done'),
+                        req.status === 'done' && req.staffName && React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, '✓ Completed by: ' + req.staffName + ' at ' + (req.completedAt || ''))
+                    )
+                );
+                
+                return React.createElement('div', {className: 'animate-fade', style: {padding: '24px'}},
+                    React.createElement('h2', {style: {textAlign: 'center', marginBottom: '24px', fontSize: '20px'}}, '🔔 Guest Requests'),
+                    
+                    React.createElement('div', {style: {display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}},
+                        // Pending
+                        React.createElement('div', null,
+                            React.createElement('h3', {style: {marginBottom: '16px', color: '#f59e0b'}}, '⏳ Pending (' + pendingReqs.length + ')'),
+                            pendingReqs.map(req => React.createElement(RequestCard, {key: req.id, req})),
+                            pendingReqs.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}, 'No pending requests')
+                        ),
+                        // Received / In Progress
+                        React.createElement('div', null,
+                            React.createElement('h3', {style: {marginBottom: '16px', color: '#3b82f6'}}, '🔄 In Progress (' + receivedReqs.length + ')'),
+                            receivedReqs.map(req => React.createElement(RequestCard, {key: req.id, req})),
+                            receivedReqs.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}, 'None in progress')
+                        ),
+                        // Completed
+                        React.createElement('div', null,
+                            React.createElement('h3', {style: {marginBottom: '16px', color: '#22c55e'}}, '✓ Completed (' + doneReqs.length + ')'),
+                            doneReqs.map(req => React.createElement(RequestCard, {key: req.id, req})),
+                            doneReqs.length === 0 && React.createElement('div', {style: {color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}, 'None completed today')
+                        )
+                    )
+                );
+            };
+
+            // RENDER: Accounting View
+            const renderAccountingView = () => {
+                const today = getBDDate();
+                
+                // Calculate financials
+                const todayCheckIns = bookings.filter(b => b.checkIn === today);
+                const todayCheckOuts = bookings.filter(b => b.checkOut === today);
+                const allActiveBookings = bookings.filter(b => b.checkIn <= today && b.checkOut >= today);
+                
+                const cashPayments = bookings.filter(b => b.paymentMethod === 'Cash').reduce((sum, b) => sum + (b.paidAmount || 0), 0);
+                const bkashPayments = bookings.filter(b => b.paymentMethod === 'bKash').reduce((sum, b) => sum + (b.paidAmount || 0), 0);
+                const bankPayments = bookings.filter(b => b.paymentMethod === 'Bank').reduce((sum, b) => sum + (b.paidAmount || 0), 0);
+                
+                const totalCollected = bookings.reduce((sum, b) => sum + (b.paidAmount || 0), 0);
+                const totalDues = bookings.reduce((sum, b) => sum + ((b.totalAmount || 0) - (b.paidAmount || 0)), 0);
+                const expectedFromCheckIns = todayCheckIns.reduce((sum, b) => sum + ((b.totalAmount || 0) - (b.paidAmount || 0)), 0);
+                const checkOutCollections = todayCheckOuts.reduce((sum, b) => sum + ((b.totalAmount || 0) - (b.paidAmount || 0)), 0);
+                
+                return React.createElement('div', {className: 'animate-fade', style: {padding: '24px'}},
+                    React.createElement('h2', {style: {textAlign: 'center', marginBottom: '28px', fontSize: '22px', fontWeight: '700'}}, '💰 Accounting Dashboard'),
+                    
+                    // Summary Cards
+                    React.createElement('div', {className: 'accounting-grid'},
+                        React.createElement('div', {className: 'accounting-card income'},
+                            React.createElement('h4', null, '💵 Total Collected Today'),
+                            React.createElement('div', {className: 'amount', style: {color: '#22c55e'}}, '৳' + totalCollected.toLocaleString())
+                        ),
+                        React.createElement('div', {className: 'accounting-card pending'},
+                            React.createElement('h4', null, '⏳ Expected from Check-ins'),
+                            React.createElement('div', {className: 'amount', style: {color: '#f59e0b'}}, '৳' + expectedFromCheckIns.toLocaleString())
+                        ),
+                        React.createElement('div', {className: 'accounting-card pending'},
+                            React.createElement('h4', null, '🔄 Check-out Bills Due'),
+                            React.createElement('div', {className: 'amount', style: {color: '#f59e0b'}}, '৳' + checkOutCollections.toLocaleString())
+                        ),
+                        React.createElement('div', {className: 'accounting-card expense'},
+                            React.createElement('h4', null, '📊 Total Outstanding Dues'),
+                            React.createElement('div', {className: 'amount', style: {color: '#ef4444'}}, '৳' + totalDues.toLocaleString())
+                        )
+                    ),
+                    
+                    // Payment Methods Breakdown
+                    React.createElement('h3', {style: {marginTop: '32px', marginBottom: '20px', fontSize: '18px'}}, '💳 Payment Methods'),
+                    React.createElement('div', {className: 'accounting-grid'},
+                        React.createElement('div', {className: 'accounting-card'},
+                            React.createElement('h4', null, '💵 Cash at Hand'),
+                            React.createElement('div', {className: 'amount'}, '৳' + cashPayments.toLocaleString()),
+                            React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, bookings.filter(b => b.paymentMethod === 'Cash').length + ' transactions')
+                        ),
+                        React.createElement('div', {className: 'accounting-card'},
+                            React.createElement('h4', null, '📱 bKash Collection'),
+                            React.createElement('div', {className: 'amount', style: {color: '#e91e8c'}}, '৳' + bkashPayments.toLocaleString()),
+                            React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, bookings.filter(b => b.paymentMethod === 'bKash').length + ' transactions')
+                        ),
+                        React.createElement('div', {className: 'accounting-card'},
+                            React.createElement('h4', null, '🏦 Bank Transfer'),
+                            React.createElement('div', {className: 'amount', style: {color: '#3b82f6'}}, '৳' + bankPayments.toLocaleString()),
+                            React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '8px'}}, bookings.filter(b => b.paymentMethod === 'Bank').length + ' transactions')
+                        )
+                    ),
+                    
+                    // Recent Transactions
+                    React.createElement('h3', {style: {marginTop: '32px', marginBottom: '20px', fontSize: '18px'}}, '📋 Recent Transactions'),
+                    React.createElement('div', {style: {background: 'rgba(255,255,255,0.03)', borderRadius: '16px', overflow: 'hidden'}},
+                        bookings.slice(0, 8).map((b, idx) => 
+                            React.createElement('div', {
+                                key: b.id,
+                                style: {
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center', 
+                                    padding: '16px 20px', 
+                                    borderBottom: idx < 7 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                                }
+                            },
+                                React.createElement('div', null,
+                                    React.createElement('div', {style: {fontWeight: '600', fontSize: '15px'}}, b.guestName),
+                                    React.createElement('div', {style: {fontSize: '13px', color: 'rgba(255,255,255,0.5)'}}, 'Room ' + b.roomId + ' • ' + b.checkIn)
+                                ),
+                                React.createElement('div', {style: {textAlign: 'right'}},
+                                    React.createElement('div', {style: {color: '#22c55e', fontWeight: '700', fontSize: '16px'}}, '+৳' + (b.paidAmount || 0).toLocaleString()),
+                                    React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.4)'}}, b.paymentMethod),
+                                    (b.totalAmount - b.paidAmount) > 0 && React.createElement('div', {style: {fontSize: '11px', color: '#ef4444'}}, 'Due: ৳' + (b.totalAmount - b.paidAmount).toLocaleString())
+                                )
+                            )
+                        )
+                    )
+                );
+            };
+
+            // Render content based on active tab
+            const renderContent = () => {
+                switch(activeTab) {
+                    case 'today': return renderTodayView();
+                    case 'calendar': return renderCalendarView();
+                    case 'search': return renderSearchView();
+                    case 'housekeeping': return renderHousekeepingView();
+                    case 'accounting': return renderAccountingView();
+                    case 'requests': return renderRequestsView();
+                    case 'movements': 
+                        return React.createElement('div', {className: 'animate-fade', style: {padding: '24px', textAlign: 'center'}},
+                            React.createElement('h2', {style: {fontSize: '20px', marginBottom: '20px'}}, '🚶 Room Movements'),
+                            React.createElement('div', {style: {color: 'rgba(255,255,255,0.5)'}}, 'No room changes today')
+                        );
+                    default: return renderTodayView();
+                }
+            };
+
+            // Booking/Info Modal
+            const renderBookingModal = () => {
+                if (!bookingModal) return null;
+                const isNew = bookingModal.isNew;
+                const isRoomInfo = bookingModal.isRoomInfo;
+                
+                return React.createElement('div', {className: 'modal-overlay', onClick: () => { setBookingModal(null); setSelectedUnits([]); }},
+                    React.createElement('div', {className: 'modal', onClick: e => e.stopPropagation()},
+                        React.createElement('div', {className: 'modal-header'},
+                            React.createElement('h3', null, isNew ? '➕ New Booking' : isRoomInfo ? '🏨 Room Info' : '📋 Booking Details'),
+                            React.createElement('button', {className: 'modal-close', onClick: () => { setBookingModal(null); setSelectedUnits([]); }}, '×')
+                        ),
+                        
+                        isNew ? (
+                            // New Booking Form
+                            React.createElement('div', null,
+                                // Selected Units
+                                React.createElement('div', {style: {marginBottom: '20px', padding: '14px', background: 'rgba(16,185,129,0.1)', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.3)'}},
+                                    React.createElement('strong', {style: {fontSize: '14px'}}, 'Selected Units: ' + (bookingModal.units?.length || 0)),
+                                    React.createElement('div', {style: {marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px'}},
+                                        bookingModal.units?.map(u => 
+                                            React.createElement('span', {key: u.key, style: {padding: '6px 14px', background: '#10b981', borderRadius: '8px', fontSize: '14px', fontWeight: '600'}}, 
+                                                'Room ' + u.roomId
+                                            )
+                                        )
+                                    )
+                                ),
+                                
+                                // Guest Name
+                                React.createElement('div', {className: 'form-group'},
+                                    React.createElement('label', null, 'Guest Name *'),
+                                    React.createElement('input', {type: 'text', className: 'form-input', placeholder: 'Enter guest name'})
+                                ),
+                                React.createElement('div', {className: 'form-group'},
+                                    React.createElement('label', null, 'Phone Number'),
+                                    React.createElement('input', {type: 'tel', className: 'form-input', placeholder: '01XXXXXXXXX'})
+                                ),
+                                
+                                // Dates
+                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}},
+                                    React.createElement('div', {className: 'form-group'},
+                                        React.createElement('label', null, 'Check-in'),
+                                        React.createElement('input', {type: 'date', className: 'form-input', defaultValue: bookingModal.checkIn || searchDates.checkIn})
+                                    ),
+                                    React.createElement('div', {className: 'form-group'},
+                                        React.createElement('label', null, 'Check-out'),
+                                        React.createElement('input', {type: 'date', className: 'form-input', defaultValue: bookingModal.checkOut || searchDates.checkOut})
+                                    )
+                                ),
+                                
+                                // Guests
+                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}},
+                                    React.createElement('div', {className: 'form-group'},
+                                        React.createElement('label', null, 'Adults'),
+                                        React.createElement('input', {type: 'number', className: 'form-input', defaultValue: '2', min: '1'})
+                                    ),
+                                    React.createElement('div', {className: 'form-group'},
+                                        React.createElement('label', null, 'Children'),
+                                        React.createElement('input', {type: 'number', className: 'form-input', defaultValue: '0', min: '0'})
+                                    )
+                                ),
+                                
+                                // Payment
+                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}},
+                                    React.createElement('div', {className: 'form-group'},
+                                        React.createElement('label', null, 'Total Amount (৳)'),
+                                        React.createElement('input', {type: 'number', className: 'form-input', placeholder: '0'})
+                                    ),
+                                    React.createElement('div', {className: 'form-group'},
+                                        React.createElement('label', null, 'Advance Payment (৳)'),
+                                        React.createElement('input', {type: 'number', className: 'form-input', placeholder: '0'})
+                                    )
+                                ),
+                                
+                                React.createElement('div', {className: 'form-group'},
+                                    React.createElement('label', null, 'Payment Method'),
+                                    React.createElement('select', {className: 'form-input'},
+                                        React.createElement('option', {value: 'Cash'}, 'Cash'),
+                                        React.createElement('option', {value: 'bKash'}, 'bKash'),
+                                        React.createElement('option', {value: 'Bank'}, 'Bank Transfer')
+                                    )
+                                ),
+                                
+                                React.createElement('button', {className: 'btn-primary', style: {width: '100%', marginTop: '12px'}}, '✓ Confirm Booking & Sync to Beds24')
+                            )
+                        ) : isRoomInfo ? (
+                            // Room Info
+                            React.createElement('div', null,
+                                React.createElement('div', {style: {padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', textAlign: 'center'}},
+                                    React.createElement('div', {style: {fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}, 'Room ' + bookingModal.roomId),
+                                    React.createElement('div', {style: {color: 'rgba(255,255,255,0.6)', fontSize: '15px'}}, bookingModal.room?.name),
+                                    React.createElement('div', {style: {marginTop: '12px', fontSize: '22px', color: '#10b981', fontWeight: '700'}}, '৳' + (bookingModal.room?.rate || 0).toLocaleString() + '/night')
+                                )
+                            )
+                        ) : (
+                            // Existing Booking Details
+                            React.createElement('div', null,
+                                // Guest Info
+                                React.createElement('div', {style: {padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '14px', marginBottom: '20px'}},
+                                    React.createElement('div', {style: {fontSize: '26px', fontWeight: '800', marginBottom: '6px'}}, bookingModal.guestName),
+                                    React.createElement('div', {style: {color: 'rgba(255,255,255,0.6)', fontSize: '15px'}}, 'Room ' + bookingModal.roomId + ' • ' + (rooms.find(r => r.id === bookingModal.roomId)?.name || '')),
+                                    bookingModal.phone && React.createElement('div', {style: {marginTop: '8px', color: 'rgba(255,255,255,0.5)'}}, '📞 ' + bookingModal.phone)
+                                ),
+                                
+                                // Dates
+                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px'}},
+                                    React.createElement('div', {style: {padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px'}},
+                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}, 'Check-in'),
+                                        React.createElement('div', {style: {fontWeight: '700', fontSize: '16px'}}, bookingModal.checkIn)
+                                    ),
+                                    React.createElement('div', {style: {padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px'}},
+                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}, 'Check-out'),
+                                        React.createElement('div', {style: {fontWeight: '700', fontSize: '16px'}}, bookingModal.checkOut)
+                                    )
+                                ),
+                                
+                                // Payment Summary
+                                React.createElement('div', {style: {display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px'}},
+                                    React.createElement('div', {style: {textAlign: 'center', padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px'}},
+                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}, 'Total'),
+                                        React.createElement('div', {style: {fontWeight: '800', fontSize: '18px'}}, '৳' + (bookingModal.totalAmount || 0).toLocaleString())
+                                    ),
+                                    React.createElement('div', {style: {textAlign: 'center', padding: '14px', background: 'rgba(34,197,94,0.15)', borderRadius: '10px'}},
+                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}, 'Paid'),
+                                        React.createElement('div', {style: {fontWeight: '800', fontSize: '18px', color: '#22c55e'}}, '৳' + (bookingModal.paidAmount || 0).toLocaleString())
+                                    ),
+                                    React.createElement('div', {style: {textAlign: 'center', padding: '14px', background: 'rgba(239,68,68,0.15)', borderRadius: '10px'}},
+                                        React.createElement('div', {style: {fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}, 'Due'),
+                                        React.createElement('div', {style: {fontWeight: '800', fontSize: '18px', color: '#ef4444'}}, '৳' + ((bookingModal.totalAmount || 0) - (bookingModal.paidAmount || 0)).toLocaleString())
+                                    )
+                                ),
+                                
+                                // Action Buttons
+                                React.createElement('div', {style: {display: 'flex', gap: '12px'}},
+                                    React.createElement('button', {className: 'btn-primary', style: {flex: 1}}, '💳 Add Payment'),
+                                    React.createElement('button', {style: {flex: 1, padding: '14px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: '#fff', cursor: 'pointer', fontWeight: '600'}}, '✏️ Edit')
+                                )
+                            )
+                        )
+                    )
+                );
+            };
+
+            // Main App Return
+            return React.createElement('div', null,
+                // Top Bar - Fixed
+                React.createElement('div', {className: 'top-bar'},
+                    React.createElement('div', {style: {display: 'flex', justifyContent: 'space-between', alignItems: 'center'}},
+                        React.createElement('div', null,
+                            React.createElement('h1', {className: 'property-name'}, '🏨 Miami Beach Resort'),
+                            React.createElement('div', {className: 'property-time'}, 
+                                "Cox's Bazar • " + currentTime,
+                                React.createElement('span', {className: 'gmt-badge'}, 'GMT+6')
+                            )
+                        ),
+                        React.createElement('div', {style: {display: 'flex', gap: '14px', alignItems: 'center'}},
+                            React.createElement('button', {className: 'search-btn'}, '🔍 Search Guest'),
+                            React.createElement('button', {
+                                className: 'refresh-btn ' + (loading ? 'loading' : ''),
+                                onClick: handleRefresh
+                            }, 
+                                loading ? React.createElement('div', {className: 'spinner'}) : '🔄',
+                                ' Refresh'
+                            )
+                        )
+                    )
+                ),
+                
+                // Main Content
+                React.createElement('div', {className: 'main-content'},
+                    // Stats Row
+                    React.createElement('div', {className: 'stats-row'},
+                        React.createElement('div', {className: 'stat-card animate-fade'},
+                            React.createElement('div', {className: 'stat-num'}, stats.total),
+                            React.createElement('div', {className: 'stat-label'}, 'Total')
+                        ),
+                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.1s'}},
+                            React.createElement('div', {className: 'stat-num', style: {color: '#22c55e'}}, stats.available),
+                            React.createElement('div', {className: 'stat-label'}, 'Available')
+                        ),
+                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.2s'}},
+                            React.createElement('div', {className: 'stat-num', style: {color: '#2563eb'}}, stats.occupied),
+                            React.createElement('div', {className: 'stat-label'}, 'Occupied')
+                        ),
+                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.3s'}},
+                            React.createElement('div', {className: 'stat-num', style: {color: '#22c55e'}}, stats.checkIn),
+                            React.createElement('div', {className: 'stat-label'}, 'Check-in')
+                        ),
+                        React.createElement('div', {className: 'stat-card animate-fade', style: {animationDelay: '0.4s'}},
+                            React.createElement('div', {className: 'stat-num', style: {color: '#f97316'}}, stats.checkOut),
+                            React.createElement('div', {className: 'stat-label'}, 'Check-out')
+                        )
+                    ),
+                    
+                    // Tabs - Centered
+                    React.createElement('div', {className: 'tabs-container'},
+                        React.createElement('div', {className: 'tabs-row'},
+                            tabs.map(tab => 
+                                React.createElement('div', {key: tab.id, className: 'nav-btn-wrapper'},
+                                    React.createElement('button', {
+                                        className: 'nav-btn ' + (activeTab === tab.id ? 'active' : ''),
+                                        onClick: () => setActiveTab(tab.id)
+                                    }, tab.label),
+                                    tab.hasNotification && React.createElement('span', {className: 'notification-badge'}, tab.notificationCount || '!')
+                                )
+                            )
+                        )
+                    ),
+                    
+                    // Content
+                    renderContent()
+                ),
+                
+                // Modal
+                renderBookingModal(),
+                
+                // Version Tag
+                React.createElement('div', {className: 'version-tag'}, 'v20')
+            );
         }
+        
         ReactDOM.render(React.createElement(App), document.getElementById('root'));
     </script>
 </body>
