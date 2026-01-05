@@ -9,78 +9,121 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #1a1f2e; min-height: 100vh; margin: 0; }
-        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); min-height: 100vh; color: white; }
         
-        /* Room Card Styles */
-        .room-card { border-radius: 12px; padding: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; }
-        .room-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
-        .room-available { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .room-occupied { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .room-checkin { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-        .room-checkout { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-        .room-pending { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        /* Glass morphism */
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-dark { background: rgba(0,0,0,0.3); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
         
-        /* Housekeeping colors */
-        .hk-makeup { background: linear-gradient(135deg, #06b6d4, #0891b2); }
-        .hk-dirty { background: linear-gradient(135deg, #f97316, #ea580c); }
-        .hk-turnover { background: linear-gradient(135deg, #ec4899, #db2777); }
+        /* Sticky header */
+        .sticky-header { position: sticky; top: 0; z-index: 100; background: linear-gradient(180deg, #0f172a 0%, rgba(15,23,42,0.95) 100%); }
+        .sticky-calendar { position: sticky; top: 140px; z-index: 90; background: rgba(15,23,42,0.98); backdrop-filter: blur(20px); }
+        
+        /* Navigation */
+        .nav-item { padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; white-space: nowrap; }
+        .nav-item:hover { background: rgba(255,255,255,0.1); }
+        .nav-item.active { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+        
+        /* Day selector buttons */
+        .day-btn { padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .day-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+        .day-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); border-color: transparent; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+        
+        /* Date input */
+        .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; color: white; font-size: 14px; transition: all 0.3s ease; }
+        .date-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        
+        /* Calendar header cells */
+        .cal-header { padding: 12px 8px; text-align: center; min-width: 80px; }
+        .cal-header.today { background: rgba(251,191,36,0.15); border-radius: 12px; }
+        .cal-header .day-name { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+        .cal-header .day-num { font-size: 18px; font-weight: 700; margin-top: 2px; }
+        .cal-header.today .day-num { color: #fbbf24; }
         
         /* Floor header */
-        .floor-header { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 16px; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 8px; }
+        .floor-header { background: linear-gradient(90deg, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0) 100%); border-left: 4px solid #3b82f6; padding: 12px 20px; margin: 20px 0 12px 0; border-radius: 0 12px 12px 0; }
+        .category-header { background: linear-gradient(90deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0) 100%); border-left: 4px solid #8b5cf6; }
         
-        /* Tab/Navigation */
-        .nav-btn { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: none; cursor: pointer; }
-        .nav-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
-        .nav-btn:not(.active) { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
-        .nav-btn:hover:not(.active) { background: rgba(255,255,255,0.15); }
+        /* Room row */
+        .room-row { display: flex; align-items: stretch; margin-bottom: 8px; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; }
+        .room-row:hover { transform: translateX(4px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         
-        /* Mobile dropdown */
-        .mobile-select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 16px; border-radius: 8px; font-size: 14px; width: 100%; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
+        /* Room number cell */
+        .room-num { min-width: 100px; padding: 16px; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center; border-right: 1px solid rgba(255,255,255,0.05); }
+        .room-num .num { font-size: 22px; font-weight: 700; }
+        .room-num .type { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        
+        /* Status cells */
+        .status-cell { flex: 1; min-width: 80px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; border-right: 1px solid rgba(255,255,255,0.03); position: relative; overflow: hidden; }
+        .status-cell::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s ease; }
+        .status-cell:hover::before { opacity: 1; background: rgba(255,255,255,0.05); }
+        .status-cell:hover { transform: scale(1.02); }
+        
+        /* Status colors with gradients */
+        .status-available { background: linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.1) 100%); }
+        .status-available:hover { background: linear-gradient(135deg, rgba(16,185,129,0.4) 0%, rgba(5,150,105,0.2) 100%); }
+        .status-booked { background: linear-gradient(135deg, rgba(239,68,68,0.25) 0%, rgba(220,38,38,0.15) 100%); }
+        .status-checkin { background: linear-gradient(135deg, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.2) 100%); }
+        .status-checkout { background: linear-gradient(135deg, rgba(139,92,246,0.3) 0%, rgba(124,58,237,0.2) 100%); }
+        .status-turnover { background: linear-gradient(135deg, rgba(236,72,153,0.3) 0%, rgba(219,39,119,0.2) 100%); }
+        
+        .status-cell.today-col { box-shadow: inset 0 0 0 2px rgba(251,191,36,0.4); }
+        .status-cell.selected { box-shadow: inset 0 0 0 3px #3b82f6; background: rgba(59,130,246,0.3) !important; }
+        
+        .status-icon { font-size: 16px; margin-bottom: 2px; }
+        .status-text { font-size: 10px; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.2; }
+        .guest-name { font-size: 11px; font-weight: 600; color: white; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* Legend */
+        .legend-item { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border-radius: 20px; font-size: 12px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
         
         /* Stats cards */
-        .stat-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px 20px; text-align: center; transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.05); }
+        .stat-num { font-size: 28px; font-weight: 700; }
+        .stat-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
         
-        /* Legend badges */
-        .legend-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; background: rgba(255,255,255,0.1); }
-        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-        
-        /* Calendar mini */
-        .cal-day { padding: 4px 6px; border-radius: 4px; font-size: 11px; text-align: center; min-width: 36px; }
-        .cal-available { background: rgba(16, 185, 129, 0.3); color: #10b981; }
-        .cal-booked { background: rgba(239, 68, 68, 0.3); color: #fca5a5; }
-        .cal-checkin { background: rgba(59, 130, 246, 0.3); color: #93c5fd; }
-        .cal-checkout { background: rgba(139, 92, 246, 0.3); color: #c4b5fd; }
-        .cal-today { ring: 2px; ring-color: #fbbf24; box-shadow: 0 0 0 2px #fbbf24; }
+        /* Housekeeping cards */
+        .hk-card { border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; }
+        .hk-card:hover { transform: translateX(4px); }
+        .hk-makeup { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+        .hk-dirty { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+        .hk-turnover { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
         
         /* Movement cards */
-        .movement-card { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .movement-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 10px; transition: all 0.3s ease; }
+        .movement-card:hover { background: rgba(255,255,255,0.08); transform: translateX(4px); }
         
-        /* Day selector */
-        .day-btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s; }
-        .day-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
-        .day-btn:not(.active) { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
-        
-        /* Date picker */
-        .date-picker { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
-        
-        /* Loader */
-        .loader { border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Mobile dropdown */
+        .mobile-select { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; font-size: 14px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px; }
         
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
         
-        /* Responsive grid */
-        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-        @media (max-width: 640px) { .room-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } }
-        
-        /* Pulse animation for pending */
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .animate-fade { animation: fadeIn 0.4s ease-out; }
+        .animate-slide { animation: slideIn 0.3s ease-out; }
         .pulse { animation: pulse 2s infinite; }
+        
+        /* Loader */
+        .loader { width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .room-num { min-width: 70px; padding: 10px; }
+            .room-num .num { font-size: 18px; }
+            .status-cell { min-width: 60px; padding: 8px 4px; }
+            .cal-header { min-width: 60px; padding: 8px 4px; }
+        }
     </style>
 </head>
 <body>
@@ -91,7 +134,6 @@ const {useState, useEffect, useMemo, useCallback} = React;
 const PROXY = "https://beds24-proxy-1006186358018.us-central1.run.app";
 const PROPERTY = 279646;
 
-// Bangladesh Time Helpers
 const getBDDate = (offset = 0) => {
     const now = new Date();
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -104,11 +146,11 @@ const getBDTime = () => {
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
     return new Date(utc + 6 * 3600000).toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: true});
 };
-const formatDate = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}) : "";
-const shortDate = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"numeric",day:"numeric"}) : "";
-const dayName = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"}) : "";
+const formatDateFull = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+const dayName = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"});
+const dayNum = (d) => new Date(d+"T00:00:00").getDate();
+const shortMonth = (d) => new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"short"});
 
-// Room Configuration with Floor mapping
 const ROOMS = [
     {id:583459, name:"Royal Sea View Couple", short:"Royal SV", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
     {id:583466, name:"Premium Sea View Couple", short:"Premium SV", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
@@ -120,9 +162,9 @@ const ROOMS = [
     {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban Fam", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
 ];
 
-// Build floor mapping
-const getFloor = (roomNum) => Math.floor(parseInt(roomNum) / 100);
+const getFloor = (n) => Math.floor(parseInt(n) / 100);
 const FLOORS = [1, 2, 3, 4, 5, 6];
+const floorName = (f) => f === 1 ? "1st" : f === 2 ? "2nd" : f === 3 ? "3rd" : f + "th";
 
 const getRoomInfo = (roomId, unitId) => {
     const r = ROOMS.find(x => x.id === roomId);
@@ -130,7 +172,6 @@ const getRoomInfo = (roomId, unitId) => {
     return {room: r, unit: u, num: u?.n || "?"};
 };
 
-// LocalStorage for check-in/out status
 const STORAGE_KEY = "miami_checkin_status";
 const loadCheckStatus = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
 const saveCheckStatus = (data) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); };
@@ -138,7 +179,7 @@ const saveCheckStatus = (data) => { localStorage.setItem(STORAGE_KEY, JSON.strin
 function App() {
     const [tab, setTab] = useState("floor");
     const [calDays, setCalDays] = useState(7);
-    const [selectedDate, setSelectedDate] = useState(getBDDate());
+    const [startDate, setStartDate] = useState(getBDDate());
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -156,14 +197,12 @@ function App() {
 
     useEffect(() => { const t = setInterval(() => setTime(getBDTime()), 60000); return () => clearInterval(t); }, []);
 
-    // Build all rooms with floor info
     const allRooms = useMemo(() => {
         let arr = [];
         ROOMS.forEach(r => r.units.forEach(u => arr.push({room: r, unit: u, floor: getFloor(u.n)})));
         return arr.sort((a,b) => parseInt(a.unit.n) - parseInt(b.unit.n));
     }, []);
 
-    // Group rooms by floor
     const roomsByFloor = useMemo(() => {
         const grouped = {};
         FLOORS.forEach(f => grouped[f] = []);
@@ -171,38 +210,33 @@ function App() {
         return grouped;
     }, [allRooms]);
 
-    // Fetch bookings
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError("");
         try {
-            const depFrom = getBDDate(-7);
-            const url = `${PROXY}?endpoint=bookings&propertyId=${PROPERTY}&departureFrom=${depFrom}`;
-            const res = await fetch(url);
+            const res = await fetch(`${PROXY}?endpoint=bookings&propertyId=${PROPERTY}&departureFrom=${getBDDate(-7)}`);
             const data = await res.json();
-            if (data.success) {
-                setBookings(data.data.filter(b => b.status !== "cancelled"));
-            } else {
-                setError("API: " + (data.error || "Error"));
-            }
+            if (data.success) setBookings(data.data.filter(b => b.status !== "cancelled"));
+            else setError("API: " + (data.error || "Error"));
         } catch(e) { setError("Network: " + e.message); }
         setLoading(false);
     }, []);
 
     useEffect(() => { fetchData(); const i = setInterval(fetchData, 120000); return () => clearInterval(i); }, [fetchData]);
 
-    // Get booking for room on date
     const getBooking = useCallback((roomId, unitId, d) => {
         return bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure);
     }, [bookings]);
 
-    // Get checkout on date (for turnover check)
     const getCheckout = useCallback((roomId, unitId, d) => {
         return bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.departure === d);
     }, [bookings]);
 
-    // Generate days array
-    const getDays = (count, startDate = getBDDate()) => {
+    const getCheckin = useCallback((roomId, unitId, d) => {
+        return bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.arrival === d);
+    }, [bookings]);
+
+    const getDays = useCallback((count) => {
         const days = [];
         const start = new Date(startDate + "T00:00:00");
         for (let i = 0; i < count; i++) {
@@ -211,170 +245,163 @@ function App() {
             days.push(d.toISOString().split('T')[0]);
         }
         return days;
-    };
+    }, [startDate]);
 
-    // Toggle room selection
+    const days = useMemo(() => getDays(calDays), [getDays, calDays]);
+    const today = getBDDate();
+
     const toggleSelect = (room, unit, date) => {
-        const key = room.id + "-" + unit.id;
+        const key = `${room.id}-${unit.id}-${date}`;
         setSelected(s => {
             const exists = s.find(x => x.key === key);
             if (exists) return s.filter(x => x.key !== key);
-            return [...s, {key, room, unit, checkIn: date || getBDDate(), checkOut: getBDDate(1)}];
+            return [...s, {key, room, unit, date}];
         });
     };
 
-    // Check-in/out toggles
-    const toggleCheckIn = (bookingId) => {
-        const newStatus = {...checkStatus};
-        newStatus[bookingId] = newStatus[bookingId] === "checkedin" ? null : "checkedin";
-        if (!newStatus[bookingId]) delete newStatus[bookingId];
-        setCheckStatus(newStatus);
-        saveCheckStatus(newStatus);
+    const toggleCheckIn = (id) => {
+        const ns = {...checkStatus};
+        ns[id] = ns[id] === "checkedin" ? null : "checkedin";
+        if (!ns[id]) delete ns[id];
+        setCheckStatus(ns);
+        saveCheckStatus(ns);
     };
 
-    const toggleCheckOut = (bookingId) => {
-        const newStatus = {...checkStatus};
-        newStatus[bookingId] = newStatus[bookingId] === "checkedout" ? null : "checkedout";
-        if (!newStatus[bookingId]) delete newStatus[bookingId];
-        setCheckStatus(newStatus);
-        saveCheckStatus(newStatus);
+    const toggleCheckOut = (id) => {
+        const ns = {...checkStatus};
+        ns[id] = ns[id] === "checkedout" ? null : "checkedout";
+        if (!ns[id]) delete ns[id];
+        setCheckStatus(ns);
+        saveCheckStatus(ns);
     };
 
-    const today = getBDDate();
-
-    // Stats calculation
     const stats = useMemo(() => {
-        let occ=0, avail=0, cin=0, cout=0, pending=0;
-        allRooms.forEach(({room, unit}) => { 
-            if(getBooking(room.id, unit.id, today)) occ++; 
-            else avail++; 
-        });
-        bookings.forEach(b => { 
-            if(b.arrival === today) { cin++; if(checkStatus[b.id] !== "checkedin") pending++; }
-            if(b.departure === today) cout++; 
-        });
-        return {total: allRooms.length, occ, avail, cin, cout, pending};
-    }, [allRooms, bookings, getBooking, today, checkStatus]);
+        let occ=0, avail=0, cin=0, cout=0;
+        allRooms.forEach(({room, unit}) => { if(getBooking(room.id, unit.id, today)) occ++; else avail++; });
+        bookings.forEach(b => { if(b.arrival === today) cin++; if(b.departure === today) cout++; });
+        return {total: allRooms.length, occ, avail, cin, cout};
+    }, [allRooms, bookings, getBooking, today]);
 
-    // Housekeeping data
     const housekeeping = useMemo(() => {
         const makeup = [], dirty = [], turnover = [];
         allRooms.forEach(({room, unit}) => {
-            const checkoutToday = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === today);
-            const checkinToday = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival === today);
-            const currentGuest = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < today && b.departure > today);
-            if (checkoutToday && checkinToday) turnover.push({room, unit, out: checkoutToday, in: checkinToday});
-            else if (checkoutToday && !checkinToday) dirty.push({room, unit, booking: checkoutToday});
-            else if (currentGuest) makeup.push({room, unit, booking: currentGuest});
+            const co = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === today);
+            const ci = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival === today);
+            const stay = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < today && b.departure > today);
+            if (co && ci) turnover.push({room, unit, out: co, in: ci});
+            else if (co && !ci) dirty.push({room, unit, booking: co});
+            else if (stay) makeup.push({room, unit, booking: stay});
         });
         return {makeup, dirty, turnover};
     }, [allRooms, bookings, today]);
 
-    // Movements data
     const movements = useMemo(() => {
-        const todayCheckins = bookings.filter(b => b.arrival === today);
-        const todayCheckouts = bookings.filter(b => b.departure === today);
-        const currentGuests = bookings.filter(b => b.arrival <= today && b.departure > today);
-        const pendingIn = todayCheckins.filter(b => checkStatus[b.id] !== "checkedin");
-        const doneIn = todayCheckins.filter(b => checkStatus[b.id] === "checkedin");
-        const pendingOut = todayCheckouts.filter(b => checkStatus[b.id] !== "checkedout");
-        const doneOut = todayCheckouts.filter(b => checkStatus[b.id] === "checkedout");
-        return {pendingIn, doneIn, pendingOut, doneOut, currentGuests, todayCheckins, todayCheckouts};
+        const todayIn = bookings.filter(b => b.arrival === today);
+        const todayOut = bookings.filter(b => b.departure === today);
+        const guests = bookings.filter(b => b.arrival <= today && b.departure > today);
+        return {
+            pendingIn: todayIn.filter(b => checkStatus[b.id] !== "checkedin"),
+            doneIn: todayIn.filter(b => checkStatus[b.id] === "checkedin"),
+            pendingOut: todayOut.filter(b => checkStatus[b.id] !== "checkedout"),
+            doneOut: todayOut.filter(b => checkStatus[b.id] === "checkedout"),
+            guests
+        };
     }, [bookings, checkStatus, today]);
 
-    // Navigation tabs
     const tabs = [
         {id: "floor", label: "🏢 By Floor", icon: "🏢"},
         {id: "category", label: "📁 By Category", icon: "📁"},
-        {id: "search", label: "🔍 Search & Book", icon: "🔍"},
         {id: "housekeeping", label: "🧹 Housekeeping", icon: "🧹"},
         {id: "movements", label: "↔️ Movements", icon: "↔️"},
         {id: "dashboard", label: "📊 Dashboard", icon: "📊"}
     ];
 
-    // Room Card Component
-    const RoomCard = ({room, unit, showCalendar = true}) => {
-        const booking = getBooking(room.id, unit.id, selectedDate);
-        const isCheckin = booking?.arrival === selectedDate;
-        const isCheckout = getCheckout(room.id, unit.id, selectedDate);
-        const isPending = booking && booking.arrival === today && checkStatus[booking.id] !== "checkedin";
-        const isSelected = selected.find(x => x.key === room.id + "-" + unit.id);
-        
-        let cardClass = "room-available";
-        let statusText = "Available";
-        if (isCheckout && !booking) { cardClass = "room-checkout"; statusText = "C/O Today"; }
-        else if (booking) {
-            if (isCheckin) { cardClass = isPending ? "room-pending pulse" : "room-checkin"; statusText = isPending ? "Pending" : "C/I Today"; }
-            else { cardClass = "room-occupied"; statusText = "Occupied"; }
+    const StatusCell = ({room, unit, date}) => {
+        const booking = getBooking(room.id, unit.id, date);
+        const checkout = getCheckout(room.id, unit.id, date);
+        const checkin = getCheckin(room.id, unit.id, date);
+        const isToday = date === today;
+        const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}-${date}`);
+        const isTurnover = checkout && checkin;
+
+        let cls = "status-available";
+        let icon = "✓";
+        let text = "";
+        let guestName = "";
+
+        if (isTurnover) {
+            cls = "status-turnover";
+            icon = "🔄";
+            text = "Turnover";
+            guestName = checkin.firstName?.substring(0,8);
+        } else if (booking) {
+            if (booking.arrival === date) {
+                cls = "status-checkin";
+                icon = "⬇️";
+                text = "Check-in";
+            } else {
+                cls = "status-booked";
+                icon = "";
+            }
+            guestName = booking.firstName?.substring(0,8);
+        } else if (checkout) {
+            cls = "status-checkout";
+            icon = "⬆️";
+            text = "C/O";
         }
-        
-        const days = getDays(calDays, selectedDate);
-        
+
+        const canSelect = !booking && !checkout;
+
         return (
-            <div className={`room-card ${cardClass} ${isSelected ? 'ring-2 ring-white' : ''}`} 
-                 onClick={() => !booking && toggleSelect(room, unit, selectedDate)}>
-                <div className="flex justify-between items-start mb-2">
-                    <div>
-                        <div className="text-2xl font-bold text-white">{unit.n}</div>
-                        <div className="text-xs text-white text-opacity-80">{room.short}</div>
-                        <div className="text-xs text-white text-opacity-60">👤 {room.max}A</div>
-                    </div>
-                    {isSelected && <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-sm">✓</div>}
-                </div>
-                
-                {booking ? (
-                    <div className="mt-2">
-                        <div className="text-white font-semibold text-sm truncate">{booking.firstName}</div>
-                        <div className="text-white text-opacity-70 text-xs">→ {shortDate(booking.departure)}</div>
-                    </div>
-                ) : (
-                    <div className="mt-2">
-                        <span className="inline-block px-3 py-1 bg-white bg-opacity-20 rounded-full text-white text-xs font-medium">
-                            {statusText}
-                        </span>
-                    </div>
-                )}
-                
-                {showCalendar && (
-                    <div className="mt-3 flex gap-1 overflow-x-auto pb-1">
-                        {days.slice(0, isMobile ? 5 : 7).map(d => {
-                            const dayBooking = getBooking(room.id, unit.id, d);
-                            const dayCheckout = getCheckout(room.id, unit.id, d);
-                            let cls = "cal-available";
-                            if (dayBooking) cls = dayBooking.arrival === d ? "cal-checkin" : "cal-booked";
-                            else if (dayCheckout) cls = "cal-checkout";
-                            
-                            return (
-                                <div key={d} className={`cal-day ${cls} ${d === today ? 'cal-today' : ''}`}>
-                                    <div className="font-medium">{dayName(d).charAt(0)}</div>
-                                    <div className="opacity-70">{new Date(d+"T00:00:00").getDate()}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+            <div className={`status-cell ${cls} ${isToday ? 'today-col' : ''} ${isSelected ? 'selected' : ''}`}
+                 onClick={() => canSelect && toggleSelect(room, unit, date)}>
+                {icon && <span className="status-icon">{icon}</span>}
+                {guestName && <span className="guest-name">{guestName}</span>}
+                {text && !guestName && <span className="status-text">{text}</span>}
             </div>
         );
     };
 
-    // Movement Card Component
+    const RoomRow = ({room, unit}) => (
+        <div className="room-row glass animate-slide">
+            <div className="room-num">
+                <span className="num">{unit.n}</span>
+                <span className="type">{room.short}</span>
+            </div>
+            {days.map(d => <StatusCell key={d} room={room} unit={unit} date={d}/>)}
+        </div>
+    );
+
+    const CalendarHeader = () => (
+        <div className="sticky-calendar py-3 px-4 border-b border-white border-opacity-5">
+            <div className="flex items-center">
+                <div className="room-num opacity-0 pointer-events-none">
+                    <span className="num">000</span>
+                    <span className="type">Type</span>
+                </div>
+                {days.map(d => (
+                    <div key={d} className={`cal-header flex-1 ${d === today ? 'today' : ''}`}>
+                        <div className="day-name">{dayName(d)}</div>
+                        <div className="day-num">{dayNum(d)}</div>
+                        <div className="day-name">{shortMonth(d)}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
     const MovementCard = ({booking, type, onToggle}) => {
         const {num, room} = getRoomInfo(booking.roomId, booking.unitId);
-        const isDone = type === "done";
         return (
             <div className="movement-card flex justify-between items-center">
                 <div className="flex-1 min-w-0">
-                    <div className="text-white font-medium truncate">{booking.firstName} {booking.lastName}</div>
-                    <div className="flex items-center gap-2 text-xs text-white text-opacity-50">
-                        <span>Room {num}</span>
-                        <span>•</span>
-                        <span>{room?.short}</span>
-                    </div>
-                    {booking.mobile && <div className="text-xs text-white text-opacity-40 mt-1">📞 {booking.mobile}</div>}
+                    <div className="font-semibold truncate">{booking.firstName} {booking.lastName}</div>
+                    <div className="text-sm text-gray-400">Room {num} • {room?.short}</div>
+                    {booking.mobile && <div className="text-xs text-gray-500 mt-1">📞 {booking.mobile}</div>}
                 </div>
                 <button onClick={() => onToggle(booking.id)} 
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all ${isDone ? 'bg-green-500 text-white' : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'}`}>
-                    {isDone ? "↩" : "✓"}
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all ${type === "done" ? 'bg-green-500 text-white' : 'bg-white bg-opacity-10 hover:bg-opacity-20'}`}>
+                    {type === "done" ? "↩" : "✓"}
                 </button>
             </div>
         );
@@ -383,263 +410,202 @@ function App() {
     return (
         <div className="min-h-screen pb-24">
             {/* Header */}
-            <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 py-3">
-                    <div className="flex flex-wrap justify-between items-center gap-3">
+            <div className="sticky-header border-b border-white border-opacity-5">
+                <div className="max-w-full px-4 py-4">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                         <div>
-                            <h1 className="text-xl font-bold text-white flex items-center gap-2">🏨 Miami Beach Resort</h1>
-                            <p className="text-gray-400 text-sm">Cox's Bazar • {formatDate(today)} • {time} • {bookings.length} bookings</p>
+                            <h1 className="text-2xl font-bold flex items-center gap-2">🏨 Miami Beach Resort</h1>
+                            <p className="text-gray-400 text-sm mt-1">Cox's Bazar • {formatDateFull(today)} • {time}</p>
                         </div>
                         <button onClick={fetchData} disabled={loading} 
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50">
+                            className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20">
                             {loading ? <span className="animate-spin">⏳</span> : "🔄"} Refresh
                         </button>
                     </div>
-                    
-                    {/* Navigation - Desktop: Tabs, Mobile: Dropdown */}
+
+                    {/* Navigation */}
                     {isMobile ? (
-                        <div className="mt-3">
-                            <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select">
-                                {tabs.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label.replace(t.icon, '').trim()}</option>)}
-                            </select>
-                        </div>
+                        <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select mb-4">
+                            {tabs.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label.replace(t.icon, '').trim()}</option>)}
+                        </select>
                     ) : (
-                        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
                             {tabs.map(t => (
-                                <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>
+                                <div key={t.id} onClick={() => setTab(t.id)} className={`nav-item ${tab === t.id ? 'active' : ''}`}>
                                     {t.label}
-                                </button>
+                                </div>
                             ))}
+                        </div>
+                    )}
+
+                    {/* Stats Bar */}
+                    <div className="grid grid-cols-5 gap-3 mb-4">
+                        <div className="stat-card"><div className="stat-num text-white">{stats.total}</div><div className="stat-label">Total</div></div>
+                        <div className="stat-card"><div className="stat-num text-green-400">{stats.avail}</div><div className="stat-label">Available</div></div>
+                        <div className="stat-card"><div className="stat-num text-red-400">{stats.occ}</div><div className="stat-label">Occupied</div></div>
+                        <div className="stat-card"><div className="stat-num text-blue-400">{stats.cin}</div><div className="stat-label">Check-ins</div></div>
+                        <div className="stat-card"><div className="stat-num text-purple-400">{stats.cout}</div><div className="stat-label">Check-outs</div></div>
+                    </div>
+
+                    {/* Calendar Controls - only for floor/category tabs */}
+                    {(tab === "floor" || tab === "category") && (
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-400">📅</span>
+                                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
+                            </div>
+                            <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
+                            <div className="h-6 w-px bg-white bg-opacity-20"></div>
+                            <span className="text-gray-400 text-sm">Days:</span>
+                            {[1, 3, 7, 15].map(d => (
+                                <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}</button>
+                            ))}
+                            <div className="flex-1"></div>
+                            <div className="flex gap-2 flex-wrap">
+                                <span className="legend-item"><span className="legend-dot bg-green-500"></span>Available</span>
+                                <span className="legend-item"><span className="legend-dot bg-red-500"></span>Occupied</span>
+                                <span className="legend-item"><span className="legend-dot bg-blue-500"></span>Check-in</span>
+                                <span className="legend-item"><span className="legend-dot bg-purple-500"></span>Check-out</span>
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Stats Bar */}
-            <div className="max-w-7xl mx-auto px-4 py-4">
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
-                    <div className="stat-card"><div className="text-2xl font-bold text-white">{stats.total}</div><div className="text-gray-400 text-xs">Total</div></div>
-                    <div className="stat-card"><div className="text-2xl font-bold text-green-400">{stats.avail}</div><div className="text-gray-400 text-xs">Available</div></div>
-                    <div className="stat-card"><div className="text-2xl font-bold text-red-400">{stats.occ}</div><div className="text-gray-400 text-xs">Occupied</div></div>
-                    <div className="stat-card"><div className="text-2xl font-bold text-yellow-400">{stats.pending}</div><div className="text-gray-400 text-xs">Pending</div></div>
-                    <div className="stat-card"><div className="text-2xl font-bold text-blue-400">{stats.cin}</div><div className="text-gray-400 text-xs">Check-ins</div></div>
-                    <div className="stat-card"><div className="text-2xl font-bold text-purple-400">{stats.cout}</div><div className="text-gray-400 text-xs">Check-outs</div></div>
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-wrap gap-2 mb-4 justify-center">
-                    <span className="legend-badge"><span className="legend-dot bg-green-500"></span> Available</span>
-                    <span className="legend-badge"><span className="legend-dot bg-red-500"></span> Occupied</span>
-                    <span className="legend-badge"><span className="legend-dot bg-yellow-500"></span> Pending</span>
-                    <span className="legend-badge"><span className="legend-dot bg-purple-500"></span> C/O Today</span>
-                </div>
-
-                {/* Date Selector for Floor/Category views */}
-                {(tab === "floor" || tab === "category") && (
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-gray-400 text-sm">📅</span>
-                            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="date-picker"/>
-                        </div>
-                        <button onClick={() => setSelectedDate(getBDDate())} className={`day-btn ${selectedDate === getBDDate() ? 'active' : ''}`}>Today</button>
-                        <div className="text-gray-400 text-sm">{formatDate(selectedDate)}</div>
-                        <div className="flex-1"></div>
-                        <div className="text-gray-400 text-sm">
-                            {tab === "floor" ? `${FLOORS.length} floors` : `${ROOMS.length} categories`} • {allRooms.length} rooms
-                        </div>
-                    </div>
-                )}
-
-                {error && <div className="p-3 bg-red-500 bg-opacity-20 rounded-lg text-red-300 text-sm mb-4">{error}</div>}
-                {loading && <div className="flex justify-center py-12"><div className="loader"></div></div>}
-            </div>
+            {error && <div className="mx-4 mt-4 p-4 bg-red-500 bg-opacity-20 rounded-xl text-red-300">{error}</div>}
+            {loading && <div className="flex justify-center py-16"><div className="loader"></div></div>}
 
             {!loading && (
-                <div className="max-w-7xl mx-auto px-4">
-                    {/* BY FLOOR TAB */}
+                <div className="max-w-full">
+                    {/* BY FLOOR */}
                     {tab === "floor" && (
-                        <div>
-                            {FLOORS.map(floor => (
-                                <div key={floor} className="mb-6">
-                                    <div className="floor-header">
-                                        <span className="text-white font-bold">🏢 {floor === 1 ? '1st' : floor === 2 ? '2nd' : floor === 3 ? '3rd' : floor + 'th'} Floor</span>
-                                        <span className="text-gray-400 text-sm">{roomsByFloor[floor]?.length || 0} rooms</span>
-                                    </div>
-                                    <div className="room-grid">
-                                        {roomsByFloor[floor]?.map(({room, unit}) => (
-                                            <RoomCard key={room.id + "-" + unit.id} room={room} unit={unit} showCalendar={true}/>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* BY CATEGORY TAB */}
-                    {tab === "category" && (
-                        <div>
-                            {ROOMS.map(roomType => (
-                                <div key={roomType.id} className="mb-6">
-                                    <div className="floor-header">
-                                        <span className="text-white font-bold">📁 {roomType.name}</span>
-                                        <span className="text-gray-400 text-sm">{roomType.units.length} rooms • 👤{roomType.max}A</span>
-                                    </div>
-                                    <div className="room-grid">
-                                        {roomType.units.map(unit => (
-                                            <RoomCard key={roomType.id + "-" + unit.id} room={roomType} unit={unit} showCalendar={true}/>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* SEARCH & BOOK TAB */}
-                    {tab === "search" && (
-                        <div className="glass rounded-xl p-4">
-                            <h2 className="text-white font-bold text-lg mb-4">🔍 Search Available Rooms</h2>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                                <div>
-                                    <label className="text-gray-400 text-xs block mb-1">Check-in</label>
-                                    <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="date-picker w-full"/>
-                                </div>
-                                <div>
-                                    <label className="text-gray-400 text-xs block mb-1">Days View</label>
-                                    <div className="flex gap-1">
-                                        {[1,3,7,15].map(d => (
-                                            <button key={d} onClick={() => setCalDays(d)} className={`day-btn flex-1 ${calDays === d ? 'active' : ''}`}>{d}</button>
-                                        ))}
-                                    </div>
-                                </div>
+                        <>
+                            <CalendarHeader/>
+                            <div className="px-4">
+                                {FLOORS.map(floor => {
+                                    const rooms = roomsByFloor[floor];
+                                    if (!rooms?.length) return null;
+                                    return (
+                                        <div key={floor} className="animate-fade">
+                                            <div className="floor-header">
+                                                <span className="text-lg font-bold">🏢 {floorName(floor)} Floor</span>
+                                                <span className="text-gray-400 text-sm ml-3">{rooms.length} rooms</span>
+                                            </div>
+                                            {rooms.map(({room, unit}) => <RoomRow key={`${room.id}-${unit.id}`} room={room} unit={unit}/>)}
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            <div className="room-grid">
-                                {allRooms.filter(({room, unit}) => !getBooking(room.id, unit.id, selectedDate)).map(({room, unit}) => (
-                                    <RoomCard key={room.id + "-" + unit.id} room={room} unit={unit} showCalendar={true}/>
+                        </>
+                    )}
+
+                    {/* BY CATEGORY */}
+                    {tab === "category" && (
+                        <>
+                            <CalendarHeader/>
+                            <div className="px-4">
+                                {ROOMS.map(roomType => (
+                                    <div key={roomType.id} className="animate-fade">
+                                        <div className="floor-header category-header">
+                                            <span className="text-lg font-bold">📁 {roomType.name}</span>
+                                            <span className="text-gray-400 text-sm ml-3">{roomType.units.length} rooms • 👤{roomType.max}A</span>
+                                        </div>
+                                        {roomType.units.map(unit => <RoomRow key={`${roomType.id}-${unit.id}`} room={roomType} unit={unit}/>)}
+                                    </div>
                                 ))}
                             </div>
-                            {allRooms.filter(({room, unit}) => !getBooking(room.id, unit.id, selectedDate)).length === 0 && (
-                                <div className="text-center py-8 text-gray-400">No rooms available for this date</div>
-                            )}
-                        </div>
+                        </>
                     )}
 
-                    {/* HOUSEKEEPING TAB */}
+                    {/* HOUSEKEEPING */}
                     {tab === "housekeeping" && (
-                        <div>
-                            <h2 className="text-white font-bold text-lg mb-4">🧹 Housekeeping - {formatDate(today)}</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="glass rounded-xl p-4">
-                                    <h3 className="text-cyan-400 font-bold text-lg mb-3 flex items-center gap-2">
+                        <div className="px-4 py-6">
+                            <h2 className="text-xl font-bold mb-6">🧹 Housekeeping - {formatDateFull(today)}</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="text-lg font-bold text-cyan-400 mb-4 flex items-center gap-2">
                                         🛏️ Make-up <span className="text-sm font-normal text-gray-400">({housekeeping.makeup.length})</span>
                                     </h3>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="space-y-3">
                                         {housekeeping.makeup.map(({room, unit, booking}) => (
-                                            <div key={room.id+"-"+unit.id} className="hk-makeup rounded-lg px-3 py-2 text-white">
-                                                <div className="font-bold">{unit.n}</div>
-                                                <div className="text-xs opacity-80">{booking.firstName}</div>
+                                            <div key={`${room.id}-${unit.id}`} className="hk-card hk-makeup">
+                                                <div className="text-2xl font-bold">{unit.n}</div>
+                                                <div className="flex-1"><div className="font-medium">{booking.firstName}</div><div className="text-sm opacity-80">{room.short}</div></div>
                                             </div>
                                         ))}
-                                        {housekeeping.makeup.length === 0 && <div className="text-gray-400 text-sm">No rooms</div>}
+                                        {!housekeeping.makeup.length && <div className="text-gray-500 text-center py-8">No rooms</div>}
                                     </div>
                                 </div>
-                                
-                                <div className="glass rounded-xl p-4">
-                                    <h3 className="text-orange-400 font-bold text-lg mb-3 flex items-center gap-2">
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="text-lg font-bold text-orange-400 mb-4 flex items-center gap-2">
                                         🧽 Dirty <span className="text-sm font-normal text-gray-400">({housekeeping.dirty.length})</span>
                                     </h3>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="space-y-3">
                                         {housekeeping.dirty.map(({room, unit, booking}) => (
-                                            <div key={room.id+"-"+unit.id} className="hk-dirty rounded-lg px-3 py-2 text-white">
-                                                <div className="font-bold">{unit.n}</div>
-                                                <div className="text-xs opacity-80">{booking.firstName}</div>
+                                            <div key={`${room.id}-${unit.id}`} className="hk-card hk-dirty">
+                                                <div className="text-2xl font-bold">{unit.n}</div>
+                                                <div className="flex-1"><div className="font-medium">{booking.firstName}</div><div className="text-sm opacity-80">{room.short}</div></div>
                                             </div>
                                         ))}
-                                        {housekeeping.dirty.length === 0 && <div className="text-gray-400 text-sm">No rooms</div>}
+                                        {!housekeeping.dirty.length && <div className="text-gray-500 text-center py-8">No rooms</div>}
                                     </div>
                                 </div>
-                                
-                                <div className="glass rounded-xl p-4">
-                                    <h3 className="text-pink-400 font-bold text-lg mb-3 flex items-center gap-2">
-                                        🔄 C/O → C/I <span className="text-sm font-normal text-gray-400">({housekeeping.turnover.length})</span>
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="text-lg font-bold text-pink-400 mb-4 flex items-center gap-2">
+                                        🔄 Turnover <span className="text-sm font-normal text-gray-400">({housekeeping.turnover.length})</span>
                                     </h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {housekeeping.turnover.map(({room, unit, out, in: checkin}) => (
-                                            <div key={room.id+"-"+unit.id} className="hk-turnover rounded-lg px-3 py-2 text-white">
-                                                <div className="font-bold">{unit.n}</div>
-                                                <div className="text-xs opacity-80">{out.firstName} → {checkin.firstName}</div>
+                                    <div className="space-y-3">
+                                        {housekeeping.turnover.map(({room, unit, out, in: ci}) => (
+                                            <div key={`${room.id}-${unit.id}`} className="hk-card hk-turnover">
+                                                <div className="text-2xl font-bold">{unit.n}</div>
+                                                <div className="flex-1"><div className="font-medium">{out.firstName} → {ci.firstName}</div><div className="text-sm opacity-80">{room.short}</div></div>
                                             </div>
                                         ))}
-                                        {housekeeping.turnover.length === 0 && <div className="text-gray-400 text-sm">No rooms</div>}
+                                        {!housekeeping.turnover.length && <div className="text-gray-500 text-center py-8">No rooms</div>}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* MOVEMENTS TAB */}
+                    {/* MOVEMENTS */}
                     {tab === "movements" && (
-                        <div>
-                            <h2 className="text-white font-bold text-lg mb-4">↔️ Movements - {formatDate(today)}</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="glass rounded-xl p-4">
-                                    <h3 className="text-blue-400 font-bold mb-3 flex items-center gap-2">
-                                        ⬇️ Today's Check-in <span className="text-sm font-normal text-gray-400">({movements.pendingIn.length})</span>
-                                    </h3>
-                                    <div className="max-h-80 overflow-y-auto">
-                                        {movements.pendingIn.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckIn}/>)}
-                                        {movements.pendingIn.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
-                                    </div>
+                        <div className="px-4 py-6">
+                            <h2 className="text-xl font-bold mb-6">↔️ Movements - {formatDateFull(today)}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="font-bold text-blue-400 mb-4">⬇️ Today's Check-in ({movements.pendingIn.length})</h3>
+                                    <div className="max-h-80 overflow-y-auto">{movements.pendingIn.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckIn}/>)}</div>
+                                    {!movements.pendingIn.length && <div className="text-gray-500 text-center py-6">None</div>}
                                 </div>
-                                
-                                <div className="glass rounded-xl p-4">
-                                    <h3 className="text-green-400 font-bold mb-3 flex items-center gap-2">
-                                        ✅ Already Checked-in <span className="text-sm font-normal text-gray-400">({movements.doneIn.length})</span>
-                                    </h3>
-                                    <div className="max-h-80 overflow-y-auto">
-                                        {movements.doneIn.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckIn}/>)}
-                                        {movements.doneIn.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
-                                    </div>
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="font-bold text-green-400 mb-4">✅ Checked-in ({movements.doneIn.length})</h3>
+                                    <div className="max-h-80 overflow-y-auto">{movements.doneIn.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckIn}/>)}</div>
+                                    {!movements.doneIn.length && <div className="text-gray-500 text-center py-6">None</div>}
                                 </div>
-                                
-                                <div className="glass rounded-xl p-4">
-                                    <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
-                                        ⬆️ Today's Check-out <span className="text-sm font-normal text-gray-400">({movements.pendingOut.length})</span>
-                                    </h3>
-                                    <div className="max-h-80 overflow-y-auto">
-                                        {movements.pendingOut.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckOut}/>)}
-                                        {movements.pendingOut.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
-                                    </div>
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="font-bold text-purple-400 mb-4">⬆️ Today's Check-out ({movements.pendingOut.length})</h3>
+                                    <div className="max-h-80 overflow-y-auto">{movements.pendingOut.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckOut}/>)}</div>
+                                    {!movements.pendingOut.length && <div className="text-gray-500 text-center py-6">None</div>}
                                 </div>
-                                
-                                <div className="glass rounded-xl p-4">
-                                    <h3 className="text-orange-400 font-bold mb-3 flex items-center gap-2">
-                                        👋 Already Checked-out <span className="text-sm font-normal text-gray-400">({movements.doneOut.length})</span>
-                                    </h3>
-                                    <div className="max-h-80 overflow-y-auto">
-                                        {movements.doneOut.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckOut}/>)}
-                                        {movements.doneOut.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
-                                    </div>
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="font-bold text-orange-400 mb-4">👋 Checked-out ({movements.doneOut.length})</h3>
+                                    <div className="max-h-80 overflow-y-auto">{movements.doneOut.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckOut}/>)}</div>
+                                    {!movements.doneOut.length && <div className="text-gray-500 text-center py-6">None</div>}
                                 </div>
                             </div>
-                            
-                            {/* Current Guests */}
-                            <div className="mt-6 glass rounded-xl p-4">
-                                <h3 className="text-white font-bold text-lg mb-3">🏠 Current Guests ({movements.currentGuests.length})</h3>
-                                <div className="room-grid">
-                                    {movements.currentGuests.map(b => {
+                            <div className="glass rounded-2xl p-5">
+                                <h3 className="font-bold text-lg mb-4">🏠 Current Guests ({movements.guests.length})</h3>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                                    {movements.guests.map(b => {
                                         const {num, room} = getRoomInfo(b.roomId, b.unitId);
                                         return (
-                                            <div key={b.id} className="glass rounded-lg p-3">
+                                            <div key={b.id} className="glass rounded-xl p-4">
                                                 <div className="flex justify-between items-start">
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="text-white font-bold truncate">{b.firstName}</div>
-                                                        <div className="text-gray-400 text-xs">{room?.short}</div>
-                                                    </div>
-                                                    <div className="text-2xl font-bold text-blue-400">{num}</div>
+                                                    <div className="font-bold truncate flex-1">{b.firstName}</div>
+                                                    <div className="text-2xl font-bold text-blue-400 ml-2">{num}</div>
                                                 </div>
-                                                <div className="mt-2 text-xs text-gray-400">
-                                                    {shortDate(b.arrival)} → {shortDate(b.departure)}
-                                                </div>
+                                                <div className="text-xs text-gray-400 mt-1">{room?.short}</div>
                                             </div>
                                         );
                                     })}
@@ -648,49 +614,45 @@ function App() {
                         </div>
                     )}
 
-                    {/* DASHBOARD TAB */}
+                    {/* DASHBOARD */}
                     {tab === "dashboard" && (
-                        <div>
-                            <h2 className="text-white font-bold text-lg mb-4">📊 Dashboard</h2>
-                            
-                            {/* Occupancy by Room Type */}
-                            <div className="glass rounded-xl p-4 mb-4">
-                                <h3 className="text-white font-bold mb-3">Occupancy by Room Type</h3>
-                                <div className="space-y-3">
+                        <div className="px-4 py-6">
+                            <h2 className="text-xl font-bold mb-6">📊 Dashboard</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="font-bold mb-4">Occupancy by Room Type</h3>
                                     {ROOMS.map(r => {
                                         const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
                                         const pct = Math.round(booked / r.units.length * 100);
                                         return (
-                                            <div key={r.id}>
+                                            <div key={r.id} className="mb-4">
                                                 <div className="flex justify-between text-sm mb-1">
-                                                    <span className="text-gray-300">{r.name}</span>
+                                                    <span>{r.name}</span>
                                                     <span className="text-gray-400">{booked}/{r.units.length} ({pct}%)</span>
                                                 </div>
-                                                <div className="w-full bg-gray-700 rounded-full h-2">
-                                                    <div className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all" style={{width: pct + "%"}}></div>
+                                                <div className="h-3 bg-white bg-opacity-10 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500" style={{width: pct+"%"}}></div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                            </div>
-                            
-                            {/* Floor Occupancy */}
-                            <div className="glass rounded-xl p-4">
-                                <h3 className="text-white font-bold mb-3">Occupancy by Floor</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                                    {FLOORS.map(f => {
-                                        const rooms = roomsByFloor[f] || [];
-                                        const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
-                                        const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0;
-                                        return (
-                                            <div key={f} className="glass rounded-lg p-3 text-center">
-                                                <div className="text-gray-400 text-xs mb-1">Floor {f}</div>
-                                                <div className="text-2xl font-bold text-white">{pct}%</div>
-                                                <div className="text-xs text-gray-400">{booked}/{rooms.length}</div>
-                                            </div>
-                                        );
-                                    })}
+                                <div className="glass rounded-2xl p-5">
+                                    <h3 className="font-bold mb-4">Occupancy by Floor</h3>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        {FLOORS.map(f => {
+                                            const rooms = roomsByFloor[f] || [];
+                                            const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
+                                            const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0;
+                                            return (
+                                                <div key={f} className="text-center p-4 glass rounded-xl">
+                                                    <div className="text-gray-400 text-sm">Floor {f}</div>
+                                                    <div className="text-3xl font-bold mt-1">{pct}%</div>
+                                                    <div className="text-xs text-gray-400">{booked}/{rooms.length}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -700,63 +662,51 @@ function App() {
 
             {/* Floating Book Button */}
             {selected.length > 0 && (
-                <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+                <div className="fixed bottom-6 left-4 right-4 z-50 max-w-lg mx-auto">
                     <button onClick={() => setShowModal(true)} 
-                        className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl text-white font-bold shadow-2xl flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 transition-all">
-                        ➕ Book {selected.length} Room{selected.length > 1 ? 's' : ''} 
-                        <span className="text-sm opacity-80">({selected.map(s => s.unit.n).join(', ')})</span>
-                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} 
-                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-30">✕</span>
+                        className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl text-white font-bold shadow-2xl shadow-blue-500/30 flex items-center justify-center gap-3 hover:shadow-blue-500/50 transition-all">
+                        ➕ Book {selected.length} Room{selected.length > 1 ? 's' : ''}
+                        <span className="absolute right-4" onClick={e => {e.stopPropagation(); setSelected([]);}}>✕</span>
                     </button>
                 </div>
             )}
 
-            {/* Booking Modal */}
-            {showModal && <BookingModal rooms={selected} onClose={() => {setShowModal(false); setSelected([]); fetchData();}}/>}
+            {showModal && <BookingModal selected={selected} onClose={() => {setShowModal(false); setSelected([]); fetchData();}}/>}
         </div>
     );
 }
 
-// Booking Modal Component
-function BookingModal({rooms, onClose}) {
+function BookingModal({selected, onClose}) {
     const [form, setForm] = useState({
-        guests: [{name: ""}],
-        phones: [""],
-        email: "",
-        nid: "",
-        dob: "",
-        checkIn: rooms[0]?.checkIn || getBDDate(),
-        checkOut: rooms[0]?.checkOut || getBDDate(1)
+        guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "",
+        checkIn: selected[0]?.date || getBDDate(),
+        checkOut: getBDDate(1)
     });
     const [status, setStatus] = useState("");
 
-    const addGuest = () => { if (form.guests.length < 3) setForm({...form, guests: [...form.guests, {name: ""}]}); };
-    const addPhone = () => { if (form.phones.length < 3) setForm({...form, phones: [...form.phones, ""]}); };
+    const addGuest = () => form.guests.length < 3 && setForm({...form, guests: [...form.guests, {name: ""}]});
+    const addPhone = () => form.phones.length < 3 && setForm({...form, phones: [...form.phones, ""]});
     const updateGuest = (i, v) => { const g = [...form.guests]; g[i].name = v; setForm({...form, guests: g}); };
     const updatePhone = (i, v) => { const p = [...form.phones]; p[i] = v; setForm({...form, phones: p}); };
-    const removeGuest = (i) => { if (form.guests.length > 1) setForm({...form, guests: form.guests.filter((_,idx) => idx !== i)}); };
-    const removePhone = (i) => { if (form.phones.length > 1) setForm({...form, phones: form.phones.filter((_,idx) => idx !== i)}); };
+    const removeGuest = (i) => form.guests.length > 1 && setForm({...form, guests: form.guests.filter((_,idx) => idx !== i)});
+    const removePhone = (i) => form.phones.length > 1 && setForm({...form, phones: form.phones.filter((_,idx) => idx !== i)});
 
     const submit = async (e) => {
         e.preventDefault();
         setStatus("loading");
         try {
-            const guestNames = form.guests.map(g => g.name).filter(n => n).join(", ");
-            const phoneNums = form.phones.filter(p => p).join(", ");
-            
-            const data = rooms.map(r => ({
-                propertyId: PROPERTY, roomId: r.room.id, unitId: r.unit.id,
+            const names = form.guests.map(g => g.name).filter(Boolean).join(", ");
+            const phones = form.phones.filter(Boolean).join(", ");
+            const data = selected.map(s => ({
+                propertyId: PROPERTY, roomId: s.room.id, unitId: s.unit.id,
                 arrival: form.checkIn, departure: form.checkOut,
-                numAdult: r.room.max, numChild: 0, status: "confirmed",
-                firstName: guestNames, email: form.email || "default",
-                mobile: phoneNums, custom4: form.nid || "default", custom5: form.dob || "default",
+                numAdult: s.room.max, numChild: 0, status: "confirmed",
+                firstName: names, email: form.email || "default",
+                mobile: phones, custom4: form.nid || "default", custom5: form.dob || "default",
                 referer: "miami_frontdesk"
             }));
-            
             const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(data)
+                method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)
             });
             const result = await res.json();
             if (result.success) { setStatus("success"); setTimeout(onClose, 1500); }
@@ -765,89 +715,61 @@ function BookingModal({rooms, onClose}) {
     };
 
     if (status === "success") return (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-            <div className="glass rounded-2xl p-8 text-center">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div className="glass rounded-3xl p-10 text-center animate-fade">
                 <div className="text-6xl mb-4">✅</div>
-                <div className="text-white text-xl font-bold">Booking Created!</div>
+                <div className="text-2xl font-bold">Booking Created!</div>
             </div>
         </div>
     );
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-            <div className="glass rounded-2xl p-5 w-full max-w-md my-4">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-white">➕ New Booking</h3>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="glass rounded-3xl p-6 w-full max-w-md animate-fade">
+                <div className="flex justify-between items-center mb-5">
+                    <h3 className="text-xl font-bold">➕ New Booking</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">×</button>
                 </div>
-                
-                <div className="mb-4 flex flex-wrap gap-2">
-                    {rooms.map(r => (
-                        <span key={r.key} className="px-3 py-1 bg-blue-500 bg-opacity-30 rounded-lg text-white text-sm font-medium">
-                            {r.unit.n} - {r.room.short}
-                        </span>
-                    ))}
+                <div className="flex flex-wrap gap-2 mb-5">
+                    {selected.map(s => <span key={s.key} className="px-3 py-1.5 bg-blue-500/30 rounded-lg text-sm font-medium">{s.unit.n}</span>)}
                 </div>
-                
                 <form onSubmit={submit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="text-gray-400 text-xs block mb-1">Check-in *</label>
-                            <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} 
-                                className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:border-blue-500 focus:outline-none"/>
-                        </div>
-                        <div>
-                            <label className="text-gray-400 text-xs block mb-1">Check-out *</label>
-                            <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} 
-                                className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:border-blue-500 focus:outline-none"/>
-                        </div>
+                        <div><label className="text-gray-400 text-xs mb-1 block">Check-in</label>
+                            <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} className="date-input w-full"/></div>
+                        <div><label className="text-gray-400 text-xs mb-1 block">Check-out</label>
+                            <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} className="date-input w-full"/></div>
                     </div>
-
                     <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="text-gray-400 text-xs">Guest Names *</label>
-                            {form.guests.length < 3 && <button type="button" onClick={addGuest} className="text-blue-400 text-xs hover:underline">+ Add Guest</button>}
-                        </div>
+                        <div className="flex justify-between mb-2"><label className="text-gray-400 text-xs">Guests</label>
+                            {form.guests.length < 3 && <button type="button" onClick={addGuest} className="text-blue-400 text-xs">+ Add</button>}</div>
                         {form.guests.map((g, i) => (
                             <div key={i} className="flex gap-2 mb-2">
-                                <input type="text" required value={g.name} onChange={e => updateGuest(i, e.target.value)} placeholder={`Guest ${i + 1} name`}
-                                    className="flex-1 px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
-                                {form.guests.length > 1 && <button type="button" onClick={() => removeGuest(i)} className="text-red-400 px-2 hover:text-red-300">✕</button>}
+                                <input type="text" required value={g.name} onChange={e => updateGuest(i, e.target.value)} placeholder={`Guest ${i+1}`} className="date-input flex-1"/>
+                                {form.guests.length > 1 && <button type="button" onClick={() => removeGuest(i)} className="text-red-400 px-2">✕</button>}
                             </div>
                         ))}
                     </div>
-
                     <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="text-gray-400 text-xs">Phone Numbers *</label>
-                            {form.phones.length < 3 && <button type="button" onClick={addPhone} className="text-blue-400 text-xs hover:underline">+ Add Phone</button>}
-                        </div>
+                        <div className="flex justify-between mb-2"><label className="text-gray-400 text-xs">Phones</label>
+                            {form.phones.length < 3 && <button type="button" onClick={addPhone} className="text-blue-400 text-xs">+ Add</button>}</div>
                         {form.phones.map((p, i) => (
                             <div key={i} className="flex gap-2 mb-2">
-                                <input type="tel" required value={p} onChange={e => updatePhone(i, e.target.value)} placeholder={`Phone ${i + 1}`}
-                                    className="flex-1 px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
-                                {form.phones.length > 1 && <button type="button" onClick={() => removePhone(i)} className="text-red-400 px-2 hover:text-red-300">✕</button>}
+                                <input type="tel" required value={p} onChange={e => updatePhone(i, e.target.value)} placeholder={`Phone ${i+1}`} className="date-input flex-1"/>
+                                {form.phones.length > 1 && <button type="button" onClick={() => removePhone(i)} className="text-red-400 px-2">✕</button>}
                             </div>
                         ))}
                     </div>
-
-                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)"
-                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
-                    
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" className="date-input w-full"/>
                     <div className="grid grid-cols-2 gap-3">
-                        <input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID Number"
-                            className="px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
-                        <input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB (DD/MM/YYYY)"
-                            className="px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
+                        <input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" className="date-input"/>
+                        <input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" className="date-input"/>
                     </div>
-
-                    {status.startsWith("error") && <div className="p-3 bg-red-500 bg-opacity-20 rounded-lg text-red-300 text-sm">{status}</div>}
-                    
+                    {status.startsWith("error") && <div className="p-3 bg-red-500/20 rounded-xl text-red-300 text-sm">{status}</div>}
                     <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="flex-1 py-3 glass rounded-lg text-white font-medium hover:bg-white hover:bg-opacity-10 transition-colors">Cancel</button>
-                        <button type="submit" disabled={status === "loading"} 
-                            className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg text-white font-bold hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50">
-                            {status === "loading" ? "Creating..." : "Create Booking"}
+                        <button type="button" onClick={onClose} className="flex-1 py-3 glass rounded-xl font-medium">Cancel</button>
+                        <button type="submit" disabled={status === "loading"} className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl font-bold disabled:opacity-50">
+                            {status === "loading" ? "..." : "Book"}
                         </button>
                     </div>
                 </form>
