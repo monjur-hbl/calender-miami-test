@@ -504,7 +504,7 @@ function App() {
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
                     <div>
                         <h1 style={{fontSize: '18px', fontWeight: '700'}}>🏨 Miami Beach Resort</h1>
-                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)} • {time}</p>
+                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)}, {time} <span style={{background: 'rgba(34,197,94,0.3)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontSize: '10px', color: '#22c55e'}}>GMT+6</span></p>
                     </div>
                     <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
                         <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
