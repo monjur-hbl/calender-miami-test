@@ -9,26 +9,78 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
-        body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; }
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #1a1f2e; min-height: 100vh; margin: 0; }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .room-available { background: rgba(16, 185, 129, 0.5); }
-        .room-booked { background: rgba(239, 68, 68, 0.5); }
-        .room-checkin { background: rgba(59, 130, 246, 0.5); }
-        .room-checkout { background: rgba(139, 92, 246, 0.5); }
-        .room-makeup { background: linear-gradient(135deg, #06b6d4, #0891b2); }
-        .room-dirty { background: linear-gradient(135deg, #f97316, #ea580c); }
-        .room-turnover { background: linear-gradient(135deg, #ec4899, #db2777); }
-        .tab-active { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        
+        /* Room Card Styles */
+        .room-card { border-radius: 12px; padding: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .room-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .room-available { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .room-occupied { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .room-checkin { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .room-checkout { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .room-pending { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        
+        /* Housekeeping colors */
+        .hk-makeup { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .hk-dirty { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .hk-turnover { background: linear-gradient(135deg, #ec4899, #db2777); }
+        
+        /* Floor header */
+        .floor-header { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 16px; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 8px; }
+        
+        /* Tab/Navigation */
+        .nav-btn { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: none; cursor: pointer; }
+        .nav-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .nav-btn:not(.active) { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+        .nav-btn:hover:not(.active) { background: rgba(255,255,255,0.15); }
+        
+        /* Mobile dropdown */
+        .mobile-select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 16px; border-radius: 8px; font-size: 14px; width: 100%; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
+        
+        /* Stats cards */
+        .stat-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Legend badges */
+        .legend-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; background: rgba(255,255,255,0.1); }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+        
+        /* Calendar mini */
+        .cal-day { padding: 4px 6px; border-radius: 4px; font-size: 11px; text-align: center; min-width: 36px; }
+        .cal-available { background: rgba(16, 185, 129, 0.3); color: #10b981; }
+        .cal-booked { background: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .cal-checkin { background: rgba(59, 130, 246, 0.3); color: #93c5fd; }
+        .cal-checkout { background: rgba(139, 92, 246, 0.3); color: #c4b5fd; }
+        .cal-today { ring: 2px; ring-color: #fbbf24; box-shadow: 0 0 0 2px #fbbf24; }
+        
+        /* Movement cards */
+        .movement-card { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Day selector */
+        .day-btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s; }
+        .day-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .day-btn:not(.active) { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+        
+        /* Date picker */
+        .date-picker { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+        
+        /* Loader */
         .loader { border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .day-btn.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
-        table { border-collapse: collapse; }
-        th, td { border: 1px solid rgba(255,255,255,0.15); }
-        .sticky-col { position: sticky; left: 0; z-index: 10; background: #1e293b; }
-        .scroll-container { overflow-x: auto; }
-        .scroll-container::-webkit-scrollbar { height: 8px; }
-        .scroll-container::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
-        .scroll-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        
+        /* Responsive grid */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        @media (max-width: 640px) { .room-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } }
+        
+        /* Pulse animation for pending */
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .pulse { animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
@@ -39,6 +91,7 @@ const {useState, useEffect, useMemo, useCallback} = React;
 const PROXY = "https://beds24-proxy-1006186358018.us-central1.run.app";
 const PROPERTY = 279646;
 
+// Bangladesh Time Helpers
 const getBDDate = (offset = 0) => {
     const now = new Date();
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -55,6 +108,7 @@ const formatDate = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US"
 const shortDate = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"numeric",day:"numeric"}) : "";
 const dayName = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short"}) : "";
 
+// Room Configuration with Floor mapping
 const ROOMS = [
     {id:583459, name:"Royal Sea View Couple", short:"Royal SV", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
     {id:583466, name:"Premium Sea View Couple", short:"Premium SV", max:2, units:[{id:1,n:"401"},{id:2,n:"404"},{id:3,n:"501"},{id:4,n:"504"}]},
@@ -66,19 +120,25 @@ const ROOMS = [
     {id:583472, name:"Deluxe Urban View Family", short:"Deluxe Urban Fam", max:4, units:[{id:1,n:"105"},{id:2,n:"106"},{id:3,n:"108"}]}
 ];
 
+// Build floor mapping
+const getFloor = (roomNum) => Math.floor(parseInt(roomNum) / 100);
+const FLOORS = [1, 2, 3, 4, 5, 6];
+
 const getRoomInfo = (roomId, unitId) => {
     const r = ROOMS.find(x => x.id === roomId);
     const u = r?.units.find(x => x.id === unitId);
     return {room: r, unit: u, num: u?.n || "?"};
 };
 
+// LocalStorage for check-in/out status
 const STORAGE_KEY = "miami_checkin_status";
 const loadCheckStatus = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
 const saveCheckStatus = (data) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); };
 
 function App() {
-    const [tab, setTab] = useState("calendar");
+    const [tab, setTab] = useState("floor");
     const [calDays, setCalDays] = useState(7);
+    const [selectedDate, setSelectedDate] = useState(getBDDate());
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -86,21 +146,38 @@ function App() {
     const [showModal, setShowModal] = useState(false);
     const [time, setTime] = useState(getBDTime());
     const [checkStatus, setCheckStatus] = useState(loadCheckStatus());
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => { const t = setInterval(() => setTime(getBDTime()), 60000); return () => clearInterval(t); }, []);
 
+    // Build all rooms with floor info
     const allRooms = useMemo(() => {
         let arr = [];
-        ROOMS.forEach(r => r.units.forEach(u => arr.push({room:r, unit:u})));
+        ROOMS.forEach(r => r.units.forEach(u => arr.push({room: r, unit: u, floor: getFloor(u.n)})));
         return arr.sort((a,b) => parseInt(a.unit.n) - parseInt(b.unit.n));
     }, []);
 
+    // Group rooms by floor
+    const roomsByFloor = useMemo(() => {
+        const grouped = {};
+        FLOORS.forEach(f => grouped[f] = []);
+        allRooms.forEach(r => { if (grouped[r.floor]) grouped[r.floor].push(r); });
+        return grouped;
+    }, [allRooms]);
+
+    // Fetch bookings
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError("");
         try {
             const depFrom = getBDDate(-7);
-            const url = PROXY + "?endpoint=bookings&propertyId=" + PROPERTY + "&departureFrom=" + depFrom;
+            const url = `${PROXY}?endpoint=bookings&propertyId=${PROPERTY}&departureFrom=${depFrom}`;
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
@@ -114,21 +191,39 @@ function App() {
 
     useEffect(() => { fetchData(); const i = setInterval(fetchData, 120000); return () => clearInterval(i); }, [fetchData]);
 
+    // Get booking for room on date
     const getBooking = useCallback((roomId, unitId, d) => {
         return bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure);
     }, [bookings]);
 
-    const getDays = (count) => { const days = []; for (let i = 0; i < count; i++) days.push(getBDDate(i)); return days; };
+    // Get checkout on date (for turnover check)
+    const getCheckout = useCallback((roomId, unitId, d) => {
+        return bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.departure === d);
+    }, [bookings]);
 
-    const toggleSelect = (room, unit, checkIn, checkOut) => {
+    // Generate days array
+    const getDays = (count, startDate = getBDDate()) => {
+        const days = [];
+        const start = new Date(startDate + "T00:00:00");
+        for (let i = 0; i < count; i++) {
+            const d = new Date(start);
+            d.setDate(d.getDate() + i);
+            days.push(d.toISOString().split('T')[0]);
+        }
+        return days;
+    };
+
+    // Toggle room selection
+    const toggleSelect = (room, unit, date) => {
         const key = room.id + "-" + unit.id;
         setSelected(s => {
             const exists = s.find(x => x.key === key);
             if (exists) return s.filter(x => x.key !== key);
-            return [...s, {key, room, unit, checkIn: checkIn || getBDDate(), checkOut: checkOut || getBDDate(1)}];
+            return [...s, {key, room, unit, checkIn: date || getBDDate(), checkOut: getBDDate(1)}];
         });
     };
 
+    // Check-in/out toggles
     const toggleCheckIn = (bookingId) => {
         const newStatus = {...checkStatus};
         newStatus[bookingId] = newStatus[bookingId] === "checkedin" ? null : "checkedin";
@@ -147,13 +242,21 @@ function App() {
 
     const today = getBDDate();
 
+    // Stats calculation
     const stats = useMemo(() => {
-        let occ=0, avail=0, cin=0, cout=0;
-        allRooms.forEach(({room,unit}) => { if(getBooking(room.id, unit.id, today)) occ++; else avail++; });
-        bookings.forEach(b => { if(b.arrival===today) cin++; if(b.departure===today) cout++; });
-        return {total:allRooms.length, occ, avail, cin, cout};
-    }, [allRooms, bookings, getBooking, today]);
+        let occ=0, avail=0, cin=0, cout=0, pending=0;
+        allRooms.forEach(({room, unit}) => { 
+            if(getBooking(room.id, unit.id, today)) occ++; 
+            else avail++; 
+        });
+        bookings.forEach(b => { 
+            if(b.arrival === today) { cin++; if(checkStatus[b.id] !== "checkedin") pending++; }
+            if(b.departure === today) cout++; 
+        });
+        return {total: allRooms.length, occ, avail, cin, cout, pending};
+    }, [allRooms, bookings, getBooking, today, checkStatus]);
 
+    // Housekeeping data
     const housekeeping = useMemo(() => {
         const makeup = [], dirty = [], turnover = [];
         allRooms.forEach(({room, unit}) => {
@@ -167,6 +270,7 @@ function App() {
         return {makeup, dirty, turnover};
     }, [allRooms, bookings, today]);
 
+    // Movements data
     const movements = useMemo(() => {
         const todayCheckins = bookings.filter(b => b.arrival === today);
         const todayCheckouts = bookings.filter(b => b.departure === today);
@@ -175,204 +279,297 @@ function App() {
         const doneIn = todayCheckins.filter(b => checkStatus[b.id] === "checkedin");
         const pendingOut = todayCheckouts.filter(b => checkStatus[b.id] !== "checkedout");
         const doneOut = todayCheckouts.filter(b => checkStatus[b.id] === "checkedout");
-        return {pendingIn, doneIn, pendingOut, doneOut, currentGuests};
+        return {pendingIn, doneIn, pendingOut, doneOut, currentGuests, todayCheckins, todayCheckouts};
     }, [bookings, checkStatus, today]);
 
+    // Navigation tabs
     const tabs = [
-        {id:"calendar", label:"📅 Calendar"},
-        {id:"category", label:"👥 Category"},
-        {id:"housekeeping", label:"🧹 Housekeeping"},
-        {id:"movements", label:"↔️ Movements"},
-        {id:"guests", label:"🏠 Guests"},
-        {id:"stats", label:"📊 Stats"}
+        {id: "floor", label: "🏢 By Floor", icon: "🏢"},
+        {id: "category", label: "📁 By Category", icon: "📁"},
+        {id: "search", label: "🔍 Search & Book", icon: "🔍"},
+        {id: "housekeeping", label: "🧹 Housekeeping", icon: "🧹"},
+        {id: "movements", label: "↔️ Movements", icon: "↔️"},
+        {id: "dashboard", label: "📊 Dashboard", icon: "📊"}
     ];
 
-    const CalendarCell = ({room, unit, d}) => {
-        const booking = getBooking(room.id, unit.id, d);
-        const isCheckin = booking?.arrival === d;
-        const isCheckoutDay = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === d);
-        const isToday = d === today;
-        const isSelected = selected.find(x => x.key === room.id+"-"+unit.id);
+    // Room Card Component
+    const RoomCard = ({room, unit, showCalendar = true}) => {
+        const booking = getBooking(room.id, unit.id, selectedDate);
+        const isCheckin = booking?.arrival === selectedDate;
+        const isCheckout = getCheckout(room.id, unit.id, selectedDate);
+        const isPending = booking && booking.arrival === today && checkStatus[booking.id] !== "checkedin";
+        const isSelected = selected.find(x => x.key === room.id + "-" + unit.id);
         
-        let cls = "room-available", content = "✓";
-        if (booking) {
-            cls = isCheckin ? "room-checkin" : "room-booked";
-            content = <span className="truncate block text-xs">{booking.firstName?.substring(0,8)}</span>;
-        } else if (isCheckoutDay) {
-            cls = "room-checkout";
-            content = <span className="text-xs opacity-70">OUT</span>;
+        let cardClass = "room-available";
+        let statusText = "Available";
+        if (isCheckout && !booking) { cardClass = "room-checkout"; statusText = "C/O Today"; }
+        else if (booking) {
+            if (isCheckin) { cardClass = isPending ? "room-pending pulse" : "room-checkin"; statusText = isPending ? "Pending" : "C/I Today"; }
+            else { cardClass = "room-occupied"; statusText = "Occupied"; }
         }
         
+        const days = getDays(calDays, selectedDate);
+        
         return (
-            <td className={cls + " p-1 text-center text-white cursor-pointer h-10 " + (isToday ? "ring-2 ring-yellow-400 ring-inset" : "") + (isSelected ? " ring-2 ring-white" : "")}
-                onClick={() => !booking && toggleSelect(room, unit, d, getBDDate(getDays(calDays).indexOf(d) + 2))}>
-                {content}
-            </td>
+            <div className={`room-card ${cardClass} ${isSelected ? 'ring-2 ring-white' : ''}`} 
+                 onClick={() => !booking && toggleSelect(room, unit, selectedDate)}>
+                <div className="flex justify-between items-start mb-2">
+                    <div>
+                        <div className="text-2xl font-bold text-white">{unit.n}</div>
+                        <div className="text-xs text-white text-opacity-80">{room.short}</div>
+                        <div className="text-xs text-white text-opacity-60">👤 {room.max}A</div>
+                    </div>
+                    {isSelected && <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-sm">✓</div>}
+                </div>
+                
+                {booking ? (
+                    <div className="mt-2">
+                        <div className="text-white font-semibold text-sm truncate">{booking.firstName}</div>
+                        <div className="text-white text-opacity-70 text-xs">→ {shortDate(booking.departure)}</div>
+                    </div>
+                ) : (
+                    <div className="mt-2">
+                        <span className="inline-block px-3 py-1 bg-white bg-opacity-20 rounded-full text-white text-xs font-medium">
+                            {statusText}
+                        </span>
+                    </div>
+                )}
+                
+                {showCalendar && (
+                    <div className="mt-3 flex gap-1 overflow-x-auto pb-1">
+                        {days.slice(0, isMobile ? 5 : 7).map(d => {
+                            const dayBooking = getBooking(room.id, unit.id, d);
+                            const dayCheckout = getCheckout(room.id, unit.id, d);
+                            let cls = "cal-available";
+                            if (dayBooking) cls = dayBooking.arrival === d ? "cal-checkin" : "cal-booked";
+                            else if (dayCheckout) cls = "cal-checkout";
+                            
+                            return (
+                                <div key={d} className={`cal-day ${cls} ${d === today ? 'cal-today' : ''}`}>
+                                    <div className="font-medium">{dayName(d).charAt(0)}</div>
+                                    <div className="opacity-70">{new Date(d+"T00:00:00").getDate()}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
         );
     };
 
-    const MovementCard = ({booking, type, onToggle, actionLabel}) => {
+    // Movement Card Component
+    const MovementCard = ({booking, type, onToggle}) => {
         const {num, room} = getRoomInfo(booking.roomId, booking.unitId);
+        const isDone = type === "done";
         return (
-            <div className="glass rounded-lg p-2 flex justify-between items-center mb-2">
+            <div className="movement-card flex justify-between items-center">
                 <div className="flex-1 min-w-0">
-                    <div className="text-white font-medium text-sm truncate">{booking.firstName} {booking.lastName}</div>
-                    <div className="text-white text-opacity-50 text-xs">Room {num}</div>
+                    <div className="text-white font-medium truncate">{booking.firstName} {booking.lastName}</div>
+                    <div className="flex items-center gap-2 text-xs text-white text-opacity-50">
+                        <span>Room {num}</span>
+                        <span>•</span>
+                        <span>{room?.short}</span>
+                    </div>
+                    {booking.mobile && <div className="text-xs text-white text-opacity-40 mt-1">📞 {booking.mobile}</div>}
                 </div>
                 <button onClick={() => onToggle(booking.id)} 
-                    className={"w-7 h-7 rounded-full flex items-center justify-center text-xs " + (type === "done" ? "bg-green-500 text-white" : "bg-white bg-opacity-20 text-white hover:bg-opacity-40")}>
-                    {type === "done" ? "↩" : "✓"}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all ${isDone ? 'bg-green-500 text-white' : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'}`}>
+                    {isDone ? "↩" : "✓"}
                 </button>
             </div>
         );
     };
 
     return (
-        <div className="min-h-screen p-2 pb-24">
+        <div className="min-h-screen pb-24">
             {/* Header */}
-            <div className="glass rounded-xl p-3 mb-3">
-                <div className="flex flex-wrap justify-between items-center gap-2">
-                    <div>
-                        <h1 className="text-lg font-bold text-white">🏨 Miami Beach Resort</h1>
-                        <p className="text-white text-opacity-50 text-xs">{formatDate(today)} • {time} • {bookings.length} bookings</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-green-400 text-sm">{stats.avail}A</span>
-                        <span className="text-blue-400 text-sm">↓{stats.cin}</span>
-                        <span className="text-purple-400 text-sm">↑{stats.cout}</span>
-                        <button onClick={fetchData} disabled={loading} className="px-2 py-1 glass rounded text-white text-xs">
-                            {loading ? "⏳" : "🔄"}
+            <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-4 py-3">
+                    <div className="flex flex-wrap justify-between items-center gap-3">
+                        <div>
+                            <h1 className="text-xl font-bold text-white flex items-center gap-2">🏨 Miami Beach Resort</h1>
+                            <p className="text-gray-400 text-sm">Cox's Bazar • {formatDate(today)} • {time} • {bookings.length} bookings</p>
+                        </div>
+                        <button onClick={fetchData} disabled={loading} 
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50">
+                            {loading ? <span className="animate-spin">⏳</span> : "🔄"} Refresh
                         </button>
                     </div>
-                </div>
-                {error && <div className="mt-2 p-2 bg-red-500 bg-opacity-20 rounded text-red-300 text-xs">{error}</div>}
-                <div className="flex gap-1 mt-3 overflow-x-auto">
-                    {tabs.map(t => (
-                        <button key={t.id} onClick={() => setTab(t.id)} 
-                            className={"px-2 py-1.5 rounded-lg text-xs whitespace-nowrap " + (tab===t.id ? "tab-active text-white" : "text-white text-opacity-60")}>
-                            {t.label}
-                        </button>
-                    ))}
+                    
+                    {/* Navigation - Desktop: Tabs, Mobile: Dropdown */}
+                    {isMobile ? (
+                        <div className="mt-3">
+                            <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select">
+                                {tabs.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label.replace(t.icon, '').trim()}</option>)}
+                            </select>
+                        </div>
+                    ) : (
+                        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                            {tabs.map(t => (
+                                <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {loading && <div className="flex justify-center py-12"><div className="loader"></div></div>}
+            {/* Stats Bar */}
+            <div className="max-w-7xl mx-auto px-4 py-4">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+                    <div className="stat-card"><div className="text-2xl font-bold text-white">{stats.total}</div><div className="text-gray-400 text-xs">Total</div></div>
+                    <div className="stat-card"><div className="text-2xl font-bold text-green-400">{stats.avail}</div><div className="text-gray-400 text-xs">Available</div></div>
+                    <div className="stat-card"><div className="text-2xl font-bold text-red-400">{stats.occ}</div><div className="text-gray-400 text-xs">Occupied</div></div>
+                    <div className="stat-card"><div className="text-2xl font-bold text-yellow-400">{stats.pending}</div><div className="text-gray-400 text-xs">Pending</div></div>
+                    <div className="stat-card"><div className="text-2xl font-bold text-blue-400">{stats.cin}</div><div className="text-gray-400 text-xs">Check-ins</div></div>
+                    <div className="stat-card"><div className="text-2xl font-bold text-purple-400">{stats.cout}</div><div className="text-gray-400 text-xs">Check-outs</div></div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                    <span className="legend-badge"><span className="legend-dot bg-green-500"></span> Available</span>
+                    <span className="legend-badge"><span className="legend-dot bg-red-500"></span> Occupied</span>
+                    <span className="legend-badge"><span className="legend-dot bg-yellow-500"></span> Pending</span>
+                    <span className="legend-badge"><span className="legend-dot bg-purple-500"></span> C/O Today</span>
+                </div>
+
+                {/* Date Selector for Floor/Category views */}
+                {(tab === "floor" || tab === "category") && (
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-gray-400 text-sm">📅</span>
+                            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="date-picker"/>
+                        </div>
+                        <button onClick={() => setSelectedDate(getBDDate())} className={`day-btn ${selectedDate === getBDDate() ? 'active' : ''}`}>Today</button>
+                        <div className="text-gray-400 text-sm">{formatDate(selectedDate)}</div>
+                        <div className="flex-1"></div>
+                        <div className="text-gray-400 text-sm">
+                            {tab === "floor" ? `${FLOORS.length} floors` : `${ROOMS.length} categories`} • {allRooms.length} rooms
+                        </div>
+                    </div>
+                )}
+
+                {error && <div className="p-3 bg-red-500 bg-opacity-20 rounded-lg text-red-300 text-sm mb-4">{error}</div>}
+                {loading && <div className="flex justify-center py-12"><div className="loader"></div></div>}
+            </div>
 
             {!loading && (
-                <>
-                    {/* CALENDAR TAB */}
-                    {tab === "calendar" && (
-                        <div className="glass rounded-xl p-3">
-                            <div className="flex flex-wrap items-center gap-2 mb-3">
-                                <span className="text-white text-sm font-medium">Days:</span>
-                                {[1,3,7,15].map(d => (
-                                    <button key={d} onClick={() => setCalDays(d)}
-                                        className={"px-3 py-1 rounded text-xs day-btn " + (calDays===d ? "active" : "glass text-white")}>
-                                        {d}
-                                    </button>
-                                ))}
-                                <div className="flex-1"></div>
-                                <div className="flex gap-2 text-xs text-white flex-wrap">
-                                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-available"></span>Avail</span>
-                                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-booked"></span>Booked</span>
-                                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-checkin"></span>IN</span>
-                                </div>
-                            </div>
-                            <div className="scroll-container">
-                                <table className="w-full text-white text-xs">
-                                    <thead>
-                                        <tr>
-                                            <th className="sticky-col p-2 text-left min-w-20">Room</th>
-                                            {getDays(calDays).map(d => (
-                                                <th key={d} className={"p-1 text-center min-w-12 " + (d===today ? "bg-yellow-900 bg-opacity-40" : "")}>
-                                                    <div className="font-medium">{dayName(d)}</div>
-                                                    <div className="opacity-60 text-xs">{shortDate(d)}</div>
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {allRooms.map(({room, unit}) => (
-                                            <tr key={room.id+"-"+unit.id}>
-                                                <td className="sticky-col p-1"><span className="font-bold">{unit.n}</span></td>
-                                                {getDays(calDays).map(d => <CalendarCell key={d} room={room} unit={unit} d={d}/>)}
-                                            </tr>
+                <div className="max-w-7xl mx-auto px-4">
+                    {/* BY FLOOR TAB */}
+                    {tab === "floor" && (
+                        <div>
+                            {FLOORS.map(floor => (
+                                <div key={floor} className="mb-6">
+                                    <div className="floor-header">
+                                        <span className="text-white font-bold">🏢 {floor === 1 ? '1st' : floor === 2 ? '2nd' : floor === 3 ? '3rd' : floor + 'th'} Floor</span>
+                                        <span className="text-gray-400 text-sm">{roomsByFloor[floor]?.length || 0} rooms</span>
+                                    </div>
+                                    <div className="room-grid">
+                                        {roomsByFloor[floor]?.map(({room, unit}) => (
+                                            <RoomCard key={room.id + "-" + unit.id} room={room} unit={unit} showCalendar={true}/>
                                         ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* CATEGORY TAB */}
-                    {tab === "category" && (
-                        <div className="glass rounded-xl p-3">
-                            <div className="flex gap-2 text-xs text-white mb-3 flex-wrap justify-center">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-available"></span>Avail</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-booked"></span>Booked</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded room-checkin"></span>IN</span>
-                            </div>
-                            {ROOMS.map(roomType => (
-                                <div key={roomType.id} className="mb-4">
-                                    <h3 className="text-white font-bold text-sm mb-2 px-1">{roomType.name} ({roomType.units.length})</h3>
-                                    <div className="scroll-container">
-                                        <table className="w-full text-white text-xs">
-                                            <thead>
-                                                <tr>
-                                                    <th className="sticky-col p-1 text-left min-w-12">Unit</th>
-                                                    {getDays(7).map(d => (
-                                                        <th key={d} className={"p-1 text-center min-w-14 " + (d===today ? "bg-yellow-900 bg-opacity-40" : "")}>
-                                                            <div>{dayName(d)}</div>
-                                                            <div className="opacity-60">{shortDate(d)}</div>
-                                                        </th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {roomType.units.map(unit => (
-                                                    <tr key={unit.id}>
-                                                        <td className="sticky-col p-1 font-bold">{unit.n}</td>
-                                                        {getDays(7).map(d => <CalendarCell key={d} room={roomType} unit={unit} d={d}/>)}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
+                    {/* BY CATEGORY TAB */}
+                    {tab === "category" && (
+                        <div>
+                            {ROOMS.map(roomType => (
+                                <div key={roomType.id} className="mb-6">
+                                    <div className="floor-header">
+                                        <span className="text-white font-bold">📁 {roomType.name}</span>
+                                        <span className="text-gray-400 text-sm">{roomType.units.length} rooms • 👤{roomType.max}A</span>
+                                    </div>
+                                    <div className="room-grid">
+                                        {roomType.units.map(unit => (
+                                            <RoomCard key={roomType.id + "-" + unit.id} room={roomType} unit={unit} showCalendar={true}/>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* SEARCH & BOOK TAB */}
+                    {tab === "search" && (
+                        <div className="glass rounded-xl p-4">
+                            <h2 className="text-white font-bold text-lg mb-4">🔍 Search Available Rooms</h2>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                                <div>
+                                    <label className="text-gray-400 text-xs block mb-1">Check-in</label>
+                                    <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="date-picker w-full"/>
+                                </div>
+                                <div>
+                                    <label className="text-gray-400 text-xs block mb-1">Days View</label>
+                                    <div className="flex gap-1">
+                                        {[1,3,7,15].map(d => (
+                                            <button key={d} onClick={() => setCalDays(d)} className={`day-btn flex-1 ${calDays === d ? 'active' : ''}`}>{d}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="room-grid">
+                                {allRooms.filter(({room, unit}) => !getBooking(room.id, unit.id, selectedDate)).map(({room, unit}) => (
+                                    <RoomCard key={room.id + "-" + unit.id} room={room} unit={unit} showCalendar={true}/>
+                                ))}
+                            </div>
+                            {allRooms.filter(({room, unit}) => !getBooking(room.id, unit.id, selectedDate)).length === 0 && (
+                                <div className="text-center py-8 text-gray-400">No rooms available for this date</div>
+                            )}
+                        </div>
+                    )}
+
                     {/* HOUSEKEEPING TAB */}
                     {tab === "housekeeping" && (
-                        <div className="glass rounded-xl p-3">
-                            <h2 className="text-white font-bold mb-3">🧹 Housekeeping - {formatDate(today)}</h2>
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="glass rounded-lg p-2">
-                                    <h3 className="text-cyan-400 font-bold text-sm mb-2">M/K ({housekeeping.makeup.length})</h3>
-                                    <div className="flex flex-wrap gap-1">
-                                        {housekeeping.makeup.map(({room, unit}) => (
-                                            <span key={room.id+"-"+unit.id} className="room-makeup rounded px-2 py-1 text-white text-xs font-bold">{unit.n}</span>
+                        <div>
+                            <h2 className="text-white font-bold text-lg mb-4">🧹 Housekeeping - {formatDate(today)}</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="glass rounded-xl p-4">
+                                    <h3 className="text-cyan-400 font-bold text-lg mb-3 flex items-center gap-2">
+                                        🛏️ Make-up <span className="text-sm font-normal text-gray-400">({housekeeping.makeup.length})</span>
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {housekeeping.makeup.map(({room, unit, booking}) => (
+                                            <div key={room.id+"-"+unit.id} className="hk-makeup rounded-lg px-3 py-2 text-white">
+                                                <div className="font-bold">{unit.n}</div>
+                                                <div className="text-xs opacity-80">{booking.firstName}</div>
+                                            </div>
                                         ))}
-                                        {housekeeping.makeup.length === 0 && <span className="text-white text-opacity-40 text-xs">None</span>}
+                                        {housekeeping.makeup.length === 0 && <div className="text-gray-400 text-sm">No rooms</div>}
                                     </div>
                                 </div>
-                                <div className="glass rounded-lg p-2">
-                                    <h3 className="text-orange-400 font-bold text-sm mb-2">Dirty ({housekeeping.dirty.length})</h3>
-                                    <div className="flex flex-wrap gap-1">
-                                        {housekeeping.dirty.map(({room, unit}) => (
-                                            <span key={room.id+"-"+unit.id} className="room-dirty rounded px-2 py-1 text-white text-xs font-bold">{unit.n}</span>
+                                
+                                <div className="glass rounded-xl p-4">
+                                    <h3 className="text-orange-400 font-bold text-lg mb-3 flex items-center gap-2">
+                                        🧽 Dirty <span className="text-sm font-normal text-gray-400">({housekeeping.dirty.length})</span>
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {housekeeping.dirty.map(({room, unit, booking}) => (
+                                            <div key={room.id+"-"+unit.id} className="hk-dirty rounded-lg px-3 py-2 text-white">
+                                                <div className="font-bold">{unit.n}</div>
+                                                <div className="text-xs opacity-80">{booking.firstName}</div>
+                                            </div>
                                         ))}
-                                        {housekeeping.dirty.length === 0 && <span className="text-white text-opacity-40 text-xs">None</span>}
+                                        {housekeeping.dirty.length === 0 && <div className="text-gray-400 text-sm">No rooms</div>}
                                     </div>
                                 </div>
-                                <div className="glass rounded-lg p-2">
-                                    <h3 className="text-pink-400 font-bold text-sm mb-2">C/O-C/I ({housekeeping.turnover.length})</h3>
-                                    <div className="flex flex-wrap gap-1">
-                                        {housekeeping.turnover.map(({room, unit}) => (
-                                            <span key={room.id+"-"+unit.id} className="room-turnover rounded px-2 py-1 text-white text-xs font-bold">{unit.n}</span>
+                                
+                                <div className="glass rounded-xl p-4">
+                                    <h3 className="text-pink-400 font-bold text-lg mb-3 flex items-center gap-2">
+                                        🔄 C/O → C/I <span className="text-sm font-normal text-gray-400">({housekeeping.turnover.length})</span>
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {housekeeping.turnover.map(({room, unit, out, in: checkin}) => (
+                                            <div key={room.id+"-"+unit.id} className="hk-turnover rounded-lg px-3 py-2 text-white">
+                                                <div className="font-bold">{unit.n}</div>
+                                                <div className="text-xs opacity-80">{out.firstName} → {checkin.firstName}</div>
+                                            </div>
                                         ))}
-                                        {housekeeping.turnover.length === 0 && <span className="text-white text-opacity-40 text-xs">None</span>}
+                                        {housekeeping.turnover.length === 0 && <div className="text-gray-400 text-sm">No rooms</div>}
                                     </div>
                                 </div>
                             </div>
@@ -381,117 +578,153 @@ function App() {
 
                     {/* MOVEMENTS TAB */}
                     {tab === "movements" && (
-                        <div className="glass rounded-xl p-3">
-                            <h2 className="text-white font-bold mb-3">↔️ Movements - {formatDate(today)}</h2>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                                <div className="glass rounded-lg p-2">
-                                    <h3 className="text-blue-400 font-bold text-xs mb-2">⬇️ Today's C/I ({movements.pendingIn.length})</h3>
-                                    <div className="max-h-60 overflow-y-auto">
+                        <div>
+                            <h2 className="text-white font-bold text-lg mb-4">↔️ Movements - {formatDate(today)}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="glass rounded-xl p-4">
+                                    <h3 className="text-blue-400 font-bold mb-3 flex items-center gap-2">
+                                        ⬇️ Today's Check-in <span className="text-sm font-normal text-gray-400">({movements.pendingIn.length})</span>
+                                    </h3>
+                                    <div className="max-h-80 overflow-y-auto">
                                         {movements.pendingIn.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckIn}/>)}
-                                        {movements.pendingIn.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
+                                        {movements.pendingIn.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
                                     </div>
                                 </div>
-                                <div className="glass rounded-lg p-2">
-                                    <h3 className="text-green-400 font-bold text-xs mb-2">✅ Checked-in ({movements.doneIn.length})</h3>
-                                    <div className="max-h-60 overflow-y-auto">
+                                
+                                <div className="glass rounded-xl p-4">
+                                    <h3 className="text-green-400 font-bold mb-3 flex items-center gap-2">
+                                        ✅ Already Checked-in <span className="text-sm font-normal text-gray-400">({movements.doneIn.length})</span>
+                                    </h3>
+                                    <div className="max-h-80 overflow-y-auto">
                                         {movements.doneIn.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckIn}/>)}
-                                        {movements.doneIn.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
+                                        {movements.doneIn.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
                                     </div>
                                 </div>
-                                <div className="glass rounded-lg p-2">
-                                    <h3 className="text-purple-400 font-bold text-xs mb-2">⬆️ Today's C/O ({movements.pendingOut.length})</h3>
-                                    <div className="max-h-60 overflow-y-auto">
+                                
+                                <div className="glass rounded-xl p-4">
+                                    <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
+                                        ⬆️ Today's Check-out <span className="text-sm font-normal text-gray-400">({movements.pendingOut.length})</span>
+                                    </h3>
+                                    <div className="max-h-80 overflow-y-auto">
                                         {movements.pendingOut.map(b => <MovementCard key={b.id} booking={b} type="pending" onToggle={toggleCheckOut}/>)}
-                                        {movements.pendingOut.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
+                                        {movements.pendingOut.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
                                     </div>
                                 </div>
-                                <div className="glass rounded-lg p-2">
-                                    <h3 className="text-orange-400 font-bold text-xs mb-2">👋 Checked-out ({movements.doneOut.length})</h3>
-                                    <div className="max-h-60 overflow-y-auto">
+                                
+                                <div className="glass rounded-xl p-4">
+                                    <h3 className="text-orange-400 font-bold mb-3 flex items-center gap-2">
+                                        👋 Already Checked-out <span className="text-sm font-normal text-gray-400">({movements.doneOut.length})</span>
+                                    </h3>
+                                    <div className="max-h-80 overflow-y-auto">
                                         {movements.doneOut.map(b => <MovementCard key={b.id} booking={b} type="done" onToggle={toggleCheckOut}/>)}
-                                        {movements.doneOut.length === 0 && <div className="text-white text-opacity-40 text-center py-4 text-xs">None</div>}
+                                        {movements.doneOut.length === 0 && <div className="text-gray-400 text-center py-4 text-sm">None</div>}
                                     </div>
+                                </div>
+                            </div>
+                            
+                            {/* Current Guests */}
+                            <div className="mt-6 glass rounded-xl p-4">
+                                <h3 className="text-white font-bold text-lg mb-3">🏠 Current Guests ({movements.currentGuests.length})</h3>
+                                <div className="room-grid">
+                                    {movements.currentGuests.map(b => {
+                                        const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                                        return (
+                                            <div key={b.id} className="glass rounded-lg p-3">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-white font-bold truncate">{b.firstName}</div>
+                                                        <div className="text-gray-400 text-xs">{room?.short}</div>
+                                                    </div>
+                                                    <div className="text-2xl font-bold text-blue-400">{num}</div>
+                                                </div>
+                                                <div className="mt-2 text-xs text-gray-400">
+                                                    {shortDate(b.arrival)} → {shortDate(b.departure)}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* CURRENT GUESTS TAB */}
-                    {tab === "guests" && (
-                        <div className="glass rounded-xl p-3">
-                            <h2 className="text-white font-bold mb-3">🏠 Current Guests ({movements.currentGuests.length})</h2>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                                {movements.currentGuests.map(b => {
-                                    const {num, room} = getRoomInfo(b.roomId, b.unitId);
-                                    return (
-                                        <div key={b.id} className="glass rounded-lg p-2">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-white font-bold text-sm truncate">{b.firstName}</div>
-                                                    <div className="text-white text-opacity-50 text-xs truncate">{room?.short}</div>
+                    {/* DASHBOARD TAB */}
+                    {tab === "dashboard" && (
+                        <div>
+                            <h2 className="text-white font-bold text-lg mb-4">📊 Dashboard</h2>
+                            
+                            {/* Occupancy by Room Type */}
+                            <div className="glass rounded-xl p-4 mb-4">
+                                <h3 className="text-white font-bold mb-3">Occupancy by Room Type</h3>
+                                <div className="space-y-3">
+                                    {ROOMS.map(r => {
+                                        const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
+                                        const pct = Math.round(booked / r.units.length * 100);
+                                        return (
+                                            <div key={r.id}>
+                                                <div className="flex justify-between text-sm mb-1">
+                                                    <span className="text-gray-300">{r.name}</span>
+                                                    <span className="text-gray-400">{booked}/{r.units.length} ({pct}%)</span>
                                                 </div>
-                                                <div className="text-lg font-bold text-blue-400 ml-1">{num}</div>
+                                                <div className="w-full bg-gray-700 rounded-full h-2">
+                                                    <div className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all" style={{width: pct + "%"}}></div>
+                                                </div>
                                             </div>
-                                            <div className="mt-1 text-xs text-white text-opacity-40">→ {shortDate(b.departure)}</div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
-                            {movements.currentGuests.length === 0 && <div className="text-white text-opacity-40 text-center py-8">No current guests</div>}
+                            
+                            {/* Floor Occupancy */}
+                            <div className="glass rounded-xl p-4">
+                                <h3 className="text-white font-bold mb-3">Occupancy by Floor</h3>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                                    {FLOORS.map(f => {
+                                        const rooms = roomsByFloor[f] || [];
+                                        const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
+                                        const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0;
+                                        return (
+                                            <div key={f} className="glass rounded-lg p-3 text-center">
+                                                <div className="text-gray-400 text-xs mb-1">Floor {f}</div>
+                                                <div className="text-2xl font-bold text-white">{pct}%</div>
+                                                <div className="text-xs text-gray-400">{booked}/{rooms.length}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     )}
-
-                    {/* STATS TAB */}
-                    {tab === "stats" && (
-                        <div className="glass rounded-xl p-3">
-                            <div className="grid grid-cols-5 gap-2 mb-4">
-                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-white">{stats.total}</div><div className="text-white text-opacity-50 text-xs">Total</div></div>
-                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-green-400">{stats.avail}</div><div className="text-white text-opacity-50 text-xs">Avail</div></div>
-                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-red-400">{stats.occ}</div><div className="text-white text-opacity-50 text-xs">Occ</div></div>
-                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-blue-400">{stats.cin}</div><div className="text-white text-opacity-50 text-xs">C/I</div></div>
-                                <div className="glass rounded-lg p-3 text-center"><div className="text-2xl font-bold text-purple-400">{stats.cout}</div><div className="text-white text-opacity-50 text-xs">C/O</div></div>
-                            </div>
-                            <h3 className="text-white font-bold text-sm mb-2">By Room Type</h3>
-                            {ROOMS.map(r => {
-                                const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length;
-                                return (
-                                    <div key={r.id} className="glass rounded-lg p-2 mb-1">
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span className="text-white truncate">{r.short}</span>
-                                            <span><span className="text-green-400">{r.units.length-booked}</span>/<span className="text-red-400">{booked}</span></span>
-                                        </div>
-                                        <div className="w-full bg-white bg-opacity-10 rounded-full h-1.5">
-                                            <div className="bg-blue-500 h-1.5 rounded-full" style={{width:Math.round(booked/r.units.length*100)+"%"}}></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </>
+                </div>
             )}
 
-            {/* Book Button */}
+            {/* Floating Book Button */}
             {selected.length > 0 && (
-                <div className="fixed bottom-4 left-4 right-4 z-50">
-                    <button onClick={() => setShowModal(true)} className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl text-white font-bold shadow-xl flex items-center justify-center gap-2">
-                        ➕ Book {selected.length} Room{selected.length>1?"s":""}
-                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} className="bg-white bg-opacity-20 rounded-full w-6 h-6 flex items-center justify-center text-sm">✕</span>
+                <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+                    <button onClick={() => setShowModal(true)} 
+                        className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl text-white font-bold shadow-2xl flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 transition-all">
+                        ➕ Book {selected.length} Room{selected.length > 1 ? 's' : ''} 
+                        <span className="text-sm opacity-80">({selected.map(s => s.unit.n).join(', ')})</span>
+                        <span onClick={e => {e.stopPropagation(); setSelected([]);}} 
+                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-30">✕</span>
                     </button>
                 </div>
             )}
 
+            {/* Booking Modal */}
             {showModal && <BookingModal rooms={selected} onClose={() => {setShowModal(false); setSelected([]); fetchData();}}/>}
         </div>
     );
 }
 
+// Booking Modal Component
 function BookingModal({rooms, onClose}) {
     const [form, setForm] = useState({
         guests: [{name: ""}],
         phones: [""],
         email: "",
         nid: "",
+        dob: "",
         checkIn: rooms[0]?.checkIn || getBDDate(),
         checkOut: rooms[0]?.checkOut || getBDDate(1)
     });
@@ -515,8 +748,9 @@ function BookingModal({rooms, onClose}) {
                 propertyId: PROPERTY, roomId: r.room.id, unitId: r.unit.id,
                 arrival: form.checkIn, departure: form.checkOut,
                 numAdult: r.room.max, numChild: 0, status: "confirmed",
-                firstName: guestNames, email: form.email || "noemail@example.com",
-                mobile: phoneNums, custom4: form.nid, referer: "miami_frontdesk"
+                firstName: guestNames, email: form.email || "default",
+                mobile: phoneNums, custom4: form.nid || "default", custom5: form.dob || "default",
+                referer: "miami_frontdesk"
             }));
             
             const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
@@ -531,73 +765,89 @@ function BookingModal({rooms, onClose}) {
     };
 
     if (status === "success") return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div className="glass rounded-2xl p-8 text-center"><div className="text-5xl mb-3">✅</div><div className="text-white text-lg font-bold">Booking Created!</div></div>
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+            <div className="glass rounded-2xl p-8 text-center">
+                <div className="text-6xl mb-4">✅</div>
+                <div className="text-white text-xl font-bold">Booking Created!</div>
+            </div>
         </div>
     );
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
-            <div className="glass rounded-2xl p-4 w-full max-w-md my-4">
-                <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-lg font-bold text-white">New Booking</h3>
-                    <button onClick={onClose} className="text-white text-xl">×</button>
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="glass rounded-2xl p-5 w-full max-w-md my-4">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-white">➕ New Booking</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">×</button>
                 </div>
                 
-                <div className="mb-3 flex flex-wrap gap-1">
-                    {rooms.map(r => <span key={r.key} className="px-2 py-1 bg-blue-500 bg-opacity-30 rounded text-white text-xs">{r.unit.n}</span>)}
+                <div className="mb-4 flex flex-wrap gap-2">
+                    {rooms.map(r => (
+                        <span key={r.key} className="px-3 py-1 bg-blue-500 bg-opacity-30 rounded-lg text-white text-sm font-medium">
+                            {r.unit.n} - {r.room.short}
+                        </span>
+                    ))}
                 </div>
                 
-                <form onSubmit={submit} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                        <div><label className="text-white text-opacity-60 text-xs">Check-in</label>
-                            <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn:e.target.value})} 
-                                className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20"/></div>
-                        <div><label className="text-white text-opacity-60 text-xs">Check-out</label>
-                            <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut:e.target.value})} 
-                                className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20"/></div>
+                <form onSubmit={submit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-gray-400 text-xs block mb-1">Check-in *</label>
+                            <input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} 
+                                className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:border-blue-500 focus:outline-none"/>
+                        </div>
+                        <div>
+                            <label className="text-gray-400 text-xs block mb-1">Check-out *</label>
+                            <input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} 
+                                className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 focus:border-blue-500 focus:outline-none"/>
+                        </div>
                     </div>
 
                     <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-white text-opacity-60 text-xs">Guests *</label>
-                            {form.guests.length < 3 && <button type="button" onClick={addGuest} className="text-blue-400 text-xs">+ Add</button>}
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-gray-400 text-xs">Guest Names *</label>
+                            {form.guests.length < 3 && <button type="button" onClick={addGuest} className="text-blue-400 text-xs hover:underline">+ Add Guest</button>}
                         </div>
                         {form.guests.map((g, i) => (
-                            <div key={i} className="flex gap-1 mb-1">
-                                <input type="text" required value={g.name} onChange={e => updateGuest(i, e.target.value)} placeholder={`Guest ${i+1}`}
-                                    className="flex-1 px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
-                                {form.guests.length > 1 && <button type="button" onClick={() => removeGuest(i)} className="text-red-400 px-2 text-sm">✕</button>}
+                            <div key={i} className="flex gap-2 mb-2">
+                                <input type="text" required value={g.name} onChange={e => updateGuest(i, e.target.value)} placeholder={`Guest ${i + 1} name`}
+                                    className="flex-1 px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
+                                {form.guests.length > 1 && <button type="button" onClick={() => removeGuest(i)} className="text-red-400 px-2 hover:text-red-300">✕</button>}
                             </div>
                         ))}
                     </div>
 
                     <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-white text-opacity-60 text-xs">Phone *</label>
-                            {form.phones.length < 3 && <button type="button" onClick={addPhone} className="text-blue-400 text-xs">+ Add</button>}
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-gray-400 text-xs">Phone Numbers *</label>
+                            {form.phones.length < 3 && <button type="button" onClick={addPhone} className="text-blue-400 text-xs hover:underline">+ Add Phone</button>}
                         </div>
                         {form.phones.map((p, i) => (
-                            <div key={i} className="flex gap-1 mb-1">
-                                <input type="tel" required value={p} onChange={e => updatePhone(i, e.target.value)} placeholder={`Phone ${i+1}`}
-                                    className="flex-1 px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
-                                {form.phones.length > 1 && <button type="button" onClick={() => removePhone(i)} className="text-red-400 px-2 text-sm">✕</button>}
+                            <div key={i} className="flex gap-2 mb-2">
+                                <input type="tel" required value={p} onChange={e => updatePhone(i, e.target.value)} placeholder={`Phone ${i + 1}`}
+                                    className="flex-1 px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
+                                {form.phones.length > 1 && <button type="button" onClick={() => removePhone(i)} className="text-red-400 px-2 hover:text-red-300">✕</button>}
                             </div>
                         ))}
                     </div>
 
-                    <input type="email" value={form.email} onChange={e => setForm({...form, email:e.target.value})} placeholder="Email (optional)"
-                        className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)"
+                        className="w-full px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
                     
-                    <input type="text" required value={form.nid} onChange={e => setForm({...form, nid:e.target.value})} placeholder="NID *"
-                        className="w-full px-2 py-1.5 rounded bg-white bg-opacity-10 text-white text-sm border border-white border-opacity-20 placeholder-white placeholder-opacity-40"/>
+                    <div className="grid grid-cols-2 gap-3">
+                        <input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID Number"
+                            className="px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
+                        <input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB (DD/MM/YYYY)"
+                            className="px-3 py-2 rounded-lg bg-white bg-opacity-10 text-white border border-white border-opacity-20 placeholder-gray-500 focus:border-blue-500 focus:outline-none"/>
+                    </div>
 
-                    {status.startsWith("error") && <div className="p-2 bg-red-500 bg-opacity-20 rounded text-red-300 text-xs">{status}</div>}
+                    {status.startsWith("error") && <div className="p-3 bg-red-500 bg-opacity-20 rounded-lg text-red-300 text-sm">{status}</div>}
                     
-                    <div className="flex gap-2 pt-2">
-                        <button type="button" onClick={onClose} className="flex-1 py-2 glass rounded-lg text-white text-sm">Cancel</button>
-                        <button type="submit" disabled={status==="loading"} className="flex-1 py-2 bg-blue-500 rounded-lg text-white font-bold text-sm disabled:opacity-50">
-                            {status==="loading" ? "..." : "Book"}
+                    <div className="flex gap-3 pt-2">
+                        <button type="button" onClick={onClose} className="flex-1 py-3 glass rounded-lg text-white font-medium hover:bg-white hover:bg-opacity-10 transition-colors">Cancel</button>
+                        <button type="submit" disabled={status === "loading"} 
+                            className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg text-white font-bold hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50">
+                            {status === "loading" ? "Creating..." : "Create Booking"}
                         </button>
                     </div>
                 </form>
