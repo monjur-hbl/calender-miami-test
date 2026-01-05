@@ -482,80 +482,125 @@
             };
         };
         
-        // Sample room data (will be replaced with Beds24 API)
-        const sampleRooms = [
-            { id: '101', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe', rate: 5000 },
-            { id: '102', name: 'Deluxe Urban View', floor: 1, category: 'Deluxe', rate: 5000 },
-            { id: '201', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe', rate: 5500 },
-            { id: '202', name: 'Deluxe Hill View', floor: 2, category: 'Deluxe', rate: 5500 },
-            { id: '301', name: 'Premium Sea View', floor: 3, category: 'Premium', rate: 7000 },
-            { id: '302', name: 'Premium Sea View', floor: 3, category: 'Premium', rate: 7000 },
-            { id: '401', name: 'Royal Suite', floor: 4, category: 'Suite', rate: 12000 },
-            { id: '402', name: 'Royal Suite', floor: 4, category: 'Suite', rate: 12000 },
-            { id: '501', name: 'Penthouse', floor: 5, category: 'Suite', rate: 20000 },
-        ];
+        // Room type mapping from Beds24
+        const ROOM_TYPES = {
+            583459: { name: 'Standard Room', category: 'Standard', rate: 3000 },
+            583466: { name: 'Deluxe Room', category: 'Deluxe', rate: 4000 },
+            583467: { name: 'Deluxe Plus', category: 'Deluxe', rate: 4500 },
+            583468: { name: 'Premium Room', category: 'Premium', rate: 5000 },
+            583469: { name: 'Premium Plus', category: 'Premium', rate: 5500 },
+            583470: { name: 'Superior Room', category: 'Superior', rate: 6000 },
+            583471: { name: 'Suite', category: 'Suite', rate: 7000 },
+            583472: { name: 'Executive Suite', category: 'Suite', rate: 10000 }
+        };
         
-        // Generate sample bookings
-        const generateSampleBookings = () => {
-            const bookings = [];
-            const guests = ['Misty', 'Karif', 'Trisha', 'Mahim', 'Imam', 'Foyez', 'Hossain', 'Mobarak', 'Rajo', 'Shamim'];
-            const phones = ['01711234567', '01812345678', '01912345678', '01612345678', '01512345678'];
-            
-            sampleRooms.forEach((room, idx) => {
-                if (Math.random() > 0.35) {
-                    const checkInOffset = Math.floor(Math.random() * 3) - 1;
-                    const checkIn = getBDDate(checkInOffset);
-                    const nights = Math.floor(Math.random() * 4) + 1;
-                    const checkOutDate = new Date(checkIn);
-                    checkOutDate.setDate(checkOutDate.getDate() + nights);
-                    const totalAmount = room.rate * nights;
-                    const paidAmount = Math.floor(Math.random() * 2) === 0 ? totalAmount : Math.floor(totalAmount * 0.5);
-                    
-                    bookings.push({
-                        id: 'BK' + (1000 + idx),
-                        roomId: room.id,
-                        unitId: room.id,
-                        guestName: guests[idx % guests.length],
-                        phone: phones[idx % phones.length],
-                        checkIn,
-                        checkOut: checkOutDate.toISOString().split('T')[0],
-                        status: 'confirmed',
-                        numAdults: Math.floor(Math.random() * 2) + 1,
-                        numChildren: Math.floor(Math.random() * 2),
-                        totalAmount,
-                        paidAmount,
-                        paymentMethod: ['Cash', 'bKash', 'Bank'][Math.floor(Math.random() * 3)]
+        // Fetch real bookings from Beds24 API
+        const fetchBeds24Data = async () => {
+            try {
+                const response = await fetch(PROXY);
+                const data = await response.json();
+                if (data.success && data.data) {
+                    return data.data;
+                }
+                return [];
+            } catch (error) {
+                console.error('Failed to fetch Beds24 data:', error);
+                return [];
+            }
+        };
+        
+        // Transform Beds24 bookings to app format
+        const transformBookings = (beds24Bookings) => {
+            return beds24Bookings.map(b => ({
+                id: String(b.id),
+                roomId: String(b.unitId),
+                unitId: String(b.unitId),
+                roomTypeId: String(b.roomId),
+                guestName: `${b.firstName || ''} ${b.lastName || ''}`.trim() || 'Guest',
+                phone: b.mobile || b.phone || '',
+                checkIn: b.arrival,
+                checkOut: b.departure,
+                status: b.status,
+                numAdults: b.numAdult || 1,
+                numChildren: b.numChild || 0,
+                totalAmount: b.price || 0,
+                paidAmount: b.deposit || 0,
+                paymentMethod: 'Beds24',
+                referer: b.referer || '',
+                notes: b.notes || ''
+            }));
+        };
+        
+        // Extract unique rooms from bookings
+        const extractRooms = (beds24Bookings) => {
+            const roomMap = new Map();
+            beds24Bookings.forEach(b => {
+                const unitKey = String(b.unitId);
+                if (!roomMap.has(unitKey)) {
+                    const roomType = ROOM_TYPES[b.roomId] || { name: 'Room', category: 'Standard', rate: 3000 };
+                    roomMap.set(unitKey, {
+                        id: unitKey,
+                        roomTypeId: String(b.roomId),
+                        name: roomType.name,
+                        floor: Math.ceil(b.unitId / 3),
+                        category: roomType.category,
+                        rate: roomType.rate
                     });
                 }
             });
-            return bookings;
+            // If no rooms found, create default 9 units
+            if (roomMap.size === 0) {
+                for (let i = 1; i <= 9; i++) {
+                    roomMap.set(String(i), {
+                        id: String(i),
+                        roomTypeId: '583468',
+                        name: 'Room ' + i,
+                        floor: Math.ceil(i / 3),
+                        category: 'Standard',
+                        rate: 5000
+                    });
+                }
+            }
+            return Array.from(roomMap.values()).sort((a, b) => Number(a.id) - Number(b.id));
         };
         
         // Housekeeping requests
-        const generateRequests = () => [
-            { id: 1, roomId: '102', type: 'Extra Towels', status: 'pending', time: '09:30 AM' },
-            { id: 2, roomId: '301', type: 'Room Cleaning', status: 'pending', time: '10:15 AM' },
-        ];
+        const generateRequests = () => [];
         
         function App() {
             const [currentTime, setCurrentTime] = useState(formatBDDateTime());
             const [activeTab, setActiveTab] = useState('today');
             const [selectedDate, setSelectedDate] = useState(getBDDate());
-            const [rooms] = useState(sampleRooms);
-            const [bookings, setBookings] = useState(generateSampleBookings());
-            const [loading, setLoading] = useState(false);
+            const [rooms, setRooms] = useState([]);
+            const [bookings, setBookings] = useState([]);
+            const [loading, setLoading] = useState(true);
             const [calendarView, setCalendarView] = useState('floor');
             const [bookingModal, setBookingModal] = useState(null);
             const [selectedUnits, setSelectedUnits] = useState([]);
             const [searchDates, setSearchDates] = useState({ checkIn: getBDDate(), checkOut: getBDDate(1) });
             const [dateSelectionMode, setDateSelectionMode] = useState('checkIn');
             const [housekeepingTab, setHousekeepingTab] = useState('today');
-            const [requests, setRequests] = useState(generateRequests());
+            const [requests, setRequests] = useState([]);
+            
+            // Fetch data on mount
+            useEffect(() => {
+                const loadData = async () => {
+                    setLoading(true);
+                    const beds24Data = await fetchBeds24Data();
+                    const transformedBookings = transformBookings(beds24Data);
+                    const extractedRooms = extractRooms(beds24Data);
+                    setBookings(transformedBookings);
+                    setRooms(extractedRooms);
+                    setLoading(false);
+                };
+                loadData();
+            }, []);
             
             // Update time every minute
             useEffect(() => {
                 const timer = setInterval(() => setCurrentTime(formatBDDateTime()), 60000);
                 return () => clearInterval(timer);
+            }, []);
             }, []);
             
             const dateRange = Array.from({ length: 7 }, (_, i) => getBDDate(i));
@@ -591,9 +636,12 @@
             // Refresh handler
             const handleRefresh = async () => {
                 setLoading(true);
-                await new Promise(r => setTimeout(r, 1000));
-                setBookings(generateSampleBookings());
-                setRequests(generateRequests());
+                const beds24Data = await fetchBeds24Data();
+                const transformedBookings = transformBookings(beds24Data);
+                const extractedRooms = extractRooms(beds24Data);
+                setBookings(transformedBookings);
+                setRooms(extractedRooms);
+                // Requests loaded from API
                 setLoading(false);
             };
             
