@@ -586,12 +586,17 @@ function App() {
 
             {!loading && (
                 <>
-                    <div className="view-selector" style={{marginBottom: '12px'}}>
-                        <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 By Floor</button>
-                        <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
-                    </div>
-                    <CalendarView groupBy={calendarViewBy}/>
                     {tab === "today" && <TodayView/>}
+                    
+                    {tab === "calendar" && (
+                        <>
+                            <div className="view-selector" style={{marginBottom: '12px'}}>
+                                <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 By Floor</button>
+                                <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
+                            </div>
+                            <CalendarView groupBy={calendarViewBy}/>
+                        </>
+                    )}
 
                     {tab === "searchbook" && (
                         <div style={{padding: '16px'}}>
