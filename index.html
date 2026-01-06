@@ -268,6 +268,8 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [selected, setSelected] = useState([]);
+    const [multiBookCheckIn, setMultiBookCheckIn] = useState(getBDDate());
+    const [multiBookCheckOut, setMultiBookCheckOut] = useState(getBDDate(1));
     const [showBookModal, setShowBookModal] = useState(false);
     const [showInfoModal, setShowInfoModal] = useState(null);
     const [showSearchModal, setShowSearchModal] = useState(false);
@@ -358,7 +360,22 @@ function App() {
 
     const toggleSelect = (room, unit, date) => {
         const key = `${room.id}-${unit.id}-${date}`;
-        setSelected(s => s.find(x => x.key === key) ? s.filter(x => x.key !== key) : [...s, {key, room, unit, date}]);
+        setSelected(s => {
+            const exists = s.find(x => x.key === key);
+            if (exists) {
+                return s.filter(x => x.key !== key);
+            } else {
+                // Auto-set check-in date when first room selected
+                if (s.length === 0) {
+                    setMultiBookCheckIn(date);
+                    // Auto-set checkout to next day
+                    const nextDay = new Date(date + "T12:00:00");
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    setMultiBookCheckOut(nextDay.toLocaleDateString('en-CA'));
+                }
+                return [...s, {key, room, unit, date}];
+            }
+        });
     };
 
     const toggle = (id, type) => {
@@ -930,11 +947,34 @@ function App() {
                 </>
             )}
 
-            {selected.length > 0 && tab !== "searchbook" && (
-                <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '500px', margin: '0 auto'}}>
-                    <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '16px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 25px rgba(34,197,94,0.4)'}}>➕ Book {selected.length} Room(s): {selected.map(s => s.unit.n).join(', ')}</button>
-                </div>
-            )}
+            {selected.length > 0 && tab !== "searchbook" && (() => {
+                const nights = Math.max(1, Math.ceil((new Date(multiBookCheckOut) - new Date(multiBookCheckIn)) / (1000 * 60 * 60 * 24)));
+                return (
+                    <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '600px', margin: '0 auto', padding: '16px', background: 'linear-gradient(145deg, #1e293b, #0f172a)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px'}}>
+                            <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
+                                {selected.map(s => <span key={s.key} style={{padding: '5px 10px', background: '#22c55e', borderRadius: '6px', fontSize: '12px', fontWeight: '600'}}>{s.unit.n}</span>)}
+                            </div>
+                            <button onClick={() => setSelected([])} style={{background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '6px', padding: '5px 10px', color: '#ef4444', fontSize: '11px', cursor: 'pointer'}}>✕ Clear</button>
+                        </div>
+                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', marginBottom: '12px', alignItems: 'end'}}>
+                            <div>
+                                <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label>
+                                <input type="date" value={multiBookCheckIn} onChange={e => { setMultiBookCheckIn(e.target.value); const next = new Date(e.target.value + "T12:00:00"); next.setDate(next.getDate() + 1); setMultiBookCheckOut(next.toLocaleDateString('en-CA')); }} style={{width: '100%', padding: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '12px'}}/>
+                            </div>
+                            <div>
+                                <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label>
+                                <input type="date" value={multiBookCheckOut} min={multiBookCheckIn} onChange={e => setMultiBookCheckOut(e.target.value)} style={{width: '100%', padding: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '12px'}}/>
+                            </div>
+                            <div style={{textAlign: 'center', padding: '6px 14px', background: 'rgba(59,130,246,0.2)', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.4)'}}>
+                                <div style={{fontSize: '18px', fontWeight: '700', color: '#3b82f6'}}>{nights}</div>
+                                <div style={{fontSize: '9px', color: 'rgba(255,255,255,0.6)'}}>night{nights > 1 ? 's' : ''}</div>
+                            </div>
+                        </div>
+                        <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '14px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(34,197,94,0.4)'}}>➕ Book {selected.length} Room(s) × {nights} Night{nights > 1 ? 's' : ''}</button>
+                    </div>
+                );
+            })()}
 
             {showSearchModal && (
                 <div className="modal-overlay" onClick={() => setShowSearchModal(false)}>
@@ -951,7 +991,7 @@ function App() {
             )}
 
             {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests}/>}
-            {showBookModal && <BookingModal selected={selected} checkIn={searchCheckIn} checkOut={searchCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData();}}/>}
+            {showBookModal && <BookingModal selected={selected} checkIn={tab === "searchbook" ? searchCheckIn : multiBookCheckIn} checkOut={tab === "searchbook" ? searchCheckOut : multiBookCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData();}}/>}
         </div>
     );
 }
