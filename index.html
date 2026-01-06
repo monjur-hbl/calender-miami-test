@@ -1147,11 +1147,17 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
             const result = await res.json();
             console.log("Beds24 response:", result);
             
-            if (result.success) { 
+            // API returns array of results - check if all succeeded
+            const isArray = Array.isArray(result);
+            const allSuccess = isArray ? result.every(r => r.success) : result.success;
+            const errors = isArray ? result.filter(r => !r.success).map(r => r.error || "Unknown error") : [];
+            
+            if (allSuccess) { 
                 setStatus("success"); 
                 setTimeout(onClose, 1500); 
             } else {
-                setStatus("error: " + (result.error || JSON.stringify(result)));
+                const errorMsg = errors.length ? errors.join(", ") : (result.error || JSON.stringify(result));
+                setStatus("error: " + errorMsg);
             }
         } catch(e) { 
             console.error("Booking error:", e);
