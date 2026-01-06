@@ -518,6 +518,7 @@ function App() {
         {id: "requests", label: "🛎️ Requests"},
         {id: "housekeeping", label: "🧹 Housekeeping"},
         {id: "movements", label: "↔️ Movements"},
+        {id: "accounting", label: "💰 Accounting"},
         {id: "dashboard", label: "📊 Dashboard"}
     ];
 
@@ -975,6 +976,176 @@ function App() {
                             </div>
                         </div>
                     )}
+
+                    {tab === "accounting" && (() => {
+                        const [accDateFrom, setAccDateFrom] = useState(getBDDate(-30));
+                        const [accDateTo, setAccDateTo] = useState(getBDDate(30));
+                        const [accFilter, setAccFilter] = useState("all"); // all, paid, partial, unpaid
+                        const [accSearch, setAccSearch] = useState("");
+                        const [quickPayId, setQuickPayId] = useState(null);
+                        const [quickPayAmount, setQuickPayAmount] = useState("");
+                        const [saving, setSaving] = useState(false);
+                        
+                        // Filter bookings by date range
+                        const filteredBookings = bookings.filter(b => {
+                            if (b.arrival < accDateFrom || b.arrival > accDateTo) return false;
+                            const price = parseFloat(b.price) || 0;
+                            const paid = parseFloat(b.paid) || 0;
+                            const due = price - paid;
+                            if (accFilter === "paid" && due > 0) return false;
+                            if (accFilter === "unpaid" && paid > 0) return false;
+                            if (accFilter === "partial" && (paid === 0 || due === 0)) return false;
+                            if (accSearch && !b.firstName?.toLowerCase().includes(accSearch.toLowerCase()) && !b.mobile?.includes(accSearch)) return false;
+                            return true;
+                        }).sort((a, b) => new Date(b.arrival) - new Date(a.arrival));
+                        
+                        // Calculate totals
+                        const totals = filteredBookings.reduce((acc, b) => {
+                            const price = parseFloat(b.price) || 0;
+                            const paid = parseFloat(b.paid) || 0;
+                            acc.revenue += price;
+                            acc.paid += paid;
+                            acc.due += (price - paid);
+                            if (price - paid <= 0) acc.fullyPaid++;
+                            else if (paid > 0) acc.partial++;
+                            else acc.unpaid++;
+                            return acc;
+                        }, {revenue: 0, paid: 0, due: 0, fullyPaid: 0, partial: 0, unpaid: 0});
+                        
+                        const collectionRate = totals.revenue > 0 ? Math.round((totals.paid / totals.revenue) * 100) : 0;
+                        
+                        const handleQuickPay = async (bookingId, amount, currentPaid) => {
+                            setSaving(true);
+                            try {
+                                const newPaid = parseFloat(currentPaid || 0) + parseFloat(amount || 0);
+                                const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                                    method: "POST",
+                                    headers: {"Content-Type": "application/json"},
+                                    body: JSON.stringify([{id: bookingId, paid: newPaid.toString()}])
+                                });
+                                const result = await res.json();
+                                if (Array.isArray(result) ? result[0]?.success : result.success) {
+                                    fetchData();
+                                    setQuickPayId(null);
+                                    setQuickPayAmount("");
+                                }
+                            } catch(e) { alert("Error: " + e.message); }
+                            setSaving(false);
+                        };
+                        
+                        const markFullyPaid = async (b) => {
+                            const due = (parseFloat(b.price) || 0) - (parseFloat(b.paid) || 0);
+                            if (due <= 0) return;
+                            await handleQuickPay(b.id, due, b.paid);
+                        };
+                        
+                        return (
+                            <div style={{padding: '16px'}}>
+                                <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>💰 Accounting</h2>
+                                
+                                {/* Summary Cards */}
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px'}}>
+                                    <div style={{background: 'linear-gradient(145deg, rgba(59,130,246,0.2), rgba(59,130,246,0.05))', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Total Revenue</div>
+                                        <div style={{fontSize: '22px', fontWeight: '700', color: '#3b82f6'}}>৳{totals.revenue.toLocaleString()}</div>
+                                    </div>
+                                    <div style={{background: 'linear-gradient(145deg, rgba(34,197,94,0.2), rgba(34,197,94,0.05))', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collected</div>
+                                        <div style={{fontSize: '22px', fontWeight: '700', color: '#22c55e'}}>৳{totals.paid.toLocaleString()}</div>
+                                    </div>
+                                    <div style={{background: 'linear-gradient(145deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05))', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Outstanding</div>
+                                        <div style={{fontSize: '22px', fontWeight: '700', color: '#ef4444'}}>৳{totals.due.toLocaleString()}</div>
+                                    </div>
+                                    <div style={{background: 'linear-gradient(145deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05))', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collection Rate</div>
+                                        <div style={{fontSize: '22px', fontWeight: '700', color: '#a855f7'}}>{collectionRate}%</div>
+                                    </div>
+                                </div>
+                                
+                                {/* Filters */}
+                                <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'center'}}>
+                                    <input type="date" value={accDateFrom} onChange={e => setAccDateFrom(e.target.value)} style={{padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'}}/>
+                                    <span style={{color: 'rgba(255,255,255,0.4)'}}>→</span>
+                                    <input type="date" value={accDateTo} onChange={e => setAccDateTo(e.target.value)} style={{padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'}}/>
+                                    <select value={accFilter} onChange={e => setAccFilter(e.target.value)} style={{padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'}}>
+                                        <option value="all">All ({filteredBookings.length})</option>
+                                        <option value="paid">✅ Paid ({totals.fullyPaid})</option>
+                                        <option value="partial">⚠️ Partial ({totals.partial})</option>
+                                        <option value="unpaid">❌ Unpaid ({totals.unpaid})</option>
+                                    </select>
+                                    <input type="text" placeholder="🔍 Search guest..." value={accSearch} onChange={e => setAccSearch(e.target.value)} style={{flex: 1, minWidth: '150px', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'}}/>
+                                </div>
+                                
+                                {/* Status Summary */}
+                                <div style={{display: 'flex', gap: '8px', marginBottom: '16px'}}>
+                                    <span style={{padding: '4px 10px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '20px', fontSize: '12px', color: '#22c55e'}}>✅ {totals.fullyPaid} Paid</span>
+                                    <span style={{padding: '4px 10px', background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '20px', fontSize: '12px', color: '#f97316'}}>⚠️ {totals.partial} Partial</span>
+                                    <span style={{padding: '4px 10px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '20px', fontSize: '12px', color: '#ef4444'}}>❌ {totals.unpaid} Unpaid</span>
+                                </div>
+                                
+                                {/* Bookings List */}
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '50vh', overflowY: 'auto'}}>
+                                    {filteredBookings.map(b => {
+                                        const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                                        const price = parseFloat(b.price) || 0;
+                                        const paid = parseFloat(b.paid) || 0;
+                                        const due = price - paid;
+                                        const status = due <= 0 ? 'paid' : paid > 0 ? 'partial' : 'unpaid';
+                                        const statusColors = {paid: '#22c55e', partial: '#f97316', unpaid: '#ef4444'};
+                                        const statusIcons = {paid: '✅', partial: '⚠️', unpaid: '❌'};
+                                        
+                                        return (
+                                            <div key={b.id} style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px', borderLeft: \`4px solid \${statusColors[status]}\`}}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px'}}>
+                                                    <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                                        <div style={{width: '50px', height: '50px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700'}}>{num}</div>
+                                                        <div>
+                                                            <div style={{fontWeight: '600', fontSize: '15px'}}>{b.firstName} {b.lastName}</div>
+                                                            <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.short}</div>
+                                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px'}}>{formatDate(b.arrival)} → {formatDate(b.departure)}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{textAlign: 'right'}}>
+                                                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Total: ৳{price.toLocaleString()}</div>
+                                                        <div style={{fontSize: '12px', color: '#22c55e'}}>Paid: ৳{paid.toLocaleString()}</div>
+                                                        <div style={{fontSize: '16px', fontWeight: '700', color: statusColors[status], marginTop: '2px'}}>{statusIcons[status]} Due: ৳{due.toLocaleString()}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Quick Pay Section */}
+                                                {due > 0 && (
+                                                    <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
+                                                        {quickPayId === b.id ? (
+                                                            <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
+                                                                <input type="number" placeholder="Amount" value={quickPayAmount} onChange={e => setQuickPayAmount(e.target.value)} style={{width: '120px', padding: '8px 12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', fontSize: '14px'}}/>
+                                                                <button onClick={() => handleQuickPay(b.id, quickPayAmount, b.paid)} disabled={saving || !quickPayAmount} style={{padding: '8px 16px', background: '#22c55e', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px', opacity: saving || !quickPayAmount ? 0.5 : 1}}>{saving ? '⏳' : '💾 Save'}</button>
+                                                                <button onClick={() => {setQuickPayId(null); setQuickPayAmount("");}} style={{padding: '8px 12px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', color: '#ef4444', cursor: 'pointer', fontSize: '13px'}}>✕</button>
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{display: 'flex', gap: '8px'}}>
+                                                                <button onClick={() => {setQuickPayId(b.id); setQuickPayAmount(due.toString());}} style={{padding: '6px 12px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '6px', color: '#22c55e', cursor: 'pointer', fontSize: '12px'}}>💵 Add Payment</button>
+                                                                <button onClick={() => markFullyPaid(b)} style={{padding: '6px 12px', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '6px', color: '#3b82f6', cursor: 'pointer', fontSize: '12px'}}>✅ Mark Paid (৳{due.toLocaleString()})</button>
+                                                                <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ Details</button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {due <= 0 && (
+                                                    <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
+                                                        <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ View Details</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                    {filteredBookings.length === 0 && (
+                                        <div style={{textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)'}}>No bookings found for this period</div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {tab === "dashboard" && (
                         <div style={{padding: '16px'}}>
