@@ -307,11 +307,11 @@ function App() {
 
     const getDays = useCallback((count) => {
         const days = [];
-        const start = new Date(startDate + "T00:00:00");
+        const start = new Date(startDate + "T12:00:00");
         for (let i = 0; i < count; i++) {
             const d = new Date(start);
             d.setDate(d.getDate() + i);
-            days.push(d.toISOString().split('T')[0]);
+            days.push(d.toLocaleDateString('en-CA'));
         }
         return days;
     }, [startDate]);
