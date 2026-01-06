@@ -491,7 +491,7 @@ function App() {
                     return (
                         <div key={group.key} className="today-group">
                             <div style={{maxWidth: '900px', margin: '0 auto 10px auto', textAlign: 'center'}}><div className="floor-header" style={{display: 'inline-flex', justifyContent: 'center'}}><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div></div>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxWidth: '900px', margin: '0 auto', justifyContent: 'center'}}>
+                            <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center'}}>
                                 {group.rooms.map(({room, unit}) => {
                                     const booking = getBooking(room.id, unit.id, today);
                                     const isBooked = !!booking;
