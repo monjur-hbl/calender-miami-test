@@ -1000,7 +1000,7 @@ function App() {
                                             <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{s.room.short}</span>
                                         </div>
                                         <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn.slice(5)} → {s.checkOut.slice(5)}</span>
+                                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn.slice(8)}-{s.checkIn.slice(5,7)} → {s.checkOut.slice(8)}-{s.checkOut.slice(5,7)}</span>
                                             <span style={{padding: '2px 8px', background: 'rgba(59,130,246,0.3)', borderRadius: '4px', fontSize: '10px', fontWeight: '600', color: '#3b82f6'}}>{nights}N</span>
                                             <button onClick={() => setSelected(selected.filter(x => x.unitKey !== s.unitKey))} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '0 4px'}}>×</button>
                                         </div>
@@ -1136,7 +1136,7 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
                         return (
                             <div key={s.unitKey || s.key} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', marginBottom: '6px'}}>
                                 <span style={{fontSize: '16px', fontWeight: '700', color: '#22c55e'}}>{s.unit.n}</span>
-                                {s.checkIn && <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn} → {s.checkOut} ({nights}N)</span>}
+                                {s.checkIn && <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn.slice(8)}-{s.checkIn.slice(5,7)} → {s.checkOut.slice(8)}-{s.checkOut.slice(5,7)} ({nights}N)</span>}
                             </div>
                         );
                     })}
