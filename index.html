@@ -1045,7 +1045,7 @@ function App() {
                 </div>
             )}
 
-            {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests}/>}
+            {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests} onUpdate={() => {fetchData(); setShowInfoModal(null);}}/>}
             {showBookModal && <BookingModal selected={selected} checkIn={tab === "searchbook" ? searchCheckIn : multiBookCheckIn} checkOut={tab === "searchbook" ? searchCheckOut : multiBookCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData();}}/>}
         </div>
     );
@@ -1073,34 +1073,176 @@ function GuestRequestCard({guest, onAddRequest, requestCounts}) {
     );
 }
 
-function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, requests}) {
+function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, requests, onUpdate}) {
     const {num, room} = getRoomInfo(booking.roomId, booking.unitId);
     const multiUnit = getMultiUnitInfo(booking);
     const price = parseFloat(booking.price) || 0, paid = parseFloat(booking.paid) || 0, due = price - paid;
     const counts = getRequestCounts(booking.id);
     const bookingRequests = requests.filter(r => r.bookingId === booking.id);
+    
+    const [editMode, setEditMode] = useState(null); // 'guest', 'dates', 'payment'
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState({
+        firstName: booking.firstName || '',
+        lastName: booking.lastName || '',
+        mobile: booking.mobile || '',
+        email: booking.email || '',
+        nid: booking.custom4 || '',
+        dob: booking.custom5 || '',
+        arrival: booking.arrival || '',
+        departure: booking.departure || '',
+        price: price.toString(),
+        paid: paid.toString()
+    });
+    
+    const inputStyle = {width: '100%', padding: '10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', fontSize: '14px'};
+    
+    const saveChanges = async (fields) => {
+        setSaving(true);
+        try {
+            const updateData = {id: booking.id};
+            fields.forEach(f => {
+                if (f === 'nid') updateData.custom4 = form.nid;
+                else if (f === 'dob') updateData.custom5 = form.dob;
+                else updateData[f] = form[f];
+            });
+            
+            console.log("Updating booking:", updateData);
+            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"}, 
+                body: JSON.stringify([updateData])
+            });
+            const result = await res.json();
+            console.log("Update response:", result);
+            
+            const success = Array.isArray(result) ? result[0]?.success : result.success;
+            if (success) {
+                setEditMode(null);
+                if (onUpdate) onUpdate();
+            } else {
+                alert("Update failed: " + JSON.stringify(result));
+            }
+        } catch(e) {
+            console.error("Update error:", e);
+            alert("Error: " + e.message);
+        }
+        setSaving(false);
+    };
+    
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{maxHeight: '90vh', overflowY: 'auto'}}>
                 <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>ℹ️ Booking Details</h3><button className="modal-close" onClick={onClose}>×</button></div>
+                
+                {/* Room & Guest Header */}
                 <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px'}}>
                     <div style={{width: '70px', height: '70px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: '700'}}>{num}</div>
-                    <div><div style={{fontSize: '20px', fontWeight: '700'}}>{booking.firstName} {booking.lastName}</div><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '13px'}}>{room?.name}</div><div style={{color: 'rgba(255,255,255,0.4)', fontSize: '12px'}}>ID: {booking.id}</div></div>
+                    <div style={{flex: 1}}>
+                        <div style={{fontSize: '20px', fontWeight: '700'}}>{booking.firstName} {booking.lastName}</div>
+                        <div style={{color: 'rgba(255,255,255,0.5)', fontSize: '13px'}}>{room?.name}</div>
+                        <div style={{color: 'rgba(255,255,255,0.4)', fontSize: '12px'}}>ID: {booking.id}</div>
+                    </div>
                 </div>
-                <div className="info-section"><div className="info-grid"><div><div className="info-label">Check-in</div><div className="info-value">{formatDate(booking.arrival)}</div></div><div><div className="info-label">Check-out</div><div className="info-value">{formatDate(booking.departure)}</div></div></div></div>
-                <div className="info-section"><div className="info-label">Contact</div><div className="info-value">{booking.mobile || "No phone"}</div>{booking.email && <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>{booking.email}</div>}</div>
-                <div className="info-section"><div className="info-label">Payment</div><div className="info-grid" style={{marginTop: '8px'}}><div><div className="info-label">Total</div><div className="info-value">৳{price.toLocaleString()}</div></div><div><div className="info-label">Paid</div><div className="info-value" style={{color: '#22c55e'}}>৳{paid.toLocaleString()}</div></div></div><div style={{marginTop: '12px', padding: '12px', background: due > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Due</div><div style={{fontSize: '28px', fontWeight: '700', color: due > 0 ? '#ef4444' : '#22c55e'}}>৳{due.toLocaleString()}</div></div></div>
+                
+                {/* Guest Info Section */}
+                <div className="info-section" style={{position: 'relative'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                        <div className="info-label">👤 Guest Info</div>
+                        <button onClick={() => setEditMode(editMode === 'guest' ? null : 'guest')} style={{background: editMode === 'guest' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'guest' ? '#ef4444' : '#3b82f6', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'guest' ? '✕ Cancel' : '✏️ Edit'}</button>
+                    </div>
+                    {editMode === 'guest' ? (
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                                <input value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} placeholder="First Name" style={inputStyle}/>
+                                <input value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} placeholder="Last Name" style={inputStyle}/>
+                            </div>
+                            <input value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} placeholder="Phone" style={inputStyle}/>
+                            <input value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email" style={inputStyle}/>
+                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                                <input value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" style={inputStyle}/>
+                                <input value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" style={inputStyle}/>
+                            </div>
+                            <button onClick={() => saveChanges(['firstName', 'lastName', 'mobile', 'email', 'nid', 'dob'])} disabled={saving} style={{padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Guest Info'}</button>
+                        </div>
+                    ) : (
+                        <div>
+                            <div className="info-value" style={{marginBottom: '6px'}}>{booking.firstName} {booking.lastName}</div>
+                            <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)'}}>📞 {booking.mobile || 'No phone'}</div>
+                            {booking.email && booking.email !== 'default' && <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>✉️ {booking.email}</div>}
+                            {booking.custom4 && booking.custom4 !== 'default' && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>🪪 NID: {booking.custom4}</div>}
+                            {booking.custom5 && booking.custom5 !== 'default' && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px'}}>🎂 DOB: {booking.custom5}</div>}
+                        </div>
+                    )}
+                </div>
+                
+                {/* Dates Section */}
+                <div className="info-section">
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                        <div className="info-label">📅 Stay Dates</div>
+                        <button onClick={() => setEditMode(editMode === 'dates' ? null : 'dates')} style={{background: editMode === 'dates' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'dates' ? '#ef4444' : '#3b82f6', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'dates' ? '✕ Cancel' : '✏️ Edit'}</button>
+                    </div>
+                    {editMode === 'dates' ? (
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                                <div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" value={form.arrival} onChange={e => setForm({...form, arrival: e.target.value})} style={inputStyle}/></div>
+                                <div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" value={form.departure} min={form.arrival} onChange={e => setForm({...form, departure: e.target.value})} style={inputStyle}/></div>
+                            </div>
+                            <button onClick={() => saveChanges(['arrival', 'departure'])} disabled={saving} style={{padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Dates'}</button>
+                        </div>
+                    ) : (
+                        <div className="info-grid">
+                            <div><div className="info-label">Check-in</div><div className="info-value">{formatDate(booking.arrival)}</div></div>
+                            <div><div className="info-label">Check-out</div><div className="info-value">{formatDate(booking.departure)}</div></div>
+                        </div>
+                    )}
+                </div>
+                
+                {/* Payment Section */}
+                <div className="info-section">
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                        <div className="info-label">💰 Payment</div>
+                        <button onClick={() => setEditMode(editMode === 'payment' ? null : 'payment')} style={{background: editMode === 'payment' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'payment' ? '#ef4444' : '#3b82f6', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'payment' ? '✕ Cancel' : '✏️ Edit'}</button>
+                    </div>
+                    {editMode === 'payment' ? (
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                                <div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Total Price (৳)</label><input type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})} style={inputStyle}/></div>
+                                <div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Paid (৳)</label><input type="number" value={form.paid} onChange={e => setForm({...form, paid: e.target.value})} style={inputStyle}/></div>
+                            </div>
+                            <div style={{padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', textAlign: 'center'}}>
+                                <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Due: </span>
+                                <span style={{fontSize: '18px', fontWeight: '700', color: (parseFloat(form.price) - parseFloat(form.paid)) > 0 ? '#ef4444' : '#22c55e'}}>৳{(parseFloat(form.price || 0) - parseFloat(form.paid || 0)).toLocaleString()}</span>
+                            </div>
+                            <button onClick={() => saveChanges(['price', 'paid'])} disabled={saving} style={{padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Payment'}</button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="info-grid" style={{marginTop: '8px'}}>
+                                <div><div className="info-label">Total</div><div className="info-value">৳{price.toLocaleString()}</div></div>
+                                <div><div className="info-label">Paid</div><div className="info-value" style={{color: '#22c55e'}}>৳{paid.toLocaleString()}</div></div>
+                            </div>
+                            <div style={{marginTop: '12px', padding: '12px', background: due > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)', borderRadius: '8px', textAlign: 'center'}}>
+                                <div className="info-label">Due</div>
+                                <div style={{fontSize: '28px', fontWeight: '700', color: due > 0 ? '#ef4444' : '#22c55e'}}>৳{due.toLocaleString()}</div>
+                            </div>
+                        </>
+                    )}
+                </div>
+                
+                {/* Requests Section */}
                 {counts.total > 0 && (
                     <div className="info-section">
-                        <div className="info-label">Requests ({counts.total})</div>
+                        <div className="info-label">🛎️ Requests ({counts.total})</div>
                         <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>{counts.pending > 0 && <span className="request-count pending" style={{padding: '4px 10px'}}>⏳ {counts.pending} Pending</span>}{counts.done > 0 && <span className="request-count done" style={{padding: '4px 10px'}}>✓ {counts.done} Done</span>}</div>
                         <div style={{marginTop: '10px', maxHeight: '150px', overflowY: 'auto'}}>
                             {bookingRequests.map(r => (<div key={r.id} style={{padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '6px', fontSize: '12px', borderLeft: r.done ? '3px solid #22c55e' : '3px solid #f59e0b'}}><div style={{fontWeight: '600'}}>{r.requestType}</div>{r.note && <div style={{color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>{r.note}</div>}<div style={{color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{r.done ? `✓ Done ${new Date(r.doneAt).toLocaleTimeString()}` : `⏳ ${new Date(r.timestamp).toLocaleTimeString()}`}</div></div>))}
                         </div>
                     </div>
                 )}
+                
+                {/* Multi-Unit Info */}
                 {multiUnit && (<div className="info-section" style={{background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)'}}><div className="info-label" style={{color: '#3b82f6'}}>🔗 Multi-Room ({multiUnit.count})</div><div style={{fontSize: '13px', marginTop: '6px'}}>Rooms: {multiUnit.rooms.join(", ")}</div><div style={{marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Total Due</div><div style={{fontSize: '24px', fontWeight: '700', color: multiUnit.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{multiUnit.totalDue.toLocaleString()}</div></div></div>)}
-                {booking.custom4 && booking.custom4 !== 'default' && <div className="info-section"><div className="info-label">NID</div><div className="info-value">{booking.custom4}</div></div>}
             </div>
         </div>
     );
