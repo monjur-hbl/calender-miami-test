@@ -522,8 +522,12 @@ function App() {
                                                     position: 'relative',
                                                     border: isCheckIn ? '2px solid #3b82f6' : isCheckOut ? '2px solid #a855f7' : '2px solid transparent'
                                                 }}>
-                                                {isCheckIn && <div style={{position: 'absolute', top: '-8px', right: '-8px', background: '#3b82f6', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px'}}>IN</div>}
-                                                {isCheckOut && <div style={{position: 'absolute', top: '-8px', left: '-8px', background: '#a855f7', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px'}}>OUT</div>}
+                                                {(isCheckIn || isCheckOut) && (
+                                                    <div style={{display: 'flex', gap: '4px', justifyContent: 'center', marginBottom: '6px'}}>
+                                                        {isCheckIn && <div style={{background: '#3b82f6', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
+                                                        {isCheckOut && <div style={{background: '#a855f7', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', fontWeight: '700'}}>OUT</div>}
+                                                    </div>
+                                                )}
                                                 <div style={{fontSize: '24px', fontWeight: '700'}}>{unit.n}</div>
                                                 <div style={{fontSize: '10px', fontWeight: '600', marginTop: '2px', opacity: 0.9}}>{isBooked ? 'OCCUPIED' : 'AVAILABLE'}</div>
                                                 {isBooked && <div style={{fontSize: '11px', marginTop: '4px', fontWeight: '500'}}>{booking.firstName}</div>}
