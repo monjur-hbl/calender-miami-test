@@ -471,7 +471,7 @@ function App() {
                 {groups.map(group => {
                     if (!group.rooms.length) return null;
                     return (
-                        <div key={group.key} style={{marginBottom: '20px'}}>
+                        <div key={group.key} className="today-group">
                             <div style={{maxWidth: '900px', margin: '0 auto 10px auto', textAlign: 'center'}}><div className="floor-header" style={{display: 'inline-flex', justifyContent: 'center'}}><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div></div>
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxWidth: '900px', margin: '0 auto', justifyContent: 'center'}}>
                                 {group.rooms.map(({room, unit}) => {
@@ -560,7 +560,7 @@ function App() {
                                 return groups.map(group => {
                                     if (!group.rooms.length) return null;
                                     return (
-                                        <div key={group.key} style={{marginBottom: '20px'}}>
+                                        <div key={group.key} className="today-group">
                                             <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} available</span></div>
                                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px'}}>
                                                 {group.rooms.map(({room, unit}) => {
