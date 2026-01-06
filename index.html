@@ -262,6 +262,7 @@ function App() {
     const [searchCheckOut, setSearchCheckOut] = useState(getBDDate(1));
     const [searchGroupBy, setSearchGroupBy] = useState("floor");
     const [todayViewBy, setTodayViewBy] = useState("floor");
+    const [calendarViewBy, setCalendarViewBy] = useState("floor");
 
     const today = getBDDate();
 
@@ -416,8 +417,7 @@ function App() {
 
     const tabs = [
         {id: "today", label: "📅 Today"},
-        {id: "floor", label: "🏢 By Floor"},
-        {id: "category", label: "📁 By Category"},
+        {id: "calendar", label: "📆 Calendar"},
         {id: "searchbook", label: "🔍 Search & Book"},
         {id: "requests", label: "🛎️ Requests"},
         {id: "housekeeping", label: "🧹 Housekeeping"},
@@ -543,7 +543,7 @@ function App() {
                 ) : (
                     <div className="tabs-row">{tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${tab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
                 )}
-                {(tab === "floor" || tab === "category") && (
+                {tab === "calendar" && (
                     <div className="date-controls">
                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
                         <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
@@ -558,8 +558,11 @@ function App() {
 
             {!loading && (
                 <>
-                    {tab === "floor" && <CalendarView groupBy="floor"/>}
-                    {tab === "category" && <CalendarView groupBy="category"/>}
+                    <div className="view-selector" style={{marginBottom: '12px'}}>
+                        <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 By Floor</button>
+                        <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
+                    </div>
+                    <CalendarView groupBy={calendarViewBy}/>
                     {tab === "today" && <TodayView/>}
 
                     {tab === "searchbook" && (
