@@ -31,10 +31,10 @@
         .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #10b981; }
         
         /* Tabs - Full width stretched */
-        .tabs-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 12px; }
-        .nav-btn { padding: 11px 6px; border-radius: 8px; font-size: 11px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); white-space: nowrap; text-align: center; }
-        .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-        .nav-btn.active { background: #10b981; color: white; }
+        .tabs-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; justify-content: center; }
+        .nav-btn { padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); white-space: nowrap; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
+        .nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .nav-btn.active { background: linear-gradient(145deg, #10b981, #059669); color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.4); border-color: transparent; }
         
         /* Date controls - Centered */
         .date-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
@@ -156,13 +156,13 @@
             .stats-row { gap: 6px; }
             .stat-card { padding: 10px 4px; }
             .stat-num { font-size: 20px; }
-            .tabs-row { grid-template-columns: repeat(4, 1fr); }
+            .tabs-row { gap: 8px; }
         }
         @media (max-width: 768px) {
             .stat-num { font-size: 16px; }
             .stat-label { font-size: 7px; }
-            .tabs-row { grid-template-columns: 1fr; }
-            .nav-btn { padding: 12px; }
+            .tabs-row { gap: 6px; }
+            .nav-btn { padding: 12px 16px; font-size: 13px; }
             .status-card { min-width: 80px; min-height: 65px; padding: 8px; }
             .room-label { min-width: 100px; max-width: 100px; }
             .date-cell { min-width: 80px; }
