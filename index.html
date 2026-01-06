@@ -1103,26 +1103,43 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
         try {
             const names = form.guests.map(g => g.name).filter(Boolean).join(", ");
             const phones = form.phones.filter(Boolean).join(", ");
+            const groupId = "GRP" + Date.now(); // Link multi-unit bookings
+            
+            // Create booking data for each selected unit with its own dates
             const data = selected.map(s => ({
                 propertyId: PROPERTY, 
                 roomId: s.room.id, 
                 unitId: s.unit.id, 
                 arrival: s.checkIn || form.checkIn, 
                 departure: s.checkOut || form.checkOut, 
-                numAdult: s.room.max, 
+                numAdult: s.room.max || 2, 
                 numChild: 0, 
                 status: "confirmed", 
                 firstName: names, 
-                email: form.email || "default", 
+                email: form.email || "guest@miami.com", 
                 mobile: phones, 
-                custom4: form.nid || "default", 
-                custom5: form.dob || "default", 
-                referer: "miami_frontdesk"
+                custom4: form.nid || "", 
+                custom5: form.dob || "", 
+                referer: "miami_frontdesk",
+                groupId: selected.length > 1 ? groupId : undefined
             }));
+            
+            console.log("Booking data to send:", JSON.stringify(data, null, 2));
+            
             const res = await fetch(PROXY + "?endpoint=bookings&action=write", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
             const result = await res.json();
-            if (result.success) { setStatus("success"); setTimeout(onClose, 1500); } else setStatus("error: " + (result.error || "Failed"));
-        } catch(e) { setStatus("error: " + e.message); }
+            console.log("Beds24 response:", result);
+            
+            if (result.success) { 
+                setStatus("success"); 
+                setTimeout(onClose, 1500); 
+            } else {
+                setStatus("error: " + (result.error || JSON.stringify(result)));
+            }
+        } catch(e) { 
+            console.error("Booking error:", e);
+            setStatus("error: " + e.message); 
+        }
     };
     if (status === "success") return (<div className="modal-overlay"><div className="modal" style={{textAlign: 'center', padding: '50px'}}><div style={{fontSize: '56px', marginBottom: '16px'}}>✅</div><div style={{fontSize: '20px', fontWeight: '700'}}>Booking Created!</div></div></div>);
     const inputStyle = {width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '14px'};
