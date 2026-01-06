@@ -748,12 +748,12 @@ function App() {
                                             <div style={{textAlign: 'center', marginBottom: '12px'}}><div className="floor-header" style={{display: 'inline-flex'}}><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} available</span></div></div>
                                             <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center'}}>
                                                 {group.rooms.map(({room, unit}) => {
-                                                    const isSelected = selected.find(x => x.room.id === room.id && x.unit.id === unit.id);
+                                                    const isSelected = selected.find(x => x.unitKey === `${room.id}-${unit.id}`);
                                                     return (
                                                         <div key={`${room.id}-${unit.id}`} onClick={() => {
-                                                            const key = `${room.id}-${unit.id}-${searchCheckIn}`;
-                                                            if (isSelected) setSelected(selected.filter(x => !(x.room.id === room.id && x.unit.id === unit.id)));
-                                                            else setSelected([...selected, {key, room, unit, date: searchCheckIn}]);
+                                                            const unitKey = `${room.id}-${unit.id}`;
+                                                            if (isSelected) setSelected(selected.filter(x => x.unitKey !== unitKey));
+                                                            else setSelected([...selected, {unitKey, room, unit, checkIn: searchCheckIn, checkOut: searchCheckOut}]);
                                                         }} style={{background: isSelected ? 'linear-gradient(145deg, #22c55e, #16a34a)' : 'rgba(255,255,255,0.03)', border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', cursor: 'pointer'}}>
                                                             <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
                                                             <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>{room.short}</div>
@@ -768,10 +768,27 @@ function App() {
                                 });
                             })()}
                             {selected.length > 0 && (
-                                <div style={{marginTop: '24px', padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px', textAlign: 'center'}}>
-                                    <h4 style={{marginBottom: '12px'}}>Selected: {selected.length} room(s) - {selected.map(s => s.unit.n).join(', ')}</h4>
-                                    <button onClick={() => setShowBookModal(true)} style={{padding: '14px 30px', background: '#22c55e', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>📝 Book Now</button>
-                                    <button onClick={() => setSelected([])} style={{marginLeft: '12px', padding: '14px 20px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: 'white', cursor: 'pointer'}}>Clear</button>
+                                <div style={{marginTop: '24px', padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px'}}>
+                                    <h4 style={{marginBottom: '12px', textAlign: 'center'}}>Selected: {selected.length} room(s)</h4>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px'}}>
+                                        {selected.map(s => {
+                                            const nights = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
+                                            return (
+                                                <div key={s.unitKey} style={{display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '10px', flexWrap: 'wrap'}}>
+                                                    <span style={{fontSize: '16px', fontWeight: '700', color: '#22c55e', minWidth: '40px'}}>{s.unit.n}</span>
+                                                    <input type="date" value={s.checkIn} onChange={e => setSelected(selected.map(x => x.unitKey === s.unitKey ? {...x, checkIn: e.target.value} : x))} style={{padding: '6px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px'}}/>
+                                                    <span style={{color: 'rgba(255,255,255,0.5)'}}>→</span>
+                                                    <input type="date" value={s.checkOut} min={s.checkIn} onChange={e => setSelected(selected.map(x => x.unitKey === s.unitKey ? {...x, checkOut: e.target.value} : x))} style={{padding: '6px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px'}}/>
+                                                    <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px'}}>{nights}N</span>
+                                                    <button onClick={() => setSelected(selected.filter(x => x.unitKey !== s.unitKey))} style={{marginLeft: 'auto', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px', padding: '0 6px'}}>×</button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{display: 'flex', gap: '12px', justifyContent: 'center'}}>
+                                        <button onClick={() => setShowBookModal(true)} style={{padding: '14px 30px', background: '#22c55e', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>📝 Book {selected.length} Room(s)</button>
+                                        <button onClick={() => setSelected([])} style={{padding: '14px 20px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: 'white', cursor: 'pointer'}}>Clear</button>
+                                    </div>
                                 </div>
                             )}
                         </div>
