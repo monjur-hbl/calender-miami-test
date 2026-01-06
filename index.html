@@ -169,6 +169,24 @@
             .search-btn { padding: 10px 16px; font-size: 13px; }
             .date-header-wrapper { top: 52px; }
         }
+
+        /* Today view hover effects */
+        .today-group { 
+            transition: all 0.3s ease; 
+            border-radius: 16px; 
+            padding: 16px; 
+            margin-bottom: 20px;
+            border: 2px solid transparent;
+        }
+        .today-group:hover { 
+            background: rgba(59, 130, 246, 0.1); 
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 24px rgba(59, 130, 246, 0.25);
+        }
+        .today-group:hover .floor-header { 
+            background: rgba(59, 130, 246, 0.3) !important; 
+            transform: scale(1.02);
+        }
     </style>
 </head>
 <body>
