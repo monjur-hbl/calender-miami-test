@@ -6,13 +6,13 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v18.2</title>
+    <title>StaffedSpaces Dashboard v18.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1f2e; min-height: 100vh; color: #fff; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1E293B; min-height: 100vh; color: #fff; }
         
         /* Top Bar - Always sticky */
         .top-bar { background: #141824; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 200; padding: 12px 16px; }
@@ -28,26 +28,26 @@
         
         /* Search Button - 1.5x bigger */
         .search-btn { display: flex; align-items: center; gap: 10px; padding: 14px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.2s; }
-        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #10b981; }
+        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #2D6A6A; }
         
         /* Tabs - Full width stretched */
         .tabs-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; justify-content: center; }
         .nav-btn { padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); white-space: nowrap; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
         .nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .nav-btn.active { background: linear-gradient(145deg, #10b981, #059669); color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.4); border-color: transparent; }
+        .nav-btn.active { background: linear-gradient(145deg, #2D6A6A, #059669); color: white; box-shadow: 0 4px 16px rgba(45,106,106,0.4); border-color: transparent; }
         
         /* Date controls - Centered */
         .date-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
         .day-btn { padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
         .day-btn:hover { background: rgba(255,255,255,0.1); }
-        .day-btn.active { background: #10b981; color: white; }
+        .day-btn.active { background: #2D6A6A; color: white; }
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
         /* Sticky Date Header - sticks below top bar */
-        .date-header-wrapper { position: sticky; top: 62px; z-index: 150; background: #1a1f2e; padding: 12px 16px; margin-left: 0; border-top: 3px solid #10b981; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .date-header-wrapper { position: sticky; top: 62px; z-index: 150; background: #1E293B; padding: 12px 16px; margin-left: 0; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .date-header-inner { display: flex; gap: 6px; margin-left: 140px; }
         .date-cell { flex: 1; min-width: 100px; text-align: center; padding: 10px 6px; background: rgba(255,255,255,0.05); border-radius: 10px; }
-        .date-cell.today { background: #10b981; }
+        .date-cell.today { background: #2D6A6A; }
         .date-day { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); }
         .date-num { font-size: 20px; font-weight: 700; margin-top: 2px; }
         
@@ -71,9 +71,9 @@
         .status-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
         
         /* Only 2 colors: Green (available) and Red (booked) */
-        .card-available { background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%); }
+        .card-available { background: linear-gradient(145deg, #2D6A6A 0%, #245858 100%); }
         .card-booked { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); }
-        .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #10b981 !important; }
+        .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #2D6A6A !important; }
         
         .status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .guest-name { font-size: 11px; font-weight: 500; margin-top: 4px; opacity: 0.9; }
@@ -85,11 +85,11 @@
         .view-selector { display: flex; gap: 8px; margin-bottom: 16px; justify-content: center; }
         .view-btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; background: transparent; color: rgba(255,255,255,0.6); transition: all 0.2s; }
         .view-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
-        .view-btn.active { background: #10b981; border-color: #10b981; color: white; }
+        .view-btn.active { background: #2D6A6A; border-color: #2D6A6A; color: white; }
         
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
-        .modal { background: #1a1f2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal { background: #1E293B; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 28px; cursor: pointer; }
         
@@ -100,29 +100,29 @@
         
         /* Search */
         .search-input { width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 15px; }
-        .search-input:focus { outline: none; border-color: #10b981; }
+        .search-input:focus { outline: none; border-color: #2D6A6A; }
         .search-result { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-        .search-result:hover { background: rgba(255,255,255,0.08); border-color: #10b981; }
+        .search-result:hover { background: rgba(255,255,255,0.08); border-color: #2D6A6A; }
         
         /* Search & Book */
         .date-search-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; justify-content: center; margin-bottom: 20px; }
         .date-field { display: flex; flex-direction: column; gap: 6px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; }
         .date-field label { font-size: 12px; color: rgba(255,255,255,0.5); pointer-events: none; }
-        .date-field:hover { background: rgba(255,255,255,0.08); border-color: rgba(16,185,129,0.4); }
+        .date-field:hover { background: rgba(255,255,255,0.08); border-color: rgba(45,106,106,0.4); }
         .group-selector { padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; }
         
         /* Requests */
         .request-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
         .request-select { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 10px; }
         .request-note { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 8px; resize: none; }
-        .request-btn { padding: 10px 20px; background: #10b981; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .request-btn { padding: 10px 20px; background: #2D6A6A; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .request-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-top: 8px; font-size: 13px; }
         .request-pending { border-left: 3px solid #f59e0b; }
-        .request-done { border-left: 3px solid #10b981; }
-        .done-btn { padding: 6px 12px; background: #10b981; border: none; border-radius: 6px; color: white; font-size: 11px; cursor: pointer; }
+        .request-done { border-left: 3px solid #2D6A6A; }
+        .done-btn { padding: 6px 12px; background: #2D6A6A; border: none; border-radius: 6px; color: white; font-size: 11px; cursor: pointer; }
         .request-count { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
         .request-count.pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
-        .request-count.done { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .request-count.done { background: rgba(45,106,106,0.2); color: #2D6A6A; }
         
         /* Housekeeping */
         .hk-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; }
@@ -135,11 +135,11 @@
         .mv-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .mv-btn { width: 40px; height: 40px; border-radius: 8px; border: none; cursor: pointer; font-size: 16px; }
         .mv-btn-pending { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
-        .mv-btn-pending:hover { background: #10b981; color: white; }
-        .mv-btn-done { background: #10b981; color: white; }
+        .mv-btn-pending:hover { background: #2D6A6A; color: white; }
+        .mv-btn-done { background: #2D6A6A; color: white; }
         
         .mobile-select { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; }
-        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
+        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #2D6A6A; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
         .version-tag { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 4px; font-size: 10px; color: rgba(255,255,255,0.5); z-index: 9999; }
@@ -196,10 +196,10 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: radial-gradient(circle, #fff 0%, #10b981 50%, transparent 70%);
+            background: radial-gradient(circle, #fff 0%, #2D6A6A 50%, transparent 70%);
             animation: stardust-fade 1s ease-out forwards;
             z-index: 9999;
-            box-shadow: 0 0 6px #10b981, 0 0 10px #10b981;
+            box-shadow: 0 0 6px #2D6A6A, 0 0 10px #2D6A6A;
         }
         @keyframes stardust-fade {
             0% { transform: scale(1); opacity: 1; }
@@ -544,15 +544,15 @@ function App() {
         // Visual styles for selection
         let selectionStyle = {};
         if (isCheckInDate) {
-            selectionStyle = {boxShadow: '0 0 0 3px #22c55e', background: 'rgba(34,197,94,0.4)'};
+            selectionStyle = {boxShadow: '0 0 0 3px #2D6A6A', background: 'rgba(45,106,106,0.4)'};
         } else if (isInRange) {
-            selectionStyle = {background: 'rgba(34,197,94,0.25)', borderColor: 'rgba(34,197,94,0.5)'};
+            selectionStyle = {background: 'rgba(45,106,106,0.25)', borderColor: 'rgba(45,106,106,0.5)'};
         }
         
         return (
             <div className={`status-card ${cardClass}`} onClick={handleClick} style={{...selectionStyle, cursor: isBooked ? 'not-allowed' : 'pointer'}}>
                 {isBooked && displayBooking && <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>}
-                {isCheckInDate && <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#22c55e', padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
+                {isCheckInDate && <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#2D6A6A', padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
                 <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
                 {showGuestName && isBooked && displayBooking && <div className="guest-name">{displayBooking.firstName}</div>}
             </div>
@@ -565,7 +565,7 @@ function App() {
         dust.className = 'stardust';
         dust.style.left = (e.clientX - 4) + 'px';
         dust.style.top = (e.clientY - 4) + 'px';
-        dust.style.background = `radial-gradient(circle, #fff 0%, ${['#10b981', '#3b82f6', '#a855f7', '#f59e0b', '#ef4444'][Math.floor(Math.random() * 5)]} 50%, transparent 70%)`;
+        dust.style.background = `radial-gradient(circle, #fff 0%, ${['#2D6A6A', '#2D6A6A', '#D4A853', '#f59e0b', '#ef4444'][Math.floor(Math.random() * 5)]} 50%, transparent 70%)`;
         document.body.appendChild(dust);
         setTimeout(() => dust.remove(), 1000);
     };
@@ -627,7 +627,7 @@ function App() {
                                 <div style={{textAlign: 'center', marginBottom: '12px'}}>
                                     <div className="floor-header" style={{display: 'inline-flex'}}>
                                         <span style={{fontWeight: 600}}>{group.title}</span>
-                                        <span style={{color: '#22c55e', fontSize: 13}}>{group.rooms.length - groupOcc} free</span>
+                                        <span style={{color: '#2D6A6A', fontSize: 13}}>{group.rooms.length - groupOcc} free</span>
                                         <span style={{color: '#ef4444', fontSize: 13}}>{groupOcc} occupied</span>
                                     </div>
                                 </div>
@@ -640,19 +640,19 @@ function App() {
                                         return (
                                             <div key={`${room.id}-${unit.id}`} onClick={() => booking && setShowInfoModal(booking)} 
                                                 style={{
-                                                    background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #22c55e, #16a34a)', 
+                                                    background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #2D6A6A, #245858)', 
                                                     borderRadius: '12px', 
                                                     padding: '12px 16px', 
                                                     cursor: isBooked ? 'pointer' : 'default', 
                                                     textAlign: 'center',
                                                     minWidth: '90px',
                                                     position: 'relative',
-                                                    border: isCheckIn ? '2px solid #3b82f6' : isCheckOut ? '2px solid #a855f7' : '2px solid transparent'
+                                                    border: isCheckIn ? '2px solid #2D6A6A' : isCheckOut ? '2px solid #D4A853' : '2px solid transparent'
                                                 }}>
                                                 {(isCheckIn || isCheckOut) && (
                                                     <div style={{display: 'flex', gap: '4px', justifyContent: 'center', marginBottom: '6px'}}>
-                                                        {isCheckIn && <div style={{background: '#3b82f6', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
-                                                        {isCheckOut && <div style={{background: '#a855f7', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', fontWeight: '700'}}>OUT</div>}
+                                                        {isCheckIn && <div style={{background: '#2D6A6A', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
+                                                        {isCheckOut && <div style={{background: '#D4A853', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', fontWeight: '700'}}>OUT</div>}
                                                     </div>
                                                 )}
                                                 <div style={{fontSize: '24px', fontWeight: '700'}}>{unit.n}</div>
@@ -676,12 +676,12 @@ function App() {
             <div className="top-bar">
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
                     <div>
-                        <h1 style={{fontSize: '18px', fontWeight: '700'}}>🏨 Miami Beach Resort</h1>
-                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)}, {time} <span style={{background: 'rgba(34,197,94,0.3)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontSize: '10px', color: '#22c55e'}}>Local Time</span></p>
+                        <h1 style={{fontSize: '18px', fontWeight: '700'}}>🏨 StaffedSpaces Dashboard</h1>
+                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)}, {time} <span style={{background: 'rgba(45,106,106,0.3)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontSize: '10px', color: '#2D6A6A'}}>Local Time</span></p>
                     </div>
                     <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
                         <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
-                        <button onClick={fetchData} disabled={loading} style={{padding: '14px 20px', background: '#10b981', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>{loading ? '⏳' : '🔄'}</button>
+                        <button onClick={fetchData} disabled={loading} style={{padding: '14px 20px', background: '#2D6A6A', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>{loading ? '⏳' : '🔄'}</button>
                     </div>
                 </div>
             </div>
@@ -690,10 +690,10 @@ function App() {
             <div className="controls-section">
                 <div className="stats-row">
                     <div className="stat-card"><div className="stat-num">{stats.total}</div><div className="stat-label">Total</div></div>
-                    <div className="stat-card"><div className="stat-num" style={{color: '#22c55e'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
+                    <div className="stat-card"><div className="stat-num" style={{color: '#2D6A6A'}}>{stats.avail}</div><div className="stat-label">Available</div></div>
                     <div className="stat-card"><div className="stat-num" style={{color: '#ef4444'}}>{stats.occ}</div><div className="stat-label">Occupied</div></div>
-                    <div className="stat-card"><div className="stat-num" style={{color: '#3b82f6'}}>{stats.cin}</div><div className="stat-label">Check-in</div></div>
-                    <div className="stat-card"><div className="stat-num" style={{color: '#a855f7'}}>{stats.cout}</div><div className="stat-label">Check-out</div></div>
+                    <div className="stat-card"><div className="stat-num" style={{color: '#2D6A6A'}}>{stats.cin}</div><div className="stat-label">Check-in</div></div>
+                    <div className="stat-card"><div className="stat-num" style={{color: '#D4A853'}}>{stats.cout}</div><div className="stat-label">Check-out</div></div>
                 </div>
                 {isMobile ? (
                     <select value={tab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '12px'}}>
@@ -737,7 +737,7 @@ function App() {
                                 <div className="date-field" onClick={() => checkoutRef.current?.showPicker()}><label>Check-out</label><input ref={checkoutRef} type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/></div>
                                 <div className="date-field"><label>Group By</label><select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector"><option value="floor">By Floor</option><option value="category">By Category</option></select></div>
                             </div>
-                            <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#22c55e', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
+                            <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#2D6A6A', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
                             {(() => {
                                 const groups = searchGroupBy === "floor"
                                     ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: availableRooms.filter(r => r.floor === f)}))
@@ -755,7 +755,7 @@ function App() {
                                                             const unitKey = `${room.id}-${unit.id}`;
                                                             if (isSelected) setSelected(selected.filter(x => x.unitKey !== unitKey));
                                                             else setSelected([...selected, {unitKey, room, unit, checkIn: searchCheckIn, checkOut: searchCheckOut}]);
-                                                        }} style={{background: isSelected ? 'linear-gradient(145deg, #22c55e, #16a34a)' : 'rgba(255,255,255,0.03)', border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', cursor: 'pointer'}}>
+                                                        }} style={{background: isSelected ? 'linear-gradient(145deg, #2D6A6A, #245858)' : 'rgba(255,255,255,0.03)', border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', cursor: 'pointer'}}>
                                                             <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
                                                             <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>{room.short}</div>
                                                             <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>👤 {room.max}A</div>
@@ -769,14 +769,14 @@ function App() {
                                 });
                             })()}
                             {selected.length > 0 && (
-                                <div style={{marginTop: '24px', padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px'}}>
+                                <div style={{marginTop: '24px', padding: '16px', background: 'rgba(45,106,106,0.1)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px'}}>
                                     <h4 style={{marginBottom: '12px', textAlign: 'center'}}>Selected: {selected.length} room(s)</h4>
                                     <div style={{display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px'}}>
                                         {selected.map(s => {
                                             const nights = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
                                             return (
-                                                <div key={s.unitKey} style={{display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '10px', flexWrap: 'wrap'}}>
-                                                    <span style={{fontSize: '16px', fontWeight: '700', color: '#22c55e', minWidth: '40px'}}>{s.unit.n}</span>
+                                                <div key={s.unitKey} style={{display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '10px', flexWrap: 'wrap'}}>
+                                                    <span style={{fontSize: '16px', fontWeight: '700', color: '#2D6A6A', minWidth: '40px'}}>{s.unit.n}</span>
                                                     <input type="date" value={s.checkIn} onChange={e => setSelected(selected.map(x => x.unitKey === s.unitKey ? {...x, checkIn: e.target.value} : x))} style={{padding: '6px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px'}}/>
                                                     <span style={{color: 'rgba(255,255,255,0.5)'}}>→</span>
                                                     <input type="date" value={s.checkOut} min={s.checkIn} onChange={e => setSelected(selected.map(x => x.unitKey === s.unitKey ? {...x, checkOut: e.target.value} : x))} style={{padding: '6px 10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px'}}/>
@@ -787,7 +787,7 @@ function App() {
                                         })}
                                     </div>
                                     <div style={{display: 'flex', gap: '12px', justifyContent: 'center'}}>
-                                        <button onClick={() => setShowBookModal(true)} style={{padding: '14px 30px', background: '#22c55e', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>📝 Book {selected.length} Room(s)</button>
+                                        <button onClick={() => setShowBookModal(true)} style={{padding: '14px 30px', background: '#2D6A6A', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>📝 Book {selected.length} Room(s)</button>
                                         <button onClick={() => setSelected([])} style={{padding: '14px 20px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: 'white', cursor: 'pointer'}}>Clear</button>
                                     </div>
                                 </div>
@@ -800,7 +800,7 @@ function App() {
                             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>🛎️ Guest Requests</h2>
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px'}}>
                                 <div>
-                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>📋 Current Guests ({currentGuests.length})</h3>
+                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#2D6A6A'}}>📋 Current Guests ({currentGuests.length})</h3>
                                     {currentGuests.map(guest => <GuestRequestCard key={guest.id} guest={guest} onAddRequest={addRequest} requestCounts={getRequestCounts(guest.id)}/>)}
                                     {!currentGuests.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No guests</div>}
                                 </div>
@@ -815,9 +815,9 @@ function App() {
                                     {!requests.filter(r => !r.done).length && <div style={{color: 'rgba(255,255,255,0.4)', padding: '20px', textAlign: 'center'}}>No pending</div>}
                                 </div>
                                 <div>
-                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#22c55e'}}>✅ Completed</h3>
+                                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#2D6A6A'}}>✅ Completed</h3>
                                     {requests.filter(r => r.done).slice(0, 15).map(req => (
-                                        <div key={req.id} className="request-item request-done"><div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div><div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Done: {new Date(req.doneAt).toLocaleString()}</div></div><span style={{color: '#22c55e'}}>✓</span></div>
+                                        <div key={req.id} className="request-item request-done"><div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div><div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Done: {new Date(req.doneAt).toLocaleString()}</div></div><span style={{color: '#2D6A6A'}}>✓</span></div>
                                     ))}
                                 </div>
                             </div>
@@ -852,8 +852,8 @@ function App() {
                                         
                                         {/* Stats */}
                                         <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '24px'}}>
-                                            <div style={{background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#3b82f6'}}>{hkData.checkin.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Check-in</div></div>
-                                            <div style={{background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#a855f7'}}>{hkData.checkout.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Check-out</div></div>
+                                            <div style={{background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#2D6A6A'}}>{hkData.checkin.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Check-in</div></div>
+                                            <div style={{background: 'rgba(212,168,83,0.15)', border: '1px solid rgba(212,168,83,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#D4A853'}}>{hkData.checkout.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Check-out</div></div>
                                             <div style={{background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#0ea5e9'}}>{hkData.stayover.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Stay Over</div></div>
                                             <div style={{background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#f97316'}}>{hkData.turnover.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Turnover</div></div>
                                         </div>
@@ -861,17 +861,17 @@ function App() {
                                 {/* Room Cards */}
                                 <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px', marginBottom: '32px'}}>
                                     {hkData.checkin.map(({room, unit, booking}) => (
-                                        <div key={`ci-${unit.n}`} style={{background: 'rgba(59,130,246,0.1)', border: '2px solid rgba(59,130,246,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
-                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#3b82f6', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🔵 IN</div>
-                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#3b82f6', marginTop: '6px'}}>{unit.n}</div>
+                                        <div key={`ci-${unit.n}`} style={{background: 'rgba(45,106,106,0.1)', border: '2px solid rgba(45,106,106,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
+                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#2D6A6A', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🔵 IN</div>
+                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#2D6A6A', marginTop: '6px'}}>{unit.n}</div>
                                             <div style={{fontSize: '14px', fontWeight: '600'}}>{booking.firstName}</div>
                                             <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.short}</div>
                                         </div>
                                     ))}
                                     {hkData.checkout.map(({room, unit, booking}) => (
-                                        <div key={`co-${unit.n}`} style={{background: 'rgba(168,85,247,0.1)', border: '2px solid rgba(168,85,247,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
-                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#a855f7', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🟣 OUT</div>
-                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#a855f7', marginTop: '6px'}}>{unit.n}</div>
+                                        <div key={`co-${unit.n}`} style={{background: 'rgba(212,168,83,0.1)', border: '2px solid rgba(212,168,83,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
+                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#D4A853', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🟣 OUT</div>
+                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#D4A853', marginTop: '6px'}}>{unit.n}</div>
                                             <div style={{fontSize: '14px', fontWeight: '600'}}>{booking.firstName}</div>
                                             <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.short}</div>
                                         </div>
@@ -888,8 +888,8 @@ function App() {
                                         <div key={`to-${unit.n}`} style={{background: 'rgba(249,115,22,0.1)', border: '2px solid rgba(249,115,22,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
                                             <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#f97316', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🟠 TURN</div>
                                             <div style={{fontSize: '28px', fontWeight: '700', color: '#f97316', marginTop: '6px'}}>{unit.n}</div>
-                                            <div style={{fontSize: '12px', color: '#a855f7'}}>⬆ {out.firstName}</div>
-                                            <div style={{fontSize: '14px', fontWeight: '600', color: '#3b82f6'}}>⬇ {ci.firstName}</div>
+                                            <div style={{fontSize: '12px', color: '#D4A853'}}>⬆ {out.firstName}</div>
+                                            <div style={{fontSize: '14px', fontWeight: '600', color: '#2D6A6A'}}>⬇ {ci.firstName}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -916,7 +916,7 @@ function App() {
                                                     <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Requested: {new Date(req.timestamp).toLocaleString()}</div>
                                                     <input id={"staff-" + req.id} placeholder="Enter staff name" defaultValue="" style={{width: '100%', padding: '10px', marginBottom: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '13px', boxSizing: 'border-box'}}/>
                                                     <div style={{display: 'flex', gap: '8px'}}>
-                                                        <button onClick={() => handleRequestDone(req.id, false)} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #22c55e, #16a34a)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✓ Done</button>
+                                                        <button onClick={() => handleRequestDone(req.id, false)} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #2D6A6A, #245858)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✓ Done</button>
                                                         <button onClick={() => handleRequestDone(req.id, true)} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✕ Deny</button>
                                                     </div>
                                                 </div>
@@ -924,13 +924,13 @@ function App() {
                                         </div>
                                     )}
                                     
-                                    <h4 style={{fontSize: '14px', color: '#22c55e', marginBottom: '12px', marginTop: '20px'}}>✓ Completed Today ({todayCompleted.length})</h4>
+                                    <h4 style={{fontSize: '14px', color: '#2D6A6A', marginBottom: '12px', marginTop: '20px'}}>✓ Completed Today ({todayCompleted.length})</h4>
                                     {todayCompleted.length === 0 ? <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No completed requests today</div> : (
                                         <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '10px'}}>
                                             {todayCompleted.map(req => (
-                                                <div key={req.id} style={{background: req.denied ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)', border: '1px solid ' + (req.denied ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'), borderRadius: '10px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                                <div key={req.id} style={{background: req.denied ? 'rgba(239,68,68,0.1)' : 'rgba(45,106,106,0.1)', border: '1px solid ' + (req.denied ? 'rgba(239,68,68,0.3)' : 'rgba(45,106,106,0.3)'), borderRadius: '10px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                                     <div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>By: {req.doneBy || 'Staff'}</div><div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>{new Date(req.doneAt).toLocaleTimeString()}</div></div>
-                                                    <div style={{color: req.denied ? '#ef4444' : '#22c55e', fontWeight: '700', fontSize: '14px'}}>{req.denied ? '✕' : '✓'}</div>
+                                                    <div style={{color: req.denied ? '#ef4444' : '#2D6A6A', fontWeight: '700', fontSize: '14px'}}>{req.denied ? '✕' : '✓'}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -946,21 +946,21 @@ function App() {
                             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>↔️ Movements - {formatDate(today)}</h2>
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px'}}>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#3b82f6', marginBottom: '10px', fontSize: '13px'}}>⬇️ Pending In ({movements.pendingIn.length})</h3>
+                                    <h3 style={{color: '#2D6A6A', marginBottom: '10px', fontSize: '13px'}}>⬇️ Pending In ({movements.pendingIn.length})</h3>
                                     {movements.pendingIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
                                         <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "in")}>✓</button></div>
                                     ); })}
                                     {!movements.pendingIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#22c55e', marginBottom: '10px', fontSize: '13px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
+                                    <h3 style={{color: '#2D6A6A', marginBottom: '10px', fontSize: '13px'}}>✅ Checked-in ({movements.doneIn.length})</h3>
                                     {movements.doneIn.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
                                         <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-done" onClick={() => toggle(b.id, "in")}>↩</button></div>
                                     ); })}
                                     {!movements.doneIn.length && <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>None</div>}
                                 </div>
                                 <div className="hk-section">
-                                    <h3 style={{color: '#a855f7', marginBottom: '10px', fontSize: '13px'}}>⬆️ Pending Out ({movements.pendingOut.length})</h3>
+                                    <h3 style={{color: '#D4A853', marginBottom: '10px', fontSize: '13px'}}>⬆️ Pending Out ({movements.pendingOut.length})</h3>
                                     {movements.pendingOut.map(b => { const {num} = getRoomInfo(b.roomId, b.unitId); const counts = getRequestCounts(b.id); return (
                                         <div key={b.id} className="mv-card"><div><div style={{fontWeight: '600'}}>{b.firstName} <span style={{color: 'rgba(255,255,255,0.5)'}}>#{num}</span></div>{counts.total > 0 && <div style={{marginTop: '4px'}}>{counts.pending > 0 && <span className="request-count pending">⏳ {counts.pending}</span>} {counts.done > 0 && <span className="request-count done">✓ {counts.done}</span>}</div>}</div><button className="mv-btn mv-btn-pending" onClick={() => toggle(b.id, "out")}>✓</button></div>
                                     ); })}
@@ -985,12 +985,12 @@ function App() {
                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'}}>
                                 <div className="hk-section">
                                     <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Room Type</h3>
-                                    {ROOMS.map(r => { const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length; const pct = Math.round(booked / r.units.length * 100); return (<div key={r.id} style={{marginBottom: '12px'}}><div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px'}}><span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length}</span></div><div style={{height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden'}}><div style={{height: '100%', width: pct+'%', background: pct > 70 ? '#ef4444' : '#22c55e', borderRadius: '4px'}}></div></div></div>); })}
+                                    {ROOMS.map(r => { const booked = r.units.filter(u => getBooking(r.id, u.id, today)).length; const pct = Math.round(booked / r.units.length * 100); return (<div key={r.id} style={{marginBottom: '12px'}}><div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px'}}><span>{r.short}</span><span style={{color: 'rgba(255,255,255,0.5)'}}>{booked}/{r.units.length}</span></div><div style={{height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden'}}><div style={{height: '100%', width: pct+'%', background: pct > 70 ? '#ef4444' : '#2D6A6A', borderRadius: '4px'}}></div></div></div>); })}
                                 </div>
                                 <div className="hk-section">
                                     <h3 style={{marginBottom: '14px', fontSize: '14px'}}>By Floor</h3>
                                     <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px'}}>
-                                        {FLOORS.map(f => { const rooms = roomsByFloor[f] || []; const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length; const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0; return (<div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px', textAlign: 'center'}}><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '11px'}}>Floor {f}</div><div style={{fontSize: '26px', fontWeight: '700', color: pct > 70 ? '#ef4444' : '#22c55e'}}>{pct}%</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{booked}/{rooms.length}</div></div>); })}
+                                        {FLOORS.map(f => { const rooms = roomsByFloor[f] || []; const booked = rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length; const pct = rooms.length ? Math.round(booked / rooms.length * 100) : 0; return (<div key={f} style={{background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px', textAlign: 'center'}}><div style={{color: 'rgba(255,255,255,0.5)', fontSize: '11px'}}>Floor {f}</div><div style={{fontSize: '26px', fontWeight: '700', color: pct > 70 ? '#ef4444' : '#2D6A6A'}}>{pct}%</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{booked}/{rooms.length}</div></div>); })}
                                     </div>
                                 </div>
                             </div>
@@ -1005,7 +1005,7 @@ function App() {
                     return sum + n;
                 }, 0);
                 return (
-                    <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '650px', margin: '0 auto', padding: '16px', background: 'linear-gradient(145deg, #1e293b, #0f172a)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)'}}>
+                    <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '650px', margin: '0 auto', padding: '16px', background: 'linear-gradient(145deg, #1E293B, #1E293B)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)'}}>
                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
                             <div style={{fontSize: '14px', fontWeight: '600'}}>📦 {selected.length} Room(s) Selected</div>
                             <button onClick={() => setSelected([])} style={{background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '6px', padding: '5px 10px', color: '#ef4444', fontSize: '11px', cursor: 'pointer'}}>✕ Clear All</button>
@@ -1014,14 +1014,14 @@ function App() {
                             {selected.map(s => {
                                 const nights = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
                                 return (
-                                    <div key={s.unitKey} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', marginBottom: '6px'}}>
+                                    <div key={s.unitKey} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(45,106,106,0.1)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '8px', marginBottom: '6px'}}>
                                         <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                                            <span style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>{s.unit.n}</span>
+                                            <span style={{fontSize: '18px', fontWeight: '700', color: '#2D6A6A'}}>{s.unit.n}</span>
                                             <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{s.room.short}</span>
                                         </div>
                                         <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                                             <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn.slice(8)}-{s.checkIn.slice(5,7)} → {s.checkOut.slice(8)}-{s.checkOut.slice(5,7)}</span>
-                                            <span style={{padding: '2px 8px', background: 'rgba(59,130,246,0.3)', borderRadius: '4px', fontSize: '10px', fontWeight: '600', color: '#3b82f6'}}>{nights}N</span>
+                                            <span style={{padding: '2px 8px', background: 'rgba(45,106,106,0.3)', borderRadius: '4px', fontSize: '10px', fontWeight: '600', color: '#2D6A6A'}}>{nights}N</span>
                                             <button onClick={() => setSelected(selected.filter(x => x.unitKey !== s.unitKey))} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '0 4px'}}>×</button>
                                         </div>
                                     </div>
@@ -1029,7 +1029,7 @@ function App() {
                             })}
                         </div>
                         <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px', textAlign: 'center'}}>💡 Click another date on same unit to change check-out</div>
-                        <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '14px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(34,197,94,0.4)'}}>➕ Book {selected.length} Room(s) • {totalNights} Total Night{totalNights > 1 ? 's' : ''}</button>
+                        <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '14px', background: 'linear-gradient(135deg, #2D6A6A, #245858)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(45,106,106,0.4)'}}>➕ Book {selected.length} Room(s) • {totalNights} Total Night{totalNights > 1 ? 's' : ''}</button>
                     </div>
                 );
             })()}
@@ -1040,7 +1040,7 @@ function App() {
                         <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>🔍 Search Guest</h3><button className="modal-close" onClick={() => setShowSearchModal(false)}>×</button></div>
                         <input type="text" placeholder="Search by ID, phone, email, or name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="search-input" autoFocus/>
                         <div style={{marginTop: '16px', maxHeight: '400px', overflowY: 'auto'}}>
-                            {globalSearchResults.map(b => { const {num, room} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="search-result" onClick={() => {setShowInfoModal(b); setShowSearchModal(false);}}><div style={{display: 'flex', justifyContent: 'space-between'}}><div><div style={{fontWeight: '600'}}>{b.firstName} {b.lastName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.name}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>📞 {b.mobile || 'N/A'} • ID: {b.id}</div></div><div style={{textAlign: 'right'}}><div style={{fontWeight: '700', color: '#22c55e', fontSize: '18px'}}>{num}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{formatDate(b.arrival)}</div></div></div></div>); })}
+                            {globalSearchResults.map(b => { const {num, room} = getRoomInfo(b.roomId, b.unitId); return (<div key={b.id} className="search-result" onClick={() => {setShowInfoModal(b); setShowSearchModal(false);}}><div style={{display: 'flex', justifyContent: 'space-between'}}><div><div style={{fontWeight: '600'}}>{b.firstName} {b.lastName}</div><div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.name}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>📞 {b.mobile || 'N/A'} • ID: {b.id}</div></div><div style={{textAlign: 'right'}}><div style={{fontWeight: '700', color: '#2D6A6A', fontSize: '18px'}}>{num}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{formatDate(b.arrival)}</div></div></div></div>); })}
                             {searchQuery && !globalSearchResults.length && <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '30px'}}>No results</div>}
                             {!searchQuery && <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '30px'}}>Type to search...</div>}
                         </div>
@@ -1064,12 +1064,12 @@ function GuestRequestCard({guest, onAddRequest, requestCounts}) {
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <div>
                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                        <span style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>{guest.num}</span>
+                        <span style={{fontSize: '18px', fontWeight: '700', color: '#2D6A6A'}}>{guest.num}</span>
                         {requestCounts.total > 0 && <span style={{fontSize: '11px'}}>{requestCounts.pending > 0 && <span className="request-count pending">⏳ {requestCounts.pending}</span>}{requestCounts.done > 0 && <span className="request-count done" style={{marginLeft: '4px'}}>✓ {requestCounts.done}</span>}</span>}
                     </div>
                     <div style={{fontWeight: '600', marginTop: '2px'}}>{guest.firstName}</div>
                 </div>
-                <button onClick={() => setExpanded(!expanded)} style={{padding: '8px 14px', background: expanded ? 'rgba(255,255,255,0.1)' : '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>{expanded ? '✕' : '+ Request'}</button>
+                <button onClick={() => setExpanded(!expanded)} style={{padding: '8px 14px', background: expanded ? 'rgba(255,255,255,0.1)' : '#2D6A6A', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>{expanded ? '✕' : '+ Request'}</button>
             </div>
             {expanded && (<div style={{marginTop: '12px'}}><select value={requestType} onChange={e => setRequestType(e.target.value)} className="request-select"><option value="">Select...</option>{REQUEST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select><textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Note..." className="request-note" rows={2}/><button onClick={handleSubmit} disabled={!requestType} className="request-btn" style={{opacity: requestType ? 1 : 0.5}}>Submit</button></div>)}
         </div>
@@ -1140,7 +1140,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                 
                 {/* Room & Guest Header */}
                 <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px'}}>
-                    <div style={{width: '70px', height: '70px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: '700'}}>{num}</div>
+                    <div style={{width: '70px', height: '70px', background: 'linear-gradient(135deg, #2D6A6A, #245858)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: '700'}}>{num}</div>
                     <div style={{flex: 1}}>
                         <div style={{fontSize: '20px', fontWeight: '700'}}>{booking.firstName} {booking.lastName}</div>
                         <div style={{color: 'rgba(255,255,255,0.5)', fontSize: '13px'}}>{room?.name}</div>
@@ -1152,7 +1152,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                 <div className="info-section" style={{position: 'relative'}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
                         <div className="info-label">👤 Guest Info</div>
-                        <button onClick={() => setEditMode(editMode === 'guest' ? null : 'guest')} style={{background: editMode === 'guest' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'guest' ? '#ef4444' : '#3b82f6', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'guest' ? '✕ Cancel' : '✏️ Edit'}</button>
+                        <button onClick={() => setEditMode(editMode === 'guest' ? null : 'guest')} style={{background: editMode === 'guest' ? 'rgba(239,68,68,0.2)' : 'rgba(45,106,106,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'guest' ? '#ef4444' : '#2D6A6A', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'guest' ? '✕ Cancel' : '✏️ Edit'}</button>
                     </div>
                     {editMode === 'guest' ? (
                         <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
@@ -1166,7 +1166,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                                 <input value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" style={inputStyle}/>
                                 <input value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" style={inputStyle}/>
                             </div>
-                            <button onClick={() => saveChanges(['firstName', 'lastName', 'mobile', 'email', 'nid', 'dob'])} disabled={saving} style={{padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Guest Info'}</button>
+                            <button onClick={() => saveChanges(['firstName', 'lastName', 'mobile', 'email', 'nid', 'dob'])} disabled={saving} style={{padding: '12px', background: '#2D6A6A', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Guest Info'}</button>
                         </div>
                     ) : (
                         <div>
@@ -1183,7 +1183,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                 <div className="info-section">
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
                         <div className="info-label">📅 Stay Dates</div>
-                        <button onClick={() => setEditMode(editMode === 'dates' ? null : 'dates')} style={{background: editMode === 'dates' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'dates' ? '#ef4444' : '#3b82f6', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'dates' ? '✕ Cancel' : '✏️ Edit'}</button>
+                        <button onClick={() => setEditMode(editMode === 'dates' ? null : 'dates')} style={{background: editMode === 'dates' ? 'rgba(239,68,68,0.2)' : 'rgba(45,106,106,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'dates' ? '#ef4444' : '#2D6A6A', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'dates' ? '✕ Cancel' : '✏️ Edit'}</button>
                     </div>
                     {editMode === 'dates' ? (
                         <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
@@ -1191,7 +1191,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                                 <div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" value={form.arrival} onChange={e => setForm({...form, arrival: e.target.value})} style={inputStyle}/></div>
                                 <div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" value={form.departure} min={form.arrival} onChange={e => setForm({...form, departure: e.target.value})} style={inputStyle}/></div>
                             </div>
-                            <button onClick={() => saveChanges(['arrival', 'departure'])} disabled={saving} style={{padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Dates'}</button>
+                            <button onClick={() => saveChanges(['arrival', 'departure'])} disabled={saving} style={{padding: '12px', background: '#2D6A6A', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Dates'}</button>
                         </div>
                     ) : (
                         <div className="info-grid">
@@ -1205,7 +1205,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                 <div className="info-section">
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
                         <div className="info-label">💰 Payment</div>
-                        <button onClick={() => setEditMode(editMode === 'payment' ? null : 'payment')} style={{background: editMode === 'payment' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'payment' ? '#ef4444' : '#3b82f6', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'payment' ? '✕ Cancel' : '✏️ Edit'}</button>
+                        <button onClick={() => setEditMode(editMode === 'payment' ? null : 'payment')} style={{background: editMode === 'payment' ? 'rgba(239,68,68,0.2)' : 'rgba(45,106,106,0.2)', border: 'none', borderRadius: '6px', padding: '6px 12px', color: editMode === 'payment' ? '#ef4444' : '#2D6A6A', cursor: 'pointer', fontSize: '12px', fontWeight: '600'}}>{editMode === 'payment' ? '✕ Cancel' : '✏️ Edit'}</button>
                     </div>
                     {editMode === 'payment' ? (
                         <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
@@ -1215,19 +1215,19 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                             </div>
                             <div style={{padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', textAlign: 'center'}}>
                                 <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Due: </span>
-                                <span style={{fontSize: '18px', fontWeight: '700', color: (parseFloat(form.price) - parseFloat(form.deposit)) > 0 ? '#ef4444' : '#22c55e'}}>৳{(parseFloat(form.price || 0) - parseFloat(form.deposit || 0)).toLocaleString()}</span>
+                                <span style={{fontSize: '18px', fontWeight: '700', color: (parseFloat(form.price) - parseFloat(form.deposit)) > 0 ? '#ef4444' : '#2D6A6A'}}>৳{(parseFloat(form.price || 0) - parseFloat(form.deposit || 0)).toLocaleString()}</span>
                             </div>
-                            <button onClick={() => saveChanges(['price', 'deposit'])} disabled={saving} style={{padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Payment'}</button>
+                            <button onClick={() => saveChanges(['price', 'deposit'])} disabled={saving} style={{padding: '12px', background: '#2D6A6A', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Payment'}</button>
                         </div>
                     ) : (
                         <>
                             <div className="info-grid" style={{marginTop: '8px'}}>
                                 <div><div className="info-label">Total</div><div className="info-value">৳{price.toLocaleString()}</div></div>
-                                <div><div className="info-label">Paid</div><div className="info-value" style={{color: '#22c55e'}}>৳{paid.toLocaleString()}</div></div>
+                                <div><div className="info-label">Paid</div><div className="info-value" style={{color: '#2D6A6A'}}>৳{paid.toLocaleString()}</div></div>
                             </div>
-                            <div style={{marginTop: '12px', padding: '12px', background: due > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)', borderRadius: '8px', textAlign: 'center'}}>
+                            <div style={{marginTop: '12px', padding: '12px', background: due > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(45,106,106,0.15)', borderRadius: '8px', textAlign: 'center'}}>
                                 <div className="info-label">Due</div>
-                                <div style={{fontSize: '28px', fontWeight: '700', color: due > 0 ? '#ef4444' : '#22c55e'}}>৳{due.toLocaleString()}</div>
+                                <div style={{fontSize: '28px', fontWeight: '700', color: due > 0 ? '#ef4444' : '#2D6A6A'}}>৳{due.toLocaleString()}</div>
                             </div>
                         </>
                     )}
@@ -1239,683 +1239,211 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                         <div className="info-label">🛎️ Requests ({counts.total})</div>
                         <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>{counts.pending > 0 && <span className="request-count pending" style={{padding: '4px 10px'}}>⏳ {counts.pending} Pending</span>}{counts.done > 0 && <span className="request-count done" style={{padding: '4px 10px'}}>✓ {counts.done} Done</span>}</div>
                         <div style={{marginTop: '10px', maxHeight: '150px', overflowY: 'auto'}}>
-                            {bookingRequests.map(r => (<div key={r.id} style={{padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '6px', fontSize: '12px', borderLeft: r.done ? '3px solid #22c55e' : '3px solid #f59e0b'}}><div style={{fontWeight: '600'}}>{r.requestType}</div>{r.note && <div style={{color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>{r.note}</div>}<div style={{color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{r.done ? `✓ Done ${new Date(r.doneAt).toLocaleTimeString()}` : `⏳ ${new Date(r.timestamp).toLocaleTimeString()}`}</div></div>))}
+                            {bookingRequests.map(r => (<div key={r.id} style={{padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '6px', fontSize: '12px', borderLeft: r.done ? '3px solid #2D6A6A' : '3px solid #f59e0b'}}><div style={{fontWeight: '600'}}>{r.requestType}</div>{r.note && <div style={{color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>{r.note}</div>}<div style={{color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{r.done ? `✓ Done ${new Date(r.doneAt).toLocaleTimeString()}` : `⏳ ${new Date(r.timestamp).toLocaleTimeString()}`}</div></div>))}
                         </div>
                     </div>
                 )}
                 
                 {/* Multi-Unit Info */}
-                {multiUnit && (<div className="info-section" style={{background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)'}}><div className="info-label" style={{color: '#3b82f6'}}>🔗 Multi-Room ({multiUnit.count})</div><div style={{fontSize: '13px', marginTop: '6px'}}>Rooms: {multiUnit.rooms.join(", ")}</div><div style={{marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Total Due</div><div style={{fontSize: '24px', fontWeight: '700', color: multiUnit.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{multiUnit.totalDue.toLocaleString()}</div></div></div>)}
+                {multiUnit && (<div className="info-section" style={{background: 'rgba(45,106,106,0.1)', border: '1px solid rgba(45,106,106,0.3)'}}><div className="info-label" style={{color: '#2D6A6A'}}>🔗 Multi-Room ({multiUnit.count})</div><div style={{fontSize: '13px', marginTop: '6px'}}>Rooms: {multiUnit.rooms.join(", ")}</div><div style={{marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center'}}><div className="info-label">Total Due</div><div style={{fontSize: '24px', fontWeight: '700', color: multiUnit.totalDue > 0 ? '#ef4444' : '#2D6A6A'}}>৳{multiUnit.totalDue.toLocaleString()}</div></div></div>)}
             </div>
         </div>
     );
 }
 
 function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInfoModal}) {
-    // Sub-tab state
-    const [subTab, setSubTab] = useState("shift"); // shift, bookings, transactions, handover
-    
-    // Shift & Transaction Storage
-    const SHIFTS_KEY = "miami_shifts_v1";
-    const TRANSACTIONS_KEY = "miami_transactions_v1";
-    const loadShifts = () => { try { return JSON.parse(localStorage.getItem(SHIFTS_KEY) || "[]"); } catch { return []; } };
-    const saveShifts = (d) => localStorage.setItem(SHIFTS_KEY, JSON.stringify(d));
-    const loadTransactions = () => { try { return JSON.parse(localStorage.getItem(TRANSACTIONS_KEY) || "[]"); } catch { return []; } };
-    const saveTransactions = (d) => localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(d));
-    
-    const [shifts, setShifts] = useState(loadShifts());
-    const [transactions, setTransactions] = useState(loadTransactions());
-    const [showNewShift, setShowNewShift] = useState(false);
-    const [showAddTxn, setShowAddTxn] = useState(false);
-    const [showHandover, setShowHandover] = useState(false);
+    const [accDateFrom, setAccDateFrom] = useState(getBDDate(-30));
+    const [accDateTo, setAccDateTo] = useState(getBDDate(30));
+    const [accFilter, setAccFilter] = useState("all");
+    const [accSearch, setAccSearch] = useState("");
+    const [quickPayId, setQuickPayId] = useState(null);
+    const [quickPayAmount, setQuickPayAmount] = useState("");
     const [saving, setSaving] = useState(false);
     
-    // Categories
-    const INCOME_CATS = [
-        {id: "room_payment", label: "🛏️ Room Payment", syncBeds24: true},
-        {id: "restaurant", label: "🍽️ Restaurant"},
-        {id: "laundry", label: "👔 Laundry"},
-        {id: "minibar", label: "🍺 Minibar"},
-        {id: "other_service", label: "🛎️ Other Service"},
-        {id: "advance", label: "💵 Advance Deposit", syncBeds24: true},
-        {id: "other_income", label: "➕ Other Income"}
-    ];
-    const EXPENSE_CATS = [
-        {id: "bank_deposit", label: "🏦 Bank Deposit"},
-        {id: "md_withdrawal", label: "👔 MD Withdrawal"},
-        {id: "manager_withdrawal", label: "👤 Manager Withdrawal"},
-        {id: "petty_cash", label: "💰 Petty Cash"},
-        {id: "staff_advance", label: "👷 Staff Advance"},
-        {id: "vendor_payment", label: "🚚 Vendor Payment"},
-        {id: "refund", label: "↩️ Guest Refund"},
-        {id: "other_expense", label: "➖ Other Expense"}
-    ];
-    const PAY_METHODS = [{id: "cash", label: "💵 Cash"}, {id: "card", label: "💳 Card"}, {id: "bkash", label: "📱 bKash"}, {id: "nagad", label: "📱 Nagad"}, {id: "bank", label: "🏦 Bank Transfer"}];
+    // Filter bookings by date range
+    const filteredBookings = bookings.filter(b => {
+        if (b.arrival < accDateFrom || b.arrival > accDateTo) return false;
+        const price = parseFloat(b.price) || 0;
+        const deposit = parseFloat(b.deposit) || 0;
+        const due = price - deposit;
+        if (accFilter === "paid" && due > 0) return false;
+        if (accFilter === "unpaid" && deposit > 0) return false;
+        if (accFilter === "partial" && (deposit === 0 || due === 0)) return false;
+        if (accSearch && !b.firstName?.toLowerCase().includes(accSearch.toLowerCase()) && !b.mobile?.includes(accSearch)) return false;
+        return true;
+    }).sort((a, b) => new Date(b.arrival) - new Date(a.arrival));
     
-    // Get current active shift
-    const activeShift = shifts.find(s => s.status === "active");
+    // Calculate totals from ALL bookings in date range (before status filter)
+    const allInRange = bookings.filter(b => b.arrival >= accDateFrom && b.arrival <= accDateTo);
+    const totals = allInRange.reduce((acc, b) => {
+        const price = parseFloat(b.price) || 0;
+        const deposit = parseFloat(b.deposit) || 0;
+        acc.revenue += price;
+        acc.collected += deposit;
+        acc.due += (price - deposit);
+        if (price - deposit <= 0) acc.fullyPaid++;
+        else if (deposit > 0) acc.partial++;
+        else acc.unpaid++;
+        return acc;
+    }, {revenue: 0, collected: 0, due: 0, fullyPaid: 0, partial: 0, unpaid: 0});
     
-    // Get transactions for current shift
-    const shiftTxns = activeShift ? transactions.filter(t => t.shiftId === activeShift.id) : [];
-    const shiftIncome = shiftTxns.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-    const shiftExpense = shiftTxns.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
-    const currentCash = (activeShift?.openingBalance || 0) + shiftIncome - shiftExpense;
+    const collectionRate = totals.revenue > 0 ? Math.round((totals.collected / totals.revenue) * 100) : 0;
     
-    // Today's stats
-    const today = getBDDate();
-    const todayShifts = shifts.filter(s => s.date === today);
-    const todayTxns = transactions.filter(t => t.timestamp?.startsWith(today));
-    const todayIncome = todayTxns.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-    const todayExpense = todayTxns.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
-    
-    // Start New Shift
-    const startShift = (staffName, shiftType, openingBalance) => {
-        const newShift = {
-            id: "shift_" + Date.now(),
-            date: getBDDate(),
-            type: shiftType,
-            staffName,
-            openingBalance: parseFloat(openingBalance) || 0,
-            closingBalance: null,
-            status: "active",
-            startTime: new Date().toISOString(),
-            endTime: null,
-            handoverTo: null,
-            handoverNote: "",
-            cashCount: null
-        };
-        const updated = [...shifts, newShift];
-        setShifts(updated);
-        saveShifts(updated);
-        setShowNewShift(false);
-    };
-    
-    // Add Transaction
-    const addTransaction = async (txnData) => {
+    const handleQuickPay = async (bookingId, amount, currentDeposit) => {
         setSaving(true);
-        const newTxn = {
-            id: "txn_" + Date.now(),
-            shiftId: activeShift?.id,
-            ...txnData,
-            timestamp: new Date().toISOString(),
-            syncedToBeds24: false
-        };
-        
-        // If room payment, sync to Beds24
-        if ((txnData.category === "room_payment" || txnData.category === "advance") && txnData.bookingId) {
-            try {
-                const booking = bookings.find(b => b.id === parseInt(txnData.bookingId));
-                if (booking) {
-                    const currentDeposit = parseFloat(booking.deposit) || 0;
-                    const newDeposit = currentDeposit + txnData.amount;
-                    console.log("Syncing to Beds24:", {bookingId: txnData.bookingId, newDeposit});
-                    const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify([{id: parseInt(txnData.bookingId), deposit: newDeposit}])
-                    });
-                    const result = await res.json();
-                    const success = Array.isArray(result) ? result[0]?.success : result.success;
-                    if (success) {
-                        newTxn.syncedToBeds24 = true;
-                        fetchData(); // Refresh bookings
-                    }
-                }
-            } catch(e) { console.error("Beds24 sync error:", e); }
+        try {
+            const newDeposit = parseFloat(currentDeposit || 0) + parseFloat(amount || 0);
+            console.log("Updating deposit:", {bookingId, newDeposit});
+            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify([{id: bookingId, deposit: newDeposit}])
+            });
+            const result = await res.json();
+            console.log("Update result:", result);
+            const success = Array.isArray(result) ? result[0]?.success : result.success;
+            if (success) {
+                fetchData();
+                setQuickPayId(null);
+                setQuickPayAmount("");
+            } else {
+                alert("Failed to update: " + JSON.stringify(result));
+            }
+        } catch(e) { 
+            console.error("Payment error:", e);
+            alert("Error: " + e.message); 
         }
-        
-        const updated = [...transactions, newTxn];
-        setTransactions(updated);
-        saveTransactions(updated);
-        setShowAddTxn(false);
         setSaving(false);
     };
     
-    // Close/Handover Shift
-    const closeShift = (cashCount, handoverTo, note) => {
-        const updated = shifts.map(s => s.id === activeShift.id ? {
-            ...s,
-            status: "handed_over",
-            closingBalance: currentCash,
-            cashCount: parseFloat(cashCount) || currentCash,
-            endTime: new Date().toISOString(),
-            handoverTo,
-            handoverNote: note
-        } : s);
-        setShifts(updated);
-        saveShifts(updated);
-        setShowHandover(false);
+    const markFullyPaid = async (b) => {
+        const due = (parseFloat(b.price) || 0) - (parseFloat(b.deposit) || 0);
+        if (due <= 0) return;
+        setSaving(true);
+        try {
+            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify([{id: b.id, deposit: parseFloat(b.price) || 0}])
+            });
+            const result = await res.json();
+            const success = Array.isArray(result) ? result[0]?.success : result.success;
+            if (success) fetchData();
+            else alert("Failed: " + JSON.stringify(result));
+        } catch(e) { alert("Error: " + e.message); }
+        setSaving(false);
     };
     
-    // Styles
     const cardStyle = {background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px'};
-    const inputStyle = {width: '100%', padding: '10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', fontSize: '14px'};
-    const btnStyle = {padding: '10px 20px', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px'};
-    const subTabStyle = (active) => ({padding: '8px 16px', background: active ? '#22c55e' : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', color: active ? '#fff' : 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '13px', fontWeight: '500'});
+    const inputStyle = {padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'};
     
     return (
         <div style={{padding: '16px'}}>
             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>💰 Accounting</h2>
             
-            {/* Sub-tabs */}
-            <div style={{display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap'}}>
-                <button onClick={() => setSubTab("shift")} style={subTabStyle(subTab === "shift")}>📋 Current Shift</button>
-                <button onClick={() => setSubTab("bookings")} style={subTabStyle(subTab === "bookings")}>🛏️ Room Payments</button>
-                <button onClick={() => setSubTab("transactions")} style={subTabStyle(subTab === "transactions")}>📊 All Transactions</button>
-                <button onClick={() => setSubTab("handover")} style={subTabStyle(subTab === "handover")}>🔄 Shift History</button>
-            </div>
-            
-            {/* ============ SHIFT TAB ============ */}
-            {subTab === "shift" && (
-                <div>
-                    {!activeShift ? (
-                        /* No Active Shift - Start New */
-                        <div style={{...cardStyle, textAlign: 'center', padding: '40px'}}>
-                            <div style={{fontSize: '48px', marginBottom: '16px'}}>🚫</div>
-                            <h3 style={{marginBottom: '8px'}}>No Active Shift</h3>
-                            <p style={{color: 'rgba(255,255,255,0.5)', marginBottom: '20px'}}>Start a new shift to begin recording transactions</p>
-                            <button onClick={() => setShowNewShift(true)} style={{...btnStyle, background: '#22c55e', color: '#fff'}}>➕ Start New Shift</button>
-                        </div>
-                    ) : (
-                        /* Active Shift Dashboard */
-                        <>
-                            {/* Shift Header */}
-                            <div style={{...cardStyle, background: 'linear-gradient(145deg, rgba(34,197,94,0.2), rgba(34,197,94,0.05))', border: '1px solid rgba(34,197,94,0.3)', marginBottom: '16px'}}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
-                                    <div>
-                                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Active Shift</div>
-                                        <div style={{fontSize: '20px', fontWeight: '700'}}>{activeShift.type === 'day' ? '☀️ Day Shift' : '🌙 Night Shift'}</div>
-                                        <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>👤 {activeShift.staffName} • Started {new Date(activeShift.startTime).toLocaleTimeString()}</div>
-                                    </div>
-                                    <button onClick={() => setShowHandover(true)} style={{...btnStyle, background: '#f97316', color: '#fff'}}>🔄 End & Handover</button>
-                                </div>
-                            </div>
-                            
-                            {/* Cash Summary Cards */}
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '20px'}}>
-                                <div style={{...cardStyle, textAlign: 'center', borderLeft: '4px solid #3b82f6'}}>
-                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Opening Balance</div>
-                                    <div style={{fontSize: '20px', fontWeight: '700', color: '#3b82f6'}}>৳{activeShift.openingBalance.toLocaleString()}</div>
-                                </div>
-                                <div style={{...cardStyle, textAlign: 'center', borderLeft: '4px solid #22c55e'}}>
-                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>+ Income</div>
-                                    <div style={{fontSize: '20px', fontWeight: '700', color: '#22c55e'}}>৳{shiftIncome.toLocaleString()}</div>
-                                </div>
-                                <div style={{...cardStyle, textAlign: 'center', borderLeft: '4px solid #ef4444'}}>
-                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>- Expense</div>
-                                    <div style={{fontSize: '20px', fontWeight: '700', color: '#ef4444'}}>৳{shiftExpense.toLocaleString()}</div>
-                                </div>
-                                <div style={{...cardStyle, textAlign: 'center', borderLeft: '4px solid #a855f7', background: 'rgba(168,85,247,0.1)'}}>
-                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Cash In Hand</div>
-                                    <div style={{fontSize: '24px', fontWeight: '700', color: '#a855f7'}}>৳{currentCash.toLocaleString()}</div>
-                                </div>
-                            </div>
-                            
-                            {/* Quick Actions */}
-                            <div style={{display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap'}}>
-                                <button onClick={() => setShowAddTxn({type: 'income'})} style={{...btnStyle, background: '#22c55e', color: '#fff', flex: 1, minWidth: '140px'}}>➕ Add Income</button>
-                                <button onClick={() => setShowAddTxn({type: 'expense'})} style={{...btnStyle, background: '#ef4444', color: '#fff', flex: 1, minWidth: '140px'}}>➖ Add Expense</button>
-                            </div>
-                            
-                            {/* Recent Transactions */}
-                            <div style={cardStyle}>
-                                <h3 style={{fontSize: '14px', marginBottom: '12px'}}>📝 Shift Transactions ({shiftTxns.length})</h3>
-                                <div style={{maxHeight: '300px', overflowY: 'auto'}}>
-                                    {shiftTxns.length === 0 ? (
-                                        <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '20px'}}>No transactions yet</div>
-                                    ) : (
-                                        shiftTxns.slice().reverse().map(t => (
-                                            <div key={t.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
-                                                <div>
-                                                    <div style={{fontWeight: '500'}}>{t.description || t.category}</div>
-                                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{new Date(t.timestamp).toLocaleTimeString()} • {t.paymentMethod}{t.syncedToBeds24 && ' • ✅ Beds24'}</div>
-                                                </div>
-                                                <div style={{fontWeight: '700', color: t.type === 'income' ? '#22c55e' : '#ef4444'}}>{t.type === 'income' ? '+' : '-'}৳{t.amount.toLocaleString()}</div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
-            
-            {/* ============ BOOKINGS TAB (Room Payments) ============ */}
-            {subTab === "bookings" && <BookingsSubTab bookings={bookings} getRoomInfo={getRoomInfo} formatDate={formatDate} fetchData={fetchData} setShowInfoModal={setShowInfoModal} activeShift={activeShift} addTransaction={addTransaction}/>}
-            
-            {/* ============ TRANSACTIONS TAB ============ */}
-            {subTab === "transactions" && (
-                <TransactionsSubTab transactions={transactions} INCOME_CATS={INCOME_CATS} EXPENSE_CATS={EXPENSE_CATS}/>
-            )}
-            
-            {/* ============ SHIFT HISTORY TAB ============ */}
-            {subTab === "handover" && (
-                <ShiftHistorySubTab shifts={shifts} transactions={transactions}/>
-            )}
-            
-            {/* ============ MODALS ============ */}
-            
-            {/* New Shift Modal */}
-            {showNewShift && <NewShiftModal onClose={() => setShowNewShift(false)} onStart={startShift} shifts={shifts}/>}
-            
-            {/* Add Transaction Modal */}
-            {showAddTxn && <AddTransactionModal type={showAddTxn.type} onClose={() => setShowAddTxn(false)} onAdd={addTransaction} bookings={bookings} getRoomInfo={getRoomInfo} INCOME_CATS={INCOME_CATS} EXPENSE_CATS={EXPENSE_CATS} PAY_METHODS={PAY_METHODS} saving={saving} activeShift={activeShift}/>}
-            
-            {/* Handover Modal */}
-            {showHandover && <HandoverModal onClose={() => setShowHandover(false)} onHandover={closeShift} currentCash={currentCash} shiftTxns={shiftTxns} activeShift={activeShift}/>}
-        </div>
-    );
-}
-
-// ============ SUB-COMPONENTS ============
-
-function BookingsSubTab({bookings, getRoomInfo, formatDate, fetchData, setShowInfoModal, activeShift, addTransaction}) {
-    const [dateFrom, setDateFrom] = useState(getBDDate(-30));
-    const [dateTo, setDateTo] = useState(getBDDate(30));
-    const [filter, setFilter] = useState("all");
-    const [search, setSearch] = useState("");
-    const [quickPayId, setQuickPayId] = useState(null);
-    const [quickPayAmount, setQuickPayAmount] = useState("");
-    const [saving, setSaving] = useState(false);
-    
-    const filtered = bookings.filter(b => {
-        if (b.arrival < dateFrom || b.arrival > dateTo) return false;
-        const price = parseFloat(b.price) || 0;
-        const deposit = parseFloat(b.deposit) || 0;
-        const due = price - deposit;
-        if (filter === "paid" && due > 0) return false;
-        if (filter === "unpaid" && deposit > 0) return false;
-        if (filter === "partial" && (deposit === 0 || due === 0)) return false;
-        if (search && !b.firstName?.toLowerCase().includes(search.toLowerCase()) && !b.mobile?.includes(search)) return false;
-        return true;
-    }).sort((a, b) => new Date(b.arrival) - new Date(a.arrival));
-    
-    const allInRange = bookings.filter(b => b.arrival >= dateFrom && b.arrival <= dateTo);
-    const totals = allInRange.reduce((acc, b) => {
-        const price = parseFloat(b.price) || 0, deposit = parseFloat(b.deposit) || 0;
-        acc.revenue += price; acc.collected += deposit; acc.due += (price - deposit);
-        if (price - deposit <= 0) acc.paid++; else if (deposit > 0) acc.partial++; else acc.unpaid++;
-        return acc;
-    }, {revenue: 0, collected: 0, due: 0, paid: 0, partial: 0, unpaid: 0});
-    
-    const handleQuickPay = async (b, amount) => {
-        if (!activeShift) { alert("Please start a shift first!"); return; }
-        setSaving(true);
-        const {num} = getRoomInfo(b.roomId, b.unitId);
-        await addTransaction({
-            type: "income",
-            category: "room_payment",
-            amount: parseFloat(amount),
-            description: `Room ${num} - ${b.firstName}`,
-            bookingId: b.id,
-            roomNumber: num,
-            paymentMethod: "cash",
-            staffName: activeShift.staffName
-        });
-        setQuickPayId(null);
-        setQuickPayAmount("");
-        setSaving(false);
-    };
-    
-    const inputStyle = {padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'};
-    const cardStyle = {background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px'};
-    
-    return (
-        <div>
-            {/* Summary */}
+            {/* Summary Cards */}
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px'}}>
-                <div style={{...cardStyle, textAlign: 'center', borderLeft: '4px solid #3b82f6'}}><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Total Revenue</div><div style={{fontSize: '20px', fontWeight: '700', color: '#3b82f6'}}>৳{totals.revenue.toLocaleString()}</div></div>
-                <div style={{...cardStyle, textAlign: 'center', borderLeft: '4px solid #22c55e'}}><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Collected</div><div style={{fontSize: '20px', fontWeight: '700', color: '#22c55e'}}>৳{totals.collected.toLocaleString()}</div></div>
-                <div style={{...cardStyle, textAlign: 'center', borderLeft: '4px solid #ef4444'}}><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Outstanding</div><div style={{fontSize: '20px', fontWeight: '700', color: '#ef4444'}}>৳{totals.due.toLocaleString()}</div></div>
+                <div style={{background: 'linear-gradient(145deg, rgba(45,106,106,0.2), rgba(45,106,106,0.05))', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Total Revenue</div>
+                    <div style={{fontSize: '22px', fontWeight: '700', color: '#2D6A6A'}}>৳{totals.revenue.toLocaleString()}</div>
+                </div>
+                <div style={{background: 'linear-gradient(145deg, rgba(45,106,106,0.2), rgba(45,106,106,0.05))', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collected</div>
+                    <div style={{fontSize: '22px', fontWeight: '700', color: '#2D6A6A'}}>৳{totals.collected.toLocaleString()}</div>
+                </div>
+                <div style={{background: 'linear-gradient(145deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05))', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Outstanding</div>
+                    <div style={{fontSize: '22px', fontWeight: '700', color: '#ef4444'}}>৳{totals.due.toLocaleString()}</div>
+                </div>
+                <div style={{background: 'linear-gradient(145deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '1px solid rgba(212,168,83,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collection Rate</div>
+                    <div style={{fontSize: '22px', fontWeight: '700', color: '#D4A853'}}>{collectionRate}%</div>
+                </div>
             </div>
             
             {/* Filters */}
             <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'center'}}>
-                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={inputStyle}/>
+                <input type="date" value={accDateFrom} onChange={e => setAccDateFrom(e.target.value)} style={inputStyle}/>
                 <span style={{color: 'rgba(255,255,255,0.4)'}}>→</span>
-                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={inputStyle}/>
-                <select value={filter} onChange={e => setFilter(e.target.value)} style={inputStyle}>
+                <input type="date" value={accDateTo} onChange={e => setAccDateTo(e.target.value)} style={inputStyle}/>
+                <select value={accFilter} onChange={e => setAccFilter(e.target.value)} style={inputStyle}>
                     <option value="all">All ({allInRange.length})</option>
-                    <option value="paid">✅ Paid ({totals.paid})</option>
+                    <option value="paid">✅ Paid ({totals.fullyPaid})</option>
                     <option value="partial">⚠️ Partial ({totals.partial})</option>
                     <option value="unpaid">❌ Unpaid ({totals.unpaid})</option>
                 </select>
-                <input type="text" placeholder="🔍 Search..." value={search} onChange={e => setSearch(e.target.value)} style={{...inputStyle, flex: 1, minWidth: '120px'}}/>
+                <input type="text" placeholder="🔍 Search guest..." value={accSearch} onChange={e => setAccSearch(e.target.value)} style={{...inputStyle, flex: 1, minWidth: '150px'}}/>
+            </div>
+            
+            {/* Status Summary */}
+            <div style={{display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap'}}>
+                <span style={{padding: '4px 10px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '20px', fontSize: '12px', color: '#2D6A6A'}}>✅ {totals.fullyPaid} Paid</span>
+                <span style={{padding: '4px 10px', background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '20px', fontSize: '12px', color: '#f97316'}}>⚠️ {totals.partial} Partial</span>
+                <span style={{padding: '4px 10px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '20px', fontSize: '12px', color: '#ef4444'}}>❌ {totals.unpaid} Unpaid</span>
             </div>
             
             {/* Bookings List */}
-            <div style={{maxHeight: '50vh', overflowY: 'auto'}}>
-                {filtered.map(b => {
+            <div style={{display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '55vh', overflowY: 'auto'}}>
+                {filteredBookings.map(b => {
                     const {num, room} = getRoomInfo(b.roomId, b.unitId);
-                    const price = parseFloat(b.price) || 0, deposit = parseFloat(b.deposit) || 0, due = price - deposit;
+                    const price = parseFloat(b.price) || 0;
+                    const deposit = parseFloat(b.deposit) || 0;
+                    const due = price - deposit;
                     const status = due <= 0 ? 'paid' : deposit > 0 ? 'partial' : 'unpaid';
-                    const color = status === 'paid' ? '#22c55e' : status === 'partial' ? '#f97316' : '#ef4444';
+                    const statusColor = status === 'paid' ? '#2D6A6A' : status === 'partial' ? '#f97316' : '#ef4444';
+                    const statusIcon = status === 'paid' ? '✅' : status === 'partial' ? '⚠️' : '❌';
+                    
                     return (
-                        <div key={b.id} style={{...cardStyle, marginBottom: '8px', borderLeft: '4px solid ' + color}}>
-                            <div style={{display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px'}}>
-                                <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
-                                    <div style={{width: '45px', height: '45px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700'}}>{num}</div>
+                        <div key={b.id} style={{...cardStyle, borderLeft: '4px solid ' + statusColor}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px'}}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                    <div style={{width: '50px', height: '50px', background: 'linear-gradient(135deg, #2D6A6A, #245858)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700'}}>{num}</div>
                                     <div>
-                                        <div style={{fontWeight: '600'}}>{b.firstName} {b.lastName}</div>
-                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room?.short} • {formatDate(b.arrival)}</div>
+                                        <div style={{fontWeight: '600', fontSize: '15px'}}>{b.firstName} {b.lastName}</div>
+                                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.short}</div>
+                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px'}}>{formatDate(b.arrival)} → {formatDate(b.departure)}</div>
                                     </div>
                                 </div>
                                 <div style={{textAlign: 'right'}}>
-                                    <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>৳{price.toLocaleString()} | Paid: ৳{deposit.toLocaleString()}</div>
-                                    <div style={{fontWeight: '700', color}}>{status === 'paid' ? '✅' : status === 'partial' ? '⚠️' : '❌'} Due: ৳{due.toLocaleString()}</div>
+                                    <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Total: ৳{price.toLocaleString()}</div>
+                                    <div style={{fontSize: '12px', color: '#2D6A6A'}}>Paid: ৳{deposit.toLocaleString()}</div>
+                                    <div style={{fontSize: '16px', fontWeight: '700', color: statusColor, marginTop: '2px'}}>{statusIcon} Due: ৳{due.toLocaleString()}</div>
                                 </div>
                             </div>
+                            
+                            {/* Quick Pay Section */}
                             {due > 0 && (
-                                <div style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                                <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
                                     {quickPayId === b.id ? (
-                                        <>
-                                            <input type="number" value={quickPayAmount} onChange={e => setQuickPayAmount(e.target.value)} placeholder="Amount" style={{...inputStyle, width: '100px'}}/>
-                                            <button onClick={() => handleQuickPay(b, quickPayAmount)} disabled={saving || !quickPayAmount} style={{padding: '6px 12px', background: '#22c55e', border: 'none', borderRadius: '6px', color: '#fff', cursor: 'pointer', opacity: saving ? 0.5 : 1}}>{saving ? '⏳' : '💾 Save'}</button>
-                                            <button onClick={() => setQuickPayId(null)} style={{padding: '6px 12px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', color: '#ef4444', cursor: 'pointer'}}>✕</button>
-                                        </>
+                                        <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
+                                            <input type="number" placeholder="Amount" value={quickPayAmount} onChange={e => setQuickPayAmount(e.target.value)} style={{...inputStyle, width: '120px'}}/>
+                                            <button onClick={() => handleQuickPay(b.id, quickPayAmount, b.deposit)} disabled={saving || !quickPayAmount} style={{padding: '8px 16px', background: '#2D6A6A', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px', opacity: saving || !quickPayAmount ? 0.5 : 1}}>{saving ? '⏳ Saving...' : '💾 Save'}</button>
+                                            <button onClick={() => {setQuickPayId(null); setQuickPayAmount("");}} style={{padding: '8px 12px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', color: '#ef4444', cursor: 'pointer', fontSize: '13px'}}>✕</button>
+                                        </div>
                                     ) : (
-                                        <>
-                                            <button onClick={() => {setQuickPayId(b.id); setQuickPayAmount(due.toString());}} style={{padding: '6px 12px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '6px', color: '#22c55e', cursor: 'pointer', fontSize: '12px'}}>💵 Add Payment</button>
-                                            <button onClick={() => handleQuickPay(b, due)} disabled={saving || !activeShift} style={{padding: '6px 12px', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '6px', color: '#3b82f6', cursor: 'pointer', fontSize: '12px', opacity: activeShift ? 1 : 0.5}}>✅ Full (৳{due.toLocaleString()})</button>
-                                            <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '12px'}}>ℹ️</button>
-                                        </>
+                                        <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                                            <button onClick={() => {setQuickPayId(b.id); setQuickPayAmount(due.toString());}} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px'}}>💵 Add Payment</button>
+                                            <button onClick={() => markFullyPaid(b)} disabled={saving} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px', opacity: saving ? 0.5 : 1}}>{saving ? '⏳' : '✅ Mark Paid'} (৳{due.toLocaleString()})</button>
+                                            <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ Details</button>
+                                        </div>
                                     )}
+                                </div>
+                            )}
+                            {due <= 0 && (
+                                <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
+                                    <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ View Details</button>
                                 </div>
                             )}
                         </div>
                     );
                 })}
-            </div>
-        </div>
-    );
-}
-
-function TransactionsSubTab({transactions, INCOME_CATS, EXPENSE_CATS}) {
-    const [dateFilter, setDateFilter] = useState(getBDDate());
-    const [typeFilter, setTypeFilter] = useState("all");
-    const allCats = [...INCOME_CATS, ...EXPENSE_CATS];
-    
-    const filtered = transactions.filter(t => {
-        if (dateFilter && !t.timestamp?.startsWith(dateFilter)) return false;
-        if (typeFilter !== "all" && t.type !== typeFilter) return false;
-        return true;
-    }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    const dayIncome = filtered.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
-    const dayExpense = filtered.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-    
-    const inputStyle = {padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'};
-    
-    return (
-        <div>
-            <div style={{display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center'}}>
-                <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={inputStyle}/>
-                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={inputStyle}>
-                    <option value="all">All Types</option>
-                    <option value="income">Income Only</option>
-                    <option value="expense">Expense Only</option>
-                </select>
-                <div style={{marginLeft: 'auto', display: 'flex', gap: '16px'}}>
-                    <span style={{color: '#22c55e'}}>+৳{dayIncome.toLocaleString()}</span>
-                    <span style={{color: '#ef4444'}}>-৳{dayExpense.toLocaleString()}</span>
-                    <span style={{fontWeight: '700', color: dayIncome - dayExpense >= 0 ? '#22c55e' : '#ef4444'}}>Net: ৳{(dayIncome - dayExpense).toLocaleString()}</span>
-                </div>
-            </div>
-            <div style={{maxHeight: '60vh', overflowY: 'auto'}}>
-                {filtered.length === 0 ? (
-                    <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '40px'}}>No transactions for this date</div>
-                ) : (
-                    filtered.map(t => {
-                        const cat = allCats.find(c => c.id === t.category);
-                        return (
-                            <div key={t.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', marginBottom: '6px', borderLeft: '3px solid ' + (t.type === 'income' ? '#22c55e' : '#ef4444')}}>
-                                <div>
-                                    <div style={{fontWeight: '500'}}>{cat?.label || t.category}</div>
-                                    <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)'}}>{t.description}</div>
-                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{new Date(t.timestamp).toLocaleTimeString()} • {t.paymentMethod} • {t.staffName}{t.syncedToBeds24 && ' • ✅ Beds24'}</div>
-                                </div>
-                                <div style={{fontWeight: '700', fontSize: '16px', color: t.type === 'income' ? '#22c55e' : '#ef4444'}}>{t.type === 'income' ? '+' : '-'}৳{t.amount.toLocaleString()}</div>
-                            </div>
-                        );
-                    })
+                {filteredBookings.length === 0 && (
+                    <div style={{textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)'}}>No bookings found for this period</div>
                 )}
             </div>
         </div>
     );
 }
-
-function ShiftHistorySubTab({shifts, transactions}) {
-    const sortedShifts = [...shifts].sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-    
-    return (
-        <div>
-            <h3 style={{marginBottom: '16px'}}>📋 Shift History</h3>
-            <div style={{maxHeight: '60vh', overflowY: 'auto'}}>
-                {sortedShifts.length === 0 ? (
-                    <div style={{textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '40px'}}>No shift history</div>
-                ) : (
-                    sortedShifts.map(s => {
-                        const shiftTxns = transactions.filter(t => t.shiftId === s.id);
-                        const income = shiftTxns.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-                        const expense = shiftTxns.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
-                        return (
-                            <div key={s.id} style={{background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', marginBottom: '12px'}}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px'}}>
-                                    <div>
-                                        <div style={{fontWeight: '600', fontSize: '16px'}}>{s.type === 'day' ? '☀️ Day' : '🌙 Night'} • {s.date}</div>
-                                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>👤 {s.staffName}</div>
-                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{new Date(s.startTime).toLocaleTimeString()} → {s.endTime ? new Date(s.endTime).toLocaleTimeString() : 'Active'}</div>
-                                    </div>
-                                    <div style={{textAlign: 'right'}}>
-                                        <div style={{fontSize: '12px'}}>Open: ৳{s.openingBalance?.toLocaleString()} | Close: ৳{s.closingBalance?.toLocaleString() || '-'}</div>
-                                        <div style={{fontSize: '12px', color: '#22c55e'}}>+৳{income.toLocaleString()}</div>
-                                        <div style={{fontSize: '12px', color: '#ef4444'}}>-৳{expense.toLocaleString()}</div>
-                                    </div>
-                                </div>
-                                {s.status === 'handed_over' && (
-                                    <div style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '12px', color: 'rgba(255,255,255,0.6)'}}>
-                                        🔄 Handed to: {s.handoverTo} {s.handoverNote && `• "${s.handoverNote}"`}
-                                        {s.cashCount !== s.closingBalance && <span style={{color: '#f97316'}}> ⚠️ Cash count: ৳{s.cashCount?.toLocaleString()}</span>}
-                                    </div>
-                                )}
-                                <div style={{marginTop: '8px'}}><span style={{padding: '3px 8px', borderRadius: '4px', fontSize: '11px', background: s.status === 'active' ? 'rgba(34,197,94,0.2)' : s.status === 'handed_over' ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.1)', color: s.status === 'active' ? '#22c55e' : s.status === 'handed_over' ? '#3b82f6' : '#fff'}}>{s.status === 'active' ? '🟢 Active' : s.status === 'handed_over' ? '✅ Handed Over' : '⏹️ Closed'}</span></div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
-        </div>
-    );
-}
-
-// ============ MODALS ============
-
-function NewShiftModal({onClose, onStart, shifts}) {
-    const [staffName, setStaffName] = useState("");
-    const [shiftType, setShiftType] = useState(new Date().getHours() < 19 ? "day" : "night");
-    const [openingBalance, setOpeningBalance] = useState("");
-    
-    // Get last shift's closing balance as suggestion
-    const lastShift = shifts.filter(s => s.status !== "active").sort((a, b) => new Date(b.endTime) - new Date(a.endTime))[0];
-    const suggestedBalance = lastShift?.closingBalance || lastShift?.cashCount || 0;
-    
-    const inputStyle = {width: '100%', padding: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff', fontSize: '14px'};
-    
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px'}}>
-                <div className="modal-header"><h3>➕ Start New Shift</h3><button className="modal-close" onClick={onClose}>×</button></div>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Staff Name *</label>
-                        <input value={staffName} onChange={e => setStaffName(e.target.value)} placeholder="Your name" style={inputStyle}/>
-                    </div>
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Shift Type</label>
-                        <div style={{display: 'flex', gap: '10px'}}>
-                            <button onClick={() => setShiftType("day")} style={{flex: 1, padding: '12px', background: shiftType === 'day' ? '#22c55e' : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer'}}>☀️ Day (7AM-7PM)</button>
-                            <button onClick={() => setShiftType("night")} style={{flex: 1, padding: '12px', background: shiftType === 'night' ? '#3b82f6' : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer'}}>🌙 Night (7PM-7AM)</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Opening Cash Balance (৳) *</label>
-                        <input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} placeholder={suggestedBalance ? `Suggested: ৳${suggestedBalance.toLocaleString()}` : "Enter amount"} style={inputStyle}/>
-                        {suggestedBalance > 0 && <button onClick={() => setOpeningBalance(suggestedBalance.toString())} style={{marginTop: '6px', fontSize: '12px', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer'}}>Use last shift balance: ৳{suggestedBalance.toLocaleString()}</button>}
-                    </div>
-                    <button onClick={() => staffName && openingBalance && onStart(staffName, shiftType, openingBalance)} disabled={!staffName || !openingBalance} style={{padding: '14px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: staffName && openingBalance ? 1 : 0.5}}>🚀 Start Shift</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function AddTransactionModal({type, onClose, onAdd, bookings, getRoomInfo, INCOME_CATS, EXPENSE_CATS, PAY_METHODS, saving, activeShift}) {
-    const categories = type === "income" ? INCOME_CATS : EXPENSE_CATS;
-    const [category, setCategory] = useState(categories[0].id);
-    const [amount, setAmount] = useState("");
-    const [description, setDescription] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState("cash");
-    const [bookingId, setBookingId] = useState("");
-    
-    const selectedCat = categories.find(c => c.id === category);
-    const isRoomPayment = selectedCat?.syncBeds24;
-    
-    // Get bookings with outstanding balance
-    const unpaidBookings = bookings.filter(b => {
-        const price = parseFloat(b.price) || 0, deposit = parseFloat(b.deposit) || 0;
-        return price - deposit > 0;
-    }).sort((a, b) => new Date(b.arrival) - new Date(a.arrival));
-    
-    const selectedBooking = bookingId ? bookings.find(b => b.id === parseInt(bookingId)) : null;
-    const bookingDue = selectedBooking ? (parseFloat(selectedBooking.price) || 0) - (parseFloat(selectedBooking.deposit) || 0) : 0;
-    
-    const handleSubmit = () => {
-        if (!amount || parseFloat(amount) <= 0) return;
-        const {num} = selectedBooking ? getRoomInfo(selectedBooking.roomId, selectedBooking.unitId) : {num: ''};
-        onAdd({
-            type,
-            category,
-            amount: parseFloat(amount),
-            description: description || (selectedBooking ? `Room ${num} - ${selectedBooking.firstName}` : category),
-            bookingId: isRoomPayment ? bookingId : null,
-            roomNumber: num,
-            paymentMethod,
-            staffName: activeShift?.staffName || "Unknown"
-        });
-    };
-    
-    const inputStyle = {width: '100%', padding: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff', fontSize: '14px'};
-    
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '450px'}}>
-                <div className="modal-header"><h3>{type === 'income' ? '➕ Add Income' : '➖ Add Expense'}</h3><button className="modal-close" onClick={onClose}>×</button></div>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '14px'}}>
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Category *</label>
-                        <select value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                        </select>
-                    </div>
-                    
-                    {isRoomPayment && (
-                        <div>
-                            <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Select Booking * (syncs to Beds24)</label>
-                            <select value={bookingId} onChange={e => {setBookingId(e.target.value); const b = bookings.find(x => x.id === parseInt(e.target.value)); if(b) setAmount(((parseFloat(b.price)||0)-(parseFloat(b.deposit)||0)).toString());}} style={inputStyle}>
-                                <option value="">-- Select Booking --</option>
-                                {unpaidBookings.map(b => {
-                                    const {num} = getRoomInfo(b.roomId, b.unitId);
-                                    const due = (parseFloat(b.price)||0)-(parseFloat(b.deposit)||0);
-                                    return <option key={b.id} value={b.id}>{num} - {b.firstName} (Due: ৳{due.toLocaleString()})</option>;
-                                })}
-                            </select>
-                            {selectedBooking && <div style={{marginTop: '6px', fontSize: '12px', color: '#f97316'}}>Outstanding: ৳{bookingDue.toLocaleString()}</div>}
-                        </div>
-                    )}
-                    
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Amount (৳) *</label>
-                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Enter amount" style={inputStyle}/>
-                    </div>
-                    
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Payment Method</label>
-                        <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-                            {PAY_METHODS.map(m => (
-                                <button key={m.id} onClick={() => setPaymentMethod(m.id)} style={{padding: '8px 12px', background: paymentMethod === m.id ? '#22c55e' : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '12px'}}>{m.label}</button>
-                            ))}
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Description</label>
-                        <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional note" style={inputStyle}/>
-                    </div>
-                    
-                    <button onClick={handleSubmit} disabled={saving || !amount || (isRoomPayment && !bookingId)} style={{padding: '14px', background: type === 'income' ? '#22c55e' : '#ef4444', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: (saving || !amount || (isRoomPayment && !bookingId)) ? 0.5 : 1}}>{saving ? '⏳ Saving...' : (type === 'income' ? '💵 Add Income' : '💸 Add Expense')}</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function HandoverModal({onClose, onHandover, currentCash, shiftTxns, activeShift}) {
-    const [cashCount, setCashCount] = useState(currentCash.toString());
-    const [handoverTo, setHandoverTo] = useState("");
-    const [note, setNote] = useState("");
-    
-    const income = shiftTxns.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
-    const expense = shiftTxns.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-    const difference = parseFloat(cashCount || 0) - currentCash;
-    
-    const inputStyle = {width: '100%', padding: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff', fontSize: '14px'};
-    
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '450px'}}>
-                <div className="modal-header"><h3>🔄 End Shift & Handover</h3><button className="modal-close" onClick={onClose}>×</button></div>
-                
-                {/* Summary */}
-                <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '16px', marginBottom: '20px'}}>
-                    <h4 style={{marginBottom: '12px', fontSize: '14px'}}>📊 Shift Summary</h4>
-                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px'}}>
-                        <div>Opening Balance:</div><div style={{textAlign: 'right'}}>৳{activeShift?.openingBalance?.toLocaleString()}</div>
-                        <div style={{color: '#22c55e'}}>+ Total Income:</div><div style={{textAlign: 'right', color: '#22c55e'}}>৳{income.toLocaleString()}</div>
-                        <div style={{color: '#ef4444'}}>- Total Expense:</div><div style={{textAlign: 'right', color: '#ef4444'}}>৳{expense.toLocaleString()}</div>
-                        <div style={{fontWeight: '700', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px'}}>Expected Cash:</div><div style={{textAlign: 'right', fontWeight: '700', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px'}}>৳{currentCash.toLocaleString()}</div>
-                    </div>
-                    <div style={{marginTop: '10px', fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Transactions: {shiftTxns.length}</div>
-                </div>
-                
-                <div style={{display: 'flex', flexDirection: 'column', gap: '14px'}}>
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Actual Cash Count (৳) *</label>
-                        <input type="number" value={cashCount} onChange={e => setCashCount(e.target.value)} style={inputStyle}/>
-                        {difference !== 0 && (
-                            <div style={{marginTop: '6px', fontSize: '12px', color: difference > 0 ? '#22c55e' : '#ef4444'}}>
-                                {difference > 0 ? '⬆️ Surplus' : '⬇️ Shortage'}: ৳{Math.abs(difference).toLocaleString()}
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Handover To *</label>
-                        <input value={handoverTo} onChange={e => setHandoverTo(e.target.value)} placeholder="Next shift staff name" style={inputStyle}/>
-                    </div>
-                    
-                    <div>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Notes</label>
-                        <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Any notes for the next shift..." rows={2} style={{...inputStyle, resize: 'vertical'}}/>
-                    </div>
-                    
-                    <button onClick={() => cashCount && handoverTo && onHandover(cashCount, handoverTo, note)} disabled={!cashCount || !handoverTo} style={{padding: '14px', background: '#f97316', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: cashCount && handoverTo ? 1 : 0.5}}>✅ Complete Handover</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 
 function BookingModal({selected, checkIn, checkOut, onClose}) {
     const hasIndividualDates = selected.length > 0 && selected[0].checkIn;
@@ -1985,8 +1513,8 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
                     {selected.map(s => {
                         const nights = s.checkIn ? Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24))) : null;
                         return (
-                            <div key={s.unitKey || s.key} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', marginBottom: '6px'}}>
-                                <span style={{fontSize: '16px', fontWeight: '700', color: '#22c55e'}}>{s.unit.n}</span>
+                            <div key={s.unitKey || s.key} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '8px', marginBottom: '6px'}}>
+                                <span style={{fontSize: '16px', fontWeight: '700', color: '#2D6A6A'}}>{s.unit.n}</span>
                                 {s.checkIn && <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn.slice(8)}-{s.checkIn.slice(5,7)} → {s.checkOut.slice(8)}-{s.checkOut.slice(5,7)} ({nights}N)</span>}
                             </div>
                         );
@@ -1994,12 +1522,12 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
                 </div>
                 <form onSubmit={submit}>
                     {!hasIndividualDates && <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} style={inputStyle}/></div><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} style={inputStyle}/></div></div>}
-                    <div style={{marginBottom: '16px'}}><div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Guests *</label>{form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'none', border: 'none', color: '#22c55e', fontSize: '11px', cursor: 'pointer'}}>+ Add</button>}</div>{form.guests.map((g, i) => (<div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}><input type="text" required value={g.name} onChange={e => upd('guests', i, e.target.value)} placeholder={`Guest ${i+1}`} style={{...inputStyle, flex: 1}}/>{form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer'}}>×</button>}</div>))}</div>
-                    <div style={{marginBottom: '16px'}}><div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Phone *</label>{form.phones.length < 3 && <button type="button" onClick={() => add('phones')} style={{background: 'none', border: 'none', color: '#22c55e', fontSize: '11px', cursor: 'pointer'}}>+ Add</button>}</div>{form.phones.map((p, i) => (<div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}><input type="tel" required value={p} onChange={e => upd('phones', i, e.target.value)} placeholder={`Phone ${i+1}`} style={{...inputStyle, flex: 1}}/>{form.phones.length > 1 && <button type="button" onClick={() => rem('phones', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer'}}>×</button>}</div>))}</div>
+                    <div style={{marginBottom: '16px'}}><div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Guests *</label>{form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'none', border: 'none', color: '#2D6A6A', fontSize: '11px', cursor: 'pointer'}}>+ Add</button>}</div>{form.guests.map((g, i) => (<div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}><input type="text" required value={g.name} onChange={e => upd('guests', i, e.target.value)} placeholder={`Guest ${i+1}`} style={{...inputStyle, flex: 1}}/>{form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer'}}>×</button>}</div>))}</div>
+                    <div style={{marginBottom: '16px'}}><div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Phone *</label>{form.phones.length < 3 && <button type="button" onClick={() => add('phones')} style={{background: 'none', border: 'none', color: '#2D6A6A', fontSize: '11px', cursor: 'pointer'}}>+ Add</button>}</div>{form.phones.map((p, i) => (<div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}><input type="tel" required value={p} onChange={e => upd('phones', i, e.target.value)} placeholder={`Phone ${i+1}`} style={{...inputStyle, flex: 1}}/>{form.phones.length > 1 && <button type="button" onClick={() => rem('phones', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer'}}>×</button>}</div>))}</div>
                     <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email (optional)" style={{...inputStyle, marginBottom: '12px'}}/>
                     <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}><input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="NID" style={inputStyle}/><input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="DOB" style={inputStyle}/></div>
                     {status.startsWith("error") && <div style={{padding: '10px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444', fontSize: '12px', marginBottom: '14px'}}>{status}</div>}
-                    <div style={{display: 'flex', gap: '12px'}}><button type="button" onClick={onClose} style={{flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>Cancel</button><button type="submit" disabled={status === "loading"} style={{flex: 1, padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: status === "loading" ? 0.6 : 1}}>{status === "loading" ? "..." : "Book"}</button></div>
+                    <div style={{display: 'flex', gap: '12px'}}><button type="button" onClick={onClose} style={{flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>Cancel</button><button type="submit" disabled={status === "loading"} style={{flex: 1, padding: '12px', background: '#2D6A6A', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: status === "loading" ? 0.6 : 1}}>{status === "loading" ? "..." : "Book"}</button></div>
                 </form>
             </div>
         </div>
