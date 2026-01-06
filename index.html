@@ -260,28 +260,6 @@ const saveRequests = (d) => localStorage.setItem(REQUEST_KEY, JSON.stringify(d))
 
 const REQUEST_TYPES = ["Room Service", "Water Bottle", "Room Clean", "Towel Request", "Bedsheet Change", "Toiletries", "Extra Pillow", "AC/Heating Issue", "Maintenance", "Other"];
 
-const HKRequestCard = ({req, requests, setRequests, saveRequests}) => {
-    const [staffInput, setStaffInput] = useState("");
-    return (
-        <div style={{background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '12px', padding: '14px'}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px'}}>
-                <div>
-                    <div style={{fontSize: '20px', fontWeight: '700', color: '#f59e0b'}}>{req.roomNum}</div>
-                    <div style={{fontSize: '13px', fontWeight: '600'}}>{req.guestName}</div>
-                </div>
-                <div style={{background: '#f59e0b', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700'}}>{req.requestType}</div>
-            </div>
-            {req.note && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px'}}>{req.note}</div>}
-            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Requested: {new Date(req.timestamp).toLocaleString()}</div>
-            <input placeholder="Enter staff name" value={staffInput} onChange={e => setStaffInput(e.target.value)} style={{width: '100%', padding: '10px', marginBottom: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '13px'}}/>
-            <div style={{display: 'flex', gap: '8px'}}>
-                <button onClick={() => { const updated = requests.map(r => r.id === req.id ? {...r, done: true, doneAt: new Date().toISOString(), doneBy: staffInput || "Housekeeping"} : r); setRequests(updated); saveRequests(updated); }} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #22c55e, #16a34a)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✓ Done</button>
-                <button onClick={() => { const updated = requests.map(r => r.id === req.id ? {...r, done: true, denied: true, doneAt: new Date().toISOString(), doneBy: staffInput || "Housekeeping"} : r); setRequests(updated); saveRequests(updated); }} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✕ Deny</button>
-            </div>
-        </div>
-    );
-};
-
 function App() {
     const [tab, setTab] = useState("today");
     const [calDays, setCalDays] = useState(7);
@@ -416,6 +394,26 @@ function App() {
         return {total: allRooms.length, occ, avail, cin, cout};
     }, [allRooms, bookings, getBooking, today]);
 
+    const tomorrow = getBDDate(1);
+    
+    const getHKData = useCallback((targetDate) => {
+        const checkin = [], checkout = [], stayover = [], turnover = [];
+        allRooms.forEach(({room, unit}) => {
+            const co = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === targetDate);
+            const ci = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival === targetDate);
+            const stay = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < targetDate && b.departure > targetDate);
+            if (co && ci) turnover.push({room, unit, out: co, in: ci});
+            else if (co) checkout.push({room, unit, booking: co});
+            else if (ci) checkin.push({room, unit, booking: ci});
+            else if (stay) stayover.push({room, unit, booking: stay});
+        });
+        return {checkin, checkout, stayover, turnover};
+    }, [allRooms, bookings]);
+    
+    const housekeepingToday = useMemo(() => getHKData(today), [getHKData, today]);
+    const housekeepingTomorrow = useMemo(() => getHKData(tomorrow), [getHKData, tomorrow]);
+    
+    // Keep old housekeeping for backwards compat
     const housekeeping = useMemo(() => {
         const makeup = [], dirty = [], turnover = [];
         allRooms.forEach(({room, unit}) => {
@@ -428,6 +426,14 @@ function App() {
         });
         return {makeup, dirty, turnover};
     }, [allRooms, bookings, getCheckout, getCheckin, today]);
+    
+    const handleRequestDone = (reqId, isDenied) => {
+        const staffInput = document.getElementById("staff-" + reqId);
+        const staffName = staffInput ? staffInput.value : "Housekeeping";
+        const updated = requests.map(r => r.id === reqId ? {...r, done: true, denied: isDenied, doneAt: new Date().toISOString(), doneBy: staffName || "Housekeeping"} : r);
+        setRequests(updated);
+        saveRequests(updated);
+    };
 
     const movements = useMemo(() => {
         const todayIn = bookings.filter(b => b.arrival === today);
@@ -751,66 +757,15 @@ function App() {
                     )}
 
                     {tab === "housekeeping" && (() => {
-                        const tomorrow = getBDDate(1);
-                        const getHKData = (targetDate) => {
-                            const checkin = [], checkout = [], stayover = [], turnover = [];
-                            allRooms.forEach(({room, unit}) => {
-                                const co = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === targetDate);
-                                const ci = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival === targetDate);
-                                const stay = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.arrival < targetDate && b.departure > targetDate);
-                                const roomReqs = requests.filter(r => r.roomId === room.id && r.unitId === unit.id && !r.done);
-                                if (co && ci) turnover.push({room, unit, out: co, in: ci, reqs: roomReqs});
-                                else if (co) checkout.push({room, unit, booking: co, reqs: roomReqs});
-                                else if (ci) checkin.push({room, unit, booking: ci, reqs: roomReqs});
-                                else if (stay) stayover.push({room, unit, booking: stay, reqs: roomReqs});
-                            });
-                            return {checkin, checkout, stayover, turnover};
-                        };
-                        const hkData = hkDay === "today" ? getHKData(today) : getHKData(tomorrow);
+                        const hkData = hkDay === "today" ? housekeepingToday : housekeepingTomorrow;
                         const hkDate = hkDay === "today" ? today : tomorrow;
-                        const pendingReqs = requests.filter(r => !r.done).length;
-                        
-                        const HKCard = ({room, unit, booking, type, reqs, outGuest, inGuest}) => {
-                            const [expanded, setExpanded] = useState(false);
-                            const [staffName, setStaffName] = useState("");
-                            const colors = {checkin: '#3b82f6', checkout: '#a855f7', stayover: '#0ea5e9', turnover: '#f97316'};
-                            const labels = {checkin: '🔵 IN', checkout: '🟣 OUT', stayover: '🔵 STAY', turnover: '🟠 TURN'};
-                            
-                            const handleAction = (reqId, action) => {
-                                const updated = requests.map(r => r.id === reqId ? {...r, done: true, denied: action === "denied", doneAt: new Date().toISOString(), doneBy: staffName || "Staff"} : r);
-                                setRequests(updated);
-                                saveRequests(updated);
-                            };
-                            
-                            return (
-                                <div style={{background: 'rgba(255,255,255,0.03)', border: '2px solid ' + colors[type] + '40', borderRadius: '14px', padding: '14px', position: 'relative'}}>
-                                    <div style={{position: 'absolute', top: '-10px', left: '14px', background: colors[type], padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>{labels[type]}</div>
-                                    {reqs?.length > 0 && <div onClick={() => setExpanded(!expanded)} style={{position: 'absolute', top: '-10px', right: '14px', background: '#ef4444', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700', cursor: 'pointer'}}>🔔 {reqs.length}</div>}
-                                    <div style={{display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px'}}>
-                                        <div style={{fontSize: '28px', fontWeight: '700', color: colors[type]}}>{unit.n}</div>
-                                        <div style={{flex: 1}}>
-                                            {type === 'turnover' ? (<><div style={{fontSize: '12px', color: '#a855f7'}}>⬆ {outGuest}</div><div style={{fontSize: '14px', fontWeight: '600', color: '#3b82f6'}}>⬇ {inGuest}</div></>) : (<><div style={{fontSize: '14px', fontWeight: '600'}}>{booking?.firstName || '-'}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.short}</div></>)}
-                                        </div>
-                                    </div>
-                                    {expanded && reqs?.map(req => (
-                                        <div key={req.id} style={{marginTop: '12px', padding: '12px', background: 'rgba(239,68,68,0.1)', borderRadius: '10px'}}>
-                                            <div style={{fontWeight: '600', marginBottom: '6px'}}>{req.requestType}</div>
-                                            {req.note && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px'}}>{req.note}</div>}
-                                            <input placeholder="Staff name" value={staffName} onChange={e => setStaffName(e.target.value)} style={{width: '100%', padding: '8px', marginBottom: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px'}}/>
-                                            <div style={{display: 'flex', gap: '8px'}}>
-                                                <button onClick={() => handleAction(req.id, "done")} style={{flex: 1, padding: '8px', background: '#22c55e', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>✓ Done</button>
-                                                <button onClick={() => handleAction(req.id, "denied")} style={{flex: 1, padding: '8px', background: '#ef4444', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>✕ Deny</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        };
+                        const pendingReqs = requests.filter(r => !r.done);
+                        const todayCompleted = requests.filter(r => r.done && r.doneAt && new Date(r.doneAt).toDateString() === new Date().toDateString());
                         
                         return (
                             <div style={{padding: '16px', maxWidth: '1200px', margin: '0 auto'}}>
                                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px'}}>
-                                    <h2 style={{fontSize: '20px', fontWeight: '700'}}>🧹 Housekeeping {pendingReqs > 0 && <span style={{background: '#ef4444', padding: '2px 8px', borderRadius: '10px', fontSize: '12px', marginLeft: '8px'}}>{pendingReqs} requests</span>}</h2>
+                                    <h2 style={{fontSize: '20px', fontWeight: '700'}}>🧹 Housekeeping {pendingReqs.length > 0 && <span style={{background: '#ef4444', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', marginLeft: '8px'}}>{pendingReqs.length} requests</span>}</h2>
                                     <div className="view-selector" style={{marginBottom: 0}}>
                                         <button className={`view-btn ${hkDay === 'today' ? 'active' : ''}`} onClick={() => setHkDay('today')}>📅 Today</button>
                                         <button className={`view-btn ${hkDay === 'tomorrow' ? 'active' : ''}`} onClick={() => setHkDay('tomorrow')}>📆 Tomorrow</button>
@@ -818,6 +773,7 @@ function App() {
                                 </div>
                                 <p style={{color: 'rgba(255,255,255,0.5)', marginBottom: '20px', textAlign: 'center'}}>{formatDate(hkDate)}</p>
                                 
+                                {/* Stats */}
                                 <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '24px'}}>
                                     <div style={{background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#3b82f6'}}>{hkData.checkin.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Check-in</div></div>
                                     <div style={{background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#a855f7'}}>{hkData.checkout.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Check-out</div></div>
@@ -825,57 +781,80 @@ function App() {
                                     <div style={{background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}><div style={{fontSize: '28px', fontWeight: '700', color: '#f97316'}}>{hkData.turnover.length}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>Turnover</div></div>
                                 </div>
                                 
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px'}}>
-                                    {hkData.checkin.map(({room, unit, booking, reqs}) => <HKCard key={`ci-${unit.n}`} room={room} unit={unit} booking={booking} type="checkin" reqs={reqs}/>)}
-                                    {hkData.checkout.map(({room, unit, booking, reqs}) => <HKCard key={`co-${unit.n}`} room={room} unit={unit} booking={booking} type="checkout" reqs={reqs}/>)}
-                                    {hkData.stayover.map(({room, unit, booking, reqs}) => <HKCard key={`so-${unit.n}`} room={room} unit={unit} booking={booking} type="stayover" reqs={reqs}/>)}
-                                    {hkData.turnover.map(({room, unit, out, in: ci, reqs}) => <HKCard key={`to-${unit.n}`} room={room} unit={unit} type="turnover" outGuest={out.firstName} inGuest={ci.firstName} reqs={reqs}/>)}
+                                {/* Room Cards */}
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px', marginBottom: '32px'}}>
+                                    {hkData.checkin.map(({room, unit, booking}) => (
+                                        <div key={`ci-${unit.n}`} style={{background: 'rgba(59,130,246,0.1)', border: '2px solid rgba(59,130,246,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
+                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#3b82f6', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🔵 IN</div>
+                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#3b82f6', marginTop: '6px'}}>{unit.n}</div>
+                                            <div style={{fontSize: '14px', fontWeight: '600'}}>{booking.firstName}</div>
+                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.short}</div>
+                                        </div>
+                                    ))}
+                                    {hkData.checkout.map(({room, unit, booking}) => (
+                                        <div key={`co-${unit.n}`} style={{background: 'rgba(168,85,247,0.1)', border: '2px solid rgba(168,85,247,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
+                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#a855f7', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🟣 OUT</div>
+                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#a855f7', marginTop: '6px'}}>{unit.n}</div>
+                                            <div style={{fontSize: '14px', fontWeight: '600'}}>{booking.firstName}</div>
+                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.short}</div>
+                                        </div>
+                                    ))}
+                                    {hkData.stayover.map(({room, unit, booking}) => (
+                                        <div key={`so-${unit.n}`} style={{background: 'rgba(14,165,233,0.1)', border: '2px solid rgba(14,165,233,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
+                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#0ea5e9', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🔵 STAY</div>
+                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#0ea5e9', marginTop: '6px'}}>{unit.n}</div>
+                                            <div style={{fontSize: '14px', fontWeight: '600'}}>{booking.firstName}</div>
+                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.short}</div>
+                                        </div>
+                                    ))}
+                                    {hkData.turnover.map(({room, unit, out, in: ci}) => (
+                                        <div key={`to-${unit.n}`} style={{background: 'rgba(249,115,22,0.1)', border: '2px solid rgba(249,115,22,0.4)', borderRadius: '14px', padding: '14px', position: 'relative'}}>
+                                            <div style={{position: 'absolute', top: '-10px', left: '14px', background: '#f97316', padding: '2px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: '700'}}>🟠 TURN</div>
+                                            <div style={{fontSize: '28px', fontWeight: '700', color: '#f97316', marginTop: '6px'}}>{unit.n}</div>
+                                            <div style={{fontSize: '12px', color: '#a855f7'}}>⬆ {out.firstName}</div>
+                                            <div style={{fontSize: '14px', fontWeight: '600', color: '#3b82f6'}}>⬇ {ci.firstName}</div>
+                                        </div>
+                                    ))}
                                 </div>
                                 
-                                {(hkData.checkin.length + hkData.checkout.length + hkData.stayover.length + hkData.turnover.length) === 0 && <div style={{textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)'}}>No housekeeping tasks</div>}
-                                </div>
+                                {(hkData.checkin.length + hkData.checkout.length + hkData.stayover.length + hkData.turnover.length) === 0 && <div style={{textAlign: 'center', padding: '30px', color: 'rgba(255,255,255,0.4)', marginBottom: '24px'}}>No room tasks for this day</div>}
                                 
-                                {/* Requests Section for Housekeeping */}
-                                <div style={{marginTop: '32px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.08)'}}>
-                                    <h3 style={{fontSize: '18px', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px'}}>
-                                        🛎️ Guest Requests 
-                                        {requests.filter(r => !r.done).length > 0 && <span style={{background: '#ef4444', padding: '4px 12px', borderRadius: '12px', fontSize: '13px'}}>{requests.filter(r => !r.done).length} pending</span>}
-                                    </h3>
+                                {/* Guest Requests Section */}
+                                <div style={{background: 'rgba(255,255,255,0.02)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.08)'}}>
+                                    <h3 style={{fontSize: '18px', fontWeight: '700', marginBottom: '16px'}}>🛎️ Guest Requests {pendingReqs.length > 0 && <span style={{background: '#ef4444', padding: '4px 12px', borderRadius: '12px', fontSize: '13px', marginLeft: '8px'}}>{pendingReqs.length} pending</span>}</h3>
                                     
-                                    {/* Pending Requests */}
-                                    <div style={{marginBottom: '24px'}}>
-                                        <h4 style={{fontSize: '14px', color: '#f59e0b', marginBottom: '12px'}}>⏳ Pending Requests</h4>
-                                        {requests.filter(r => !r.done).length === 0 ? (
-                                            <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No pending requests</div>
-                                        ) : (
-                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px'}}>
-                                                {requests.filter(r => !r.done).map(req => (
-                                                    <HKRequestCard key={req.id} req={req} requests={requests} setRequests={setRequests} saveRequests={saveRequests}/>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Completed Requests */}
-                                    <div>
-                                        <h4 style={{fontSize: '14px', color: '#22c55e', marginBottom: '12px'}}>✓ Completed Today ({requests.filter(r => r.done && r.doneAt && new Date(r.doneAt).toDateString() === new Date().toDateString()).length})</h4>
-                                        {requests.filter(r => r.done && r.doneAt && new Date(r.doneAt).toDateString() === new Date().toDateString()).length === 0 ? (
-                                            <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No completed requests today</div>
-                                        ) : (
-                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '10px'}}>
-                                                {requests.filter(r => r.done && r.doneAt && new Date(r.doneAt).toDateString() === new Date().toDateString()).map(req => (
-                                                    <div key={req.id} style={{background: req.denied ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)', border: '1px solid ' + (req.denied ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'), borderRadius: '10px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                                        <div>
-                                                            <div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div>
-                                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>By: {req.doneBy || 'Staff'}</div>
-                                                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>{new Date(req.doneAt).toLocaleTimeString()}</div>
-                                                        </div>
-                                                        <div style={{color: req.denied ? '#ef4444' : '#22c55e', fontWeight: '700'}}>{req.denied ? '✕ Denied' : '✓ Done'}</div>
+                                    <h4 style={{fontSize: '14px', color: '#f59e0b', marginBottom: '12px'}}>⏳ Pending</h4>
+                                    {pendingReqs.length === 0 ? <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No pending requests</div> : (
+                                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px', marginBottom: '24px'}}>
+                                            {pendingReqs.map(req => (
+                                                <div key={req.id} style={{background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '12px', padding: '14px'}}>
+                                                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px'}}>
+                                                        <div><div style={{fontSize: '20px', fontWeight: '700', color: '#f59e0b'}}>{req.roomNum}</div><div style={{fontSize: '13px', fontWeight: '600'}}>{req.guestName}</div></div>
+                                                        <div style={{background: '#f59e0b', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', height: 'fit-content'}}>{req.requestType}</div>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
+                                                    {req.note && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px'}}>{req.note}</div>}
+                                                    <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Requested: {new Date(req.timestamp).toLocaleString()}</div>
+                                                    <input id={"staff-" + req.id} placeholder="Enter staff name" defaultValue="" style={{width: '100%', padding: '10px', marginBottom: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '13px', boxSizing: 'border-box'}}/>
+                                                    <div style={{display: 'flex', gap: '8px'}}>
+                                                        <button onClick={() => handleRequestDone(req.id, false)} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #22c55e, #16a34a)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✓ Done</button>
+                                                        <button onClick={() => handleRequestDone(req.id, true)} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✕ Deny</button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    
+                                    <h4 style={{fontSize: '14px', color: '#22c55e', marginBottom: '12px', marginTop: '20px'}}>✓ Completed Today ({todayCompleted.length})</h4>
+                                    {todayCompleted.length === 0 ? <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No completed requests today</div> : (
+                                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '10px'}}>
+                                            {todayCompleted.map(req => (
+                                                <div key={req.id} style={{background: req.denied ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)', border: '1px solid ' + (req.denied ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'), borderRadius: '10px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                                    <div><div style={{fontWeight: '600'}}>{req.roomNum} - {req.requestType}</div><div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>By: {req.doneBy || 'Staff'}</div><div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>{new Date(req.doneAt).toLocaleTimeString()}</div></div>
+                                                    <div style={{color: req.denied ? '#ef4444' : '#22c55e', fontWeight: '700', fontSize: '14px'}}>{req.denied ? '✕' : '✓'}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );
