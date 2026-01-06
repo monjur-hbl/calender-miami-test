@@ -477,36 +477,144 @@ function App() {
 
     const TodayView = () => {
         const groups = todayViewBy === "floor" 
-            ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || []}))
-            : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u}))}));
+            ? FLOORS.map(f => ({key: f, title: `${floorName(f)} Floor`, rooms: roomsByFloor[f] || []}))
+            : ROOMS.map(r => ({key: r.id, title: r.short, rooms: r.units.map(u => ({room: r, unit: u}))}));
+        
+        const todayCheckIns = bookings.filter(b => b.arrival === today);
+        const todayCheckOuts = bookings.filter(b => b.departure === today);
+        
         return (
-            <div style={{padding: '16px'}}>
-                <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>📅 Today's Status - {formatDate(today)}</h2>
-                <div className="view-selector">
-                    <button className={`view-btn ${todayViewBy === 'floor' ? 'active' : ''}`} onClick={() => setTodayViewBy('floor')}>🏢 By Floor</button>
-                    <button className={`view-btn ${todayViewBy === 'category' ? 'active' : ''}`} onClick={() => setTodayViewBy('category')}>📁 By Category</button>
+            <div style={{padding: '16px', maxWidth: '1200px', margin: '0 auto'}}>
+                {/* Header */}
+                <div style={{textAlign: 'center', marginBottom: '24px'}}>
+                    <h2 style={{fontSize: '28px', fontWeight: '700', marginBottom: '8px'}}>📅 {formatDate(today)}</h2>
+                    <p style={{color: 'rgba(255,255,255,0.5)', fontSize: '14px'}}>Today's Overview</p>
                 </div>
-                {groups.map(group => {
-                    if (!group.rooms.length) return null;
-                    return (
-                        <div key={group.key} className="today-group">
-                            <div style={{maxWidth: '900px', margin: '0 auto 10px auto', textAlign: 'center'}}><div className="floor-header" style={{display: 'inline-flex', justifyContent: 'center'}}><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.rooms.length} rooms</span></div></div>
-                            <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center'}}>
-                                {group.rooms.map(({room, unit}) => {
-                                    const booking = getBooking(room.id, unit.id, today);
-                                    const isBooked = !!booking;
-                                    return (
-                                        <div key={`${room.id}-${unit.id}`} onClick={() => booking && setShowInfoModal(booking)} style={{background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #22c55e, #16a34a)', borderRadius: '10px', padding: '14px', cursor: isBooked ? 'pointer' : 'default', textAlign: 'center'}}>
-                                            <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
-                                            <div style={{fontSize: '11px', fontWeight: '600', marginTop: '4px'}}>{isBooked ? 'BOOKED' : 'AVAILABLE'}</div>
-                                            {isBooked && <div style={{fontSize: '10px', marginTop: '4px', opacity: 0.9}}>{booking.firstName}</div>}
+                
+                {/* Stats Cards */}
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px'}}>
+                    <div style={{background: 'linear-gradient(145deg, rgba(34,197,94,0.2), rgba(34,197,94,0.1))', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '16px', padding: '20px', textAlign: 'center'}}>
+                        <div style={{fontSize: '36px', fontWeight: '700', color: '#22c55e'}}>{stats.avail}</div>
+                        <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>Available</div>
+                    </div>
+                    <div style={{background: 'linear-gradient(145deg, rgba(239,68,68,0.2), rgba(239,68,68,0.1))', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '20px', textAlign: 'center'}}>
+                        <div style={{fontSize: '36px', fontWeight: '700', color: '#ef4444'}}>{stats.occ}</div>
+                        <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>Occupied</div>
+                    </div>
+                    <div style={{background: 'linear-gradient(145deg, rgba(59,130,246,0.2), rgba(59,130,246,0.1))', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '16px', padding: '20px', textAlign: 'center'}}>
+                        <div style={{fontSize: '36px', fontWeight: '700', color: '#3b82f6'}}>{stats.cin}</div>
+                        <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>Check-ins</div>
+                    </div>
+                    <div style={{background: 'linear-gradient(145deg, rgba(168,85,247,0.2), rgba(168,85,247,0.1))', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '16px', padding: '20px', textAlign: 'center'}}>
+                        <div style={{fontSize: '36px', fontWeight: '700', color: '#a855f7'}}>{stats.cout}</div>
+                        <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px'}}>Check-outs</div>
+                    </div>
+                </div>
+                
+                {/* Check-ins & Check-outs Lists */}
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+                    {/* Check-ins Today */}
+                    <div style={{background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '16px', padding: '16px'}}>
+                        <h3 style={{fontSize: '16px', fontWeight: '600', color: '#3b82f6', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                            <span>🔵</span> Arrivals Today <span style={{background: 'rgba(59,130,246,0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '12px'}}>{todayCheckIns.length}</span>
+                        </h3>
+                        <div style={{maxHeight: '200px', overflowY: 'auto'}}>
+                            {todayCheckIns.length === 0 ? (
+                                <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No arrivals today</div>
+                            ) : todayCheckIns.map(b => {
+                                const info = getRoomInfo(b.roomId, b.unitId);
+                                const isDone = checkStatus[b.id] === "checkedin";
+                                return (
+                                    <div key={b.id} onClick={() => setShowInfoModal(b)} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: isDone ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', borderRadius: '10px', marginBottom: '8px', cursor: 'pointer', border: isDone ? '1px solid rgba(34,197,94,0.3)' : '1px solid transparent'}}>
+                                        <div>
+                                            <div style={{fontWeight: '600', fontSize: '14px'}}>{info.num} - {b.firstName}</div>
+                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{info.room?.short}</div>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                        <div style={{fontSize: '11px', color: isDone ? '#22c55e' : '#f59e0b', fontWeight: '600'}}>{isDone ? '✓ Checked In' : '⏳ Pending'}</div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    );
-                })}
+                    </div>
+                    
+                    {/* Check-outs Today */}
+                    <div style={{background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '16px', padding: '16px'}}>
+                        <h3 style={{fontSize: '16px', fontWeight: '600', color: '#a855f7', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                            <span>🟣</span> Departures Today <span style={{background: 'rgba(168,85,247,0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '12px'}}>{todayCheckOuts.length}</span>
+                        </h3>
+                        <div style={{maxHeight: '200px', overflowY: 'auto'}}>
+                            {todayCheckOuts.length === 0 ? (
+                                <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No departures today</div>
+                            ) : todayCheckOuts.map(b => {
+                                const info = getRoomInfo(b.roomId, b.unitId);
+                                const isDone = checkStatus[b.id] === "checkedout";
+                                return (
+                                    <div key={b.id} onClick={() => setShowInfoModal(b)} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: isDone ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', borderRadius: '10px', marginBottom: '8px', cursor: 'pointer', border: isDone ? '1px solid rgba(34,197,94,0.3)' : '1px solid transparent'}}>
+                                        <div>
+                                            <div style={{fontWeight: '600', fontSize: '14px'}}>{info.num} - {b.firstName}</div>
+                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{info.room?.short}</div>
+                                        </div>
+                                        <div style={{fontSize: '11px', color: isDone ? '#22c55e' : '#f59e0b', fontWeight: '600'}}>{isDone ? '✓ Checked Out' : '⏳ Pending'}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Room Grid Section */}
+                <div style={{background: 'rgba(255,255,255,0.02)', borderRadius: '20px', padding: '20px', border: '1px solid rgba(255,255,255,0.05)'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px'}}>
+                        <h3 style={{fontSize: '18px', fontWeight: '600'}}>🏨 Room Status</h3>
+                        <div className="view-selector" style={{marginBottom: '0'}}>
+                            <button className={`view-btn ${todayViewBy === 'floor' ? 'active' : ''}`} onClick={() => setTodayViewBy('floor')}>🏢 By Floor</button>
+                            <button className={`view-btn ${todayViewBy === 'category' ? 'active' : ''}`} onClick={() => setTodayViewBy('category')}>📁 By Category</button>
+                        </div>
+                    </div>
+                    
+                    {groups.map(group => {
+                        if (!group.rooms.length) return null;
+                        const groupOcc = group.rooms.filter(({room, unit}) => getBooking(room.id, unit.id, today)).length;
+                        return (
+                            <div key={group.key} className="today-group">
+                                <div style={{textAlign: 'center', marginBottom: '12px'}}>
+                                    <div className="floor-header" style={{display: 'inline-flex'}}>
+                                        <span style={{fontWeight: 600}}>{group.title}</span>
+                                        <span style={{color: '#22c55e', fontSize: 13}}>{group.rooms.length - groupOcc} free</span>
+                                        <span style={{color: '#ef4444', fontSize: 13}}>{groupOcc} occupied</span>
+                                    </div>
+                                </div>
+                                <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center'}}>
+                                    {group.rooms.map(({room, unit}) => {
+                                        const booking = getBooking(room.id, unit.id, today);
+                                        const isBooked = !!booking;
+                                        const isCheckIn = booking?.arrival === today;
+                                        const isCheckOut = bookings.find(b => b.roomId === room.id && b.unitId === unit.id && b.departure === today);
+                                        return (
+                                            <div key={`${room.id}-${unit.id}`} onClick={() => booking && setShowInfoModal(booking)} 
+                                                style={{
+                                                    background: isBooked ? 'linear-gradient(145deg, #ef4444, #dc2626)' : 'linear-gradient(145deg, #22c55e, #16a34a)', 
+                                                    borderRadius: '12px', 
+                                                    padding: '12px 16px', 
+                                                    cursor: isBooked ? 'pointer' : 'default', 
+                                                    textAlign: 'center',
+                                                    minWidth: '90px',
+                                                    position: 'relative',
+                                                    border: isCheckIn ? '2px solid #3b82f6' : isCheckOut ? '2px solid #a855f7' : '2px solid transparent'
+                                                }}>
+                                                {isCheckIn && <div style={{position: 'absolute', top: '-8px', right: '-8px', background: '#3b82f6', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px'}}>IN</div>}
+                                                {isCheckOut && <div style={{position: 'absolute', top: '-8px', left: '-8px', background: '#a855f7', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px'}}>OUT</div>}
+                                                <div style={{fontSize: '24px', fontWeight: '700'}}>{unit.n}</div>
+                                                <div style={{fontSize: '10px', fontWeight: '600', marginTop: '2px', opacity: 0.9}}>{isBooked ? 'OCCUPIED' : 'AVAILABLE'}</div>
+                                                {isBooked && <div style={{fontSize: '11px', marginTop: '4px', fontWeight: '500'}}>{booking.firstName}</div>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         );
     };
