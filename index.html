@@ -365,17 +365,19 @@ function App() {
             if (existing) {
                 // Unit already selected
                 if (existing.checkIn === date) {
-                    // Clicking same check-in date = deselect
+                    // Clicking check-in date = deselect this unit
                     return s.filter(x => x.unitKey !== unitKey);
                 } else if (date > existing.checkIn) {
-                    // Clicking later date = set as check-out
-                    return s.map(x => x.unitKey === unitKey ? {...x, checkOut: date} : x);
+                    // Clicking a later date = set checkout to day AFTER clicked date
+                    const nextDay = new Date(date + "T12:00:00");
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    return s.map(x => x.unitKey === unitKey ? {...x, checkOut: nextDay.toLocaleDateString('en-CA')} : x);
                 } else {
-                    // Clicking earlier date = set as new check-in
-                    return s.map(x => x.unitKey === unitKey ? {...x, checkIn: date, checkOut: existing.checkIn} : x);
+                    // Clicking earlier date = move check-in here, keep checkout
+                    return s.map(x => x.unitKey === unitKey ? {...x, checkIn: date} : x);
                 }
             } else {
-                // New unit - add with check-in = date, check-out = next day
+                // New unit - check-in = clicked date, check-out = next day
                 const nextDay = new Date(date + "T12:00:00");
                 nextDay.setDate(nextDay.getDate() + 1);
                 return [...s, {
@@ -525,16 +527,31 @@ function App() {
         const checkin = getCheckin(room.id, unit.id, date);
         const unitKey = `${room.id}-${unit.id}`;
         const unitSelection = selected.find(x => x.unitKey === unitKey);
-        const isSelected = unitSelection && date >= unitSelection.checkIn && date < unitSelection.checkOut;
         const isCheckInDate = unitSelection && date === unitSelection.checkIn;
-        const isCheckOutDate = unitSelection && date === unitSelection.checkOut;
+        const isInRange = unitSelection && date > unitSelection.checkIn && date < unitSelection.checkOut;
         const isBooked = booking || checkout || checkin;
         const cardClass = isBooked ? "card-booked" : "card-available";
         const displayBooking = checkin || booking || checkout;
-        const canSelect = !isBooked;
+        // Can click if: not booked OR (unit is selected and we're clicking to adjust checkout)
+        const canClick = !isBooked || (unitSelection && !isBooked);
+        
+        const handleClick = () => {
+            if (isBooked) return;
+            toggleSelect(room, unit, date);
+        };
+        
+        // Visual styles for selection
+        let selectionStyle = {};
+        if (isCheckInDate) {
+            selectionStyle = {boxShadow: '0 0 0 3px #22c55e', background: 'rgba(34,197,94,0.4)'};
+        } else if (isInRange) {
+            selectionStyle = {background: 'rgba(34,197,94,0.25)', borderColor: 'rgba(34,197,94,0.5)'};
+        }
+        
         return (
-            <div className={`status-card ${cardClass} ${isSelected ? 'card-selected' : ''} ${isCheckInDate ? 'card-checkin' : ''} ${isCheckOutDate ? 'card-checkout-marker' : ''}`} onClick={() => canSelect && toggleSelect(room, unit, date)} style={isSelected ? {boxShadow: '0 0 0 3px #fff, 0 0 0 6px #22c55e'} : {}}>
+            <div className={`status-card ${cardClass}`} onClick={handleClick} style={{...selectionStyle, cursor: isBooked ? 'not-allowed' : 'pointer'}}>
                 {isBooked && displayBooking && <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>}
+                {isCheckInDate && <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#22c55e', padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
                 <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
                 {showGuestName && isBooked && displayBooking && <div className="guest-name">{displayBooking.firstName}</div>}
             </div>
