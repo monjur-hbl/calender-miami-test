@@ -277,7 +277,23 @@ function App() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [searchCheckIn, setSearchCheckIn] = useState(getBDDate());
     const [searchCheckOut, setSearchCheckOut] = useState(getBDDate(1));
+    const checkoutRef = React.useRef(null);
     const [searchGroupBy, setSearchGroupBy] = useState("floor");
+    
+    const handleCheckInChange = (e) => {
+        const newCheckIn = e.target.value;
+        setSearchCheckIn(newCheckIn);
+        // Auto-set checkout to next day
+        const nextDay = new Date(newCheckIn + "T12:00:00");
+        nextDay.setDate(nextDay.getDate() + 1);
+        setSearchCheckOut(nextDay.toLocaleDateString('en-CA'));
+        // Auto-focus checkout picker after short delay
+        setTimeout(() => {
+            if (checkoutRef.current) {
+                checkoutRef.current.showPicker();
+            }
+        }, 100);
+    };
     const [todayViewBy, setTodayViewBy] = useState("floor");
     const [calendarViewBy, setCalendarViewBy] = useState("floor");
 
@@ -634,8 +650,8 @@ function App() {
                         <div style={{padding: '16px'}}>
                             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px', textAlign: 'center'}}>🔍 Search & Book</h2>
                             <div className="date-search-row">
-                                <div className="date-field"><label>Check-in</label><input type="date" value={searchCheckIn} onChange={e => setSearchCheckIn(e.target.value)} className="date-input"/></div>
-                                <div className="date-field"><label>Check-out</label><input type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input"/></div>
+                                <div className="date-field"><label>Check-in</label><input type="date" value={searchCheckIn} onChange={handleCheckInChange} className="date-input"/></div>
+                                <div className="date-field"><label>Check-out</label><input ref={checkoutRef} type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input"/></div>
                                 <div className="date-field"><label>Group By</label><select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector"><option value="floor">By Floor</option><option value="category">By Category</option></select></div>
                             </div>
                             <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#22c55e', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
