@@ -260,6 +260,28 @@ const saveRequests = (d) => localStorage.setItem(REQUEST_KEY, JSON.stringify(d))
 
 const REQUEST_TYPES = ["Room Service", "Water Bottle", "Room Clean", "Towel Request", "Bedsheet Change", "Toiletries", "Extra Pillow", "AC/Heating Issue", "Maintenance", "Other"];
 
+const HKRequestCard = ({req, requests, setRequests, saveRequests}) => {
+    const [staffInput, setStaffInput] = useState("");
+    return (
+        <div style={{background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '12px', padding: '14px'}}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px'}}>
+                <div>
+                    <div style={{fontSize: '20px', fontWeight: '700', color: '#f59e0b'}}>{req.roomNum}</div>
+                    <div style={{fontSize: '13px', fontWeight: '600'}}>{req.guestName}</div>
+                </div>
+                <div style={{background: '#f59e0b', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700'}}>{req.requestType}</div>
+            </div>
+            {req.note && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px'}}>{req.note}</div>}
+            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Requested: {new Date(req.timestamp).toLocaleString()}</div>
+            <input placeholder="Enter staff name" value={staffInput} onChange={e => setStaffInput(e.target.value)} style={{width: '100%', padding: '10px', marginBottom: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '13px'}}/>
+            <div style={{display: 'flex', gap: '8px'}}>
+                <button onClick={() => { const updated = requests.map(r => r.id === req.id ? {...r, done: true, doneAt: new Date().toISOString(), doneBy: staffInput || "Housekeeping"} : r); setRequests(updated); saveRequests(updated); }} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #22c55e, #16a34a)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✓ Done</button>
+                <button onClick={() => { const updated = requests.map(r => r.id === req.id ? {...r, done: true, denied: true, doneAt: new Date().toISOString(), doneBy: staffInput || "Housekeeping"} : r); setRequests(updated); saveRequests(updated); }} style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}>✕ Deny</button>
+            </div>
+        </div>
+    );
+};
+
 function App() {
     const [tab, setTab] = useState("today");
     const [calDays, setCalDays] = useState(7);
@@ -827,46 +849,9 @@ function App() {
                                             <div style={{color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px'}}>No pending requests</div>
                                         ) : (
                                             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px'}}>
-                                                {requests.filter(r => !r.done).map(req => {
-                                                    const [staffInput, setStaffInput] = useState("");
-                                                    return (
-                                                        <div key={req.id} style={{background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '12px', padding: '14px'}}>
-                                                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px'}}>
-                                                                <div>
-                                                                    <div style={{fontSize: '20px', fontWeight: '700', color: '#f59e0b'}}>{req.roomNum}</div>
-                                                                    <div style={{fontSize: '13px', fontWeight: '600'}}>{req.guestName}</div>
-                                                                </div>
-                                                                <div style={{background: '#f59e0b', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700'}}>{req.requestType}</div>
-                                                            </div>
-                                                            {req.note && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px'}}>{req.note}</div>}
-                                                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px'}}>Requested: {new Date(req.timestamp).toLocaleString()}</div>
-                                                            <input 
-                                                                placeholder="Enter staff name" 
-                                                                value={staffInput} 
-                                                                onChange={e => setStaffInput(e.target.value)}
-                                                                style={{width: '100%', padding: '10px', marginBottom: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '13px'}}
-                                                            />
-                                                            <div style={{display: 'flex', gap: '8px'}}>
-                                                                <button 
-                                                                    onClick={() => {
-                                                                        const updated = requests.map(r => r.id === req.id ? {...r, done: true, doneAt: new Date().toISOString(), doneBy: staffInput || "Housekeeping"} : r);
-                                                                        setRequests(updated);
-                                                                        saveRequests(updated);
-                                                                    }}
-                                                                    style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #22c55e, #16a34a)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}
-                                                                >✓ Mark Done</button>
-                                                                <button 
-                                                                    onClick={() => {
-                                                                        const updated = requests.map(r => r.id === req.id ? {...r, done: true, denied: true, doneAt: new Date().toISOString(), doneBy: staffInput || "Housekeeping"} : r);
-                                                                        setRequests(updated);
-                                                                        saveRequests(updated);
-                                                                    }}
-                                                                    style={{flex: 1, padding: '10px', background: 'linear-gradient(145deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '13px'}}
-                                                                >✕ Deny</button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                {requests.filter(r => !r.done).map(req => (
+                                                    <HKRequestCard key={req.id} req={req} requests={requests} setRequests={setRequests} saveRequests={saveRequests}/>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
