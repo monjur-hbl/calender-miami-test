@@ -359,21 +359,32 @@ function App() {
     const days = useMemo(() => getDays(calDays), [getDays, calDays]);
 
     const toggleSelect = (room, unit, date) => {
-        const key = `${room.id}-${unit.id}-${date}`;
+        const unitKey = `${room.id}-${unit.id}`;
         setSelected(s => {
-            const exists = s.find(x => x.key === key);
-            if (exists) {
-                return s.filter(x => x.key !== key);
-            } else {
-                // Auto-set check-in date when first room selected
-                if (s.length === 0) {
-                    setMultiBookCheckIn(date);
-                    // Auto-set checkout to next day
-                    const nextDay = new Date(date + "T12:00:00");
-                    nextDay.setDate(nextDay.getDate() + 1);
-                    setMultiBookCheckOut(nextDay.toLocaleDateString('en-CA'));
+            const existing = s.find(x => x.unitKey === unitKey);
+            if (existing) {
+                // Unit already selected
+                if (existing.checkIn === date) {
+                    // Clicking same check-in date = deselect
+                    return s.filter(x => x.unitKey !== unitKey);
+                } else if (date > existing.checkIn) {
+                    // Clicking later date = set as check-out
+                    return s.map(x => x.unitKey === unitKey ? {...x, checkOut: date} : x);
+                } else {
+                    // Clicking earlier date = set as new check-in
+                    return s.map(x => x.unitKey === unitKey ? {...x, checkIn: date, checkOut: existing.checkIn} : x);
                 }
-                return [...s, {key, room, unit, date}];
+            } else {
+                // New unit - add with check-in = date, check-out = next day
+                const nextDay = new Date(date + "T12:00:00");
+                nextDay.setDate(nextDay.getDate() + 1);
+                return [...s, {
+                    unitKey,
+                    room,
+                    unit,
+                    checkIn: date,
+                    checkOut: nextDay.toLocaleDateString('en-CA')
+                }];
             }
         });
     };
@@ -512,13 +523,17 @@ function App() {
         const booking = getBooking(room.id, unit.id, date);
         const checkout = getCheckout(room.id, unit.id, date);
         const checkin = getCheckin(room.id, unit.id, date);
-        const isSelected = selected.find(x => x.key === `${room.id}-${unit.id}-${date}`);
+        const unitKey = `${room.id}-${unit.id}`;
+        const unitSelection = selected.find(x => x.unitKey === unitKey);
+        const isSelected = unitSelection && date >= unitSelection.checkIn && date < unitSelection.checkOut;
+        const isCheckInDate = unitSelection && date === unitSelection.checkIn;
+        const isCheckOutDate = unitSelection && date === unitSelection.checkOut;
         const isBooked = booking || checkout || checkin;
         const cardClass = isBooked ? "card-booked" : "card-available";
         const displayBooking = checkin || booking || checkout;
         const canSelect = !isBooked;
         return (
-            <div className={`status-card ${cardClass} ${isSelected ? 'card-selected' : ''}`} onClick={() => canSelect && toggleSelect(room, unit, date)}>
+            <div className={`status-card ${cardClass} ${isSelected ? 'card-selected' : ''} ${isCheckInDate ? 'card-checkin' : ''} ${isCheckOutDate ? 'card-checkout-marker' : ''}`} onClick={() => canSelect && toggleSelect(room, unit, date)} style={isSelected ? {boxShadow: '0 0 0 3px #fff, 0 0 0 6px #22c55e'} : {}}>
                 {isBooked && displayBooking && <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>}
                 <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
                 {showGuestName && isBooked && displayBooking && <div className="guest-name">{displayBooking.firstName}</div>}
@@ -948,30 +963,36 @@ function App() {
             )}
 
             {selected.length > 0 && tab !== "searchbook" && (() => {
-                const nights = Math.max(1, Math.ceil((new Date(multiBookCheckOut) - new Date(multiBookCheckIn)) / (1000 * 60 * 60 * 24)));
+                const totalNights = selected.reduce((sum, s) => {
+                    const n = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
+                    return sum + n;
+                }, 0);
                 return (
-                    <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '600px', margin: '0 auto', padding: '16px', background: 'linear-gradient(145deg, #1e293b, #0f172a)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px'}}>
-                            <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
-                                {selected.map(s => <span key={s.key} style={{padding: '5px 10px', background: '#22c55e', borderRadius: '6px', fontSize: '12px', fontWeight: '600'}}>{s.unit.n}</span>)}
-                            </div>
-                            <button onClick={() => setSelected([])} style={{background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '6px', padding: '5px 10px', color: '#ef4444', fontSize: '11px', cursor: 'pointer'}}>✕ Clear</button>
+                    <div style={{position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 1000, maxWidth: '650px', margin: '0 auto', padding: '16px', background: 'linear-gradient(145deg, #1e293b, #0f172a)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
+                            <div style={{fontSize: '14px', fontWeight: '600'}}>📦 {selected.length} Room(s) Selected</div>
+                            <button onClick={() => setSelected([])} style={{background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '6px', padding: '5px 10px', color: '#ef4444', fontSize: '11px', cursor: 'pointer'}}>✕ Clear All</button>
                         </div>
-                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', marginBottom: '12px', alignItems: 'end'}}>
-                            <div>
-                                <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label>
-                                <input type="date" value={multiBookCheckIn} onChange={e => { setMultiBookCheckIn(e.target.value); const next = new Date(e.target.value + "T12:00:00"); next.setDate(next.getDate() + 1); setMultiBookCheckOut(next.toLocaleDateString('en-CA')); }} style={{width: '100%', padding: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '12px'}}/>
-                            </div>
-                            <div>
-                                <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label>
-                                <input type="date" value={multiBookCheckOut} min={multiBookCheckIn} onChange={e => setMultiBookCheckOut(e.target.value)} style={{width: '100%', padding: '8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '12px'}}/>
-                            </div>
-                            <div style={{textAlign: 'center', padding: '6px 14px', background: 'rgba(59,130,246,0.2)', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.4)'}}>
-                                <div style={{fontSize: '18px', fontWeight: '700', color: '#3b82f6'}}>{nights}</div>
-                                <div style={{fontSize: '9px', color: 'rgba(255,255,255,0.6)'}}>night{nights > 1 ? 's' : ''}</div>
-                            </div>
+                        <div style={{maxHeight: '150px', overflowY: 'auto', marginBottom: '12px'}}>
+                            {selected.map(s => {
+                                const nights = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
+                                return (
+                                    <div key={s.unitKey} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', marginBottom: '6px'}}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                            <span style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>{s.unit.n}</span>
+                                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{s.room.short}</span>
+                                        </div>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn.slice(5)} → {s.checkOut.slice(5)}</span>
+                                            <span style={{padding: '2px 8px', background: 'rgba(59,130,246,0.3)', borderRadius: '4px', fontSize: '10px', fontWeight: '600', color: '#3b82f6'}}>{nights}N</span>
+                                            <button onClick={() => setSelected(selected.filter(x => x.unitKey !== s.unitKey))} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '0 4px'}}>×</button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                        <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '14px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(34,197,94,0.4)'}}>➕ Book {selected.length} Room(s) × {nights} Night{nights > 1 ? 's' : ''}</button>
+                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px', textAlign: 'center'}}>💡 Click another date on same unit to change check-out</div>
+                        <button onClick={() => setShowBookModal(true)} style={{width: '100%', padding: '14px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(34,197,94,0.4)'}}>➕ Book {selected.length} Room(s) • {totalNights} Total Night{totalNights > 1 ? 's' : ''}</button>
                     </div>
                 );
             })()}
@@ -1052,7 +1073,10 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
 }
 
 function BookingModal({selected, checkIn, checkOut, onClose}) {
-    const [form, setForm] = useState({guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "", checkIn: checkIn || getBDDate(), checkOut: checkOut || getBDDate(1)});
+    const hasIndividualDates = selected.length > 0 && selected[0].checkIn;
+    const defaultCheckIn = hasIndividualDates ? selected[0].checkIn : (checkIn || getBDDate());
+    const defaultCheckOut = hasIndividualDates ? selected[0].checkOut : (checkOut || getBDDate(1));
+    const [form, setForm] = useState({guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "", checkIn: defaultCheckIn, checkOut: defaultCheckOut});
     const [status, setStatus] = useState("");
     const add = (f) => form[f].length < 3 && setForm({...form, [f]: [...form[f], f === 'guests' ? {name: ""} : ""]});
     const upd = (f, i, v) => { const a = [...form[f]]; f === 'guests' ? a[i].name = v : a[i] = v; setForm({...form, [f]: a}); };
@@ -1062,7 +1086,22 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
         try {
             const names = form.guests.map(g => g.name).filter(Boolean).join(", ");
             const phones = form.phones.filter(Boolean).join(", ");
-            const data = selected.map(s => ({propertyId: PROPERTY, roomId: s.room.id, unitId: s.unit.id, arrival: form.checkIn, departure: form.checkOut, numAdult: s.room.max, numChild: 0, status: "confirmed", firstName: names, email: form.email || "default", mobile: phones, custom4: form.nid || "default", custom5: form.dob || "default", referer: "miami_frontdesk"}));
+            const data = selected.map(s => ({
+                propertyId: PROPERTY, 
+                roomId: s.room.id, 
+                unitId: s.unit.id, 
+                arrival: s.checkIn || form.checkIn, 
+                departure: s.checkOut || form.checkOut, 
+                numAdult: s.room.max, 
+                numChild: 0, 
+                status: "confirmed", 
+                firstName: names, 
+                email: form.email || "default", 
+                mobile: phones, 
+                custom4: form.nid || "default", 
+                custom5: form.dob || "default", 
+                referer: "miami_frontdesk"
+            }));
             const res = await fetch(PROXY + "?endpoint=bookings&action=write", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
             const result = await res.json();
             if (result.success) { setStatus("success"); setTimeout(onClose, 1500); } else setStatus("error: " + (result.error || "Failed"));
@@ -1074,7 +1113,17 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
         <div className="modal-overlay">
             <div className="modal">
                 <div className="modal-header"><h3 style={{fontSize: '18px', fontWeight: '700'}}>➕ New Booking</h3><button className="modal-close" onClick={onClose}>×</button></div>
-                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px'}}>{selected.map(s => <span key={s.key} style={{padding: '8px 14px', background: '#22c55e', borderRadius: '8px', fontSize: '13px', fontWeight: '600'}}>{s.unit.n}</span>)}</div>
+                <div style={{marginBottom: '20px'}}>
+                    {selected.map(s => {
+                        const nights = s.checkIn ? Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24))) : null;
+                        return (
+                            <div key={s.unitKey || s.key} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', marginBottom: '6px'}}>
+                                <span style={{fontSize: '16px', fontWeight: '700', color: '#22c55e'}}>{s.unit.n}</span>
+                                {s.checkIn && <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)'}}>{s.checkIn} → {s.checkOut} ({nights}N)</span>}
+                            </div>
+                        );
+                    })}
+                </div>
                 <form onSubmit={submit}>
                     <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} style={inputStyle}/></div><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} style={inputStyle}/></div></div>
                     <div style={{marginBottom: '16px'}}><div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Guests *</label>{form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'none', border: 'none', color: '#22c55e', fontSize: '11px', cursor: 'pointer'}}>+ Add</button>}</div>{form.guests.map((g, i) => (<div key={i} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}><input type="text" required value={g.name} onChange={e => upd('guests', i, e.target.value)} placeholder={`Guest ${i+1}`} style={{...inputStyle, flex: 1}}/>{form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer'}}>×</button>}</div>))}</div>
