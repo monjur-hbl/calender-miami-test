@@ -187,6 +187,23 @@
             background: rgba(59, 130, 246, 0.3) !important; 
             transform: scale(1.02);
         }
+
+        /* Star dust trail animation */
+        .stardust {
+            position: fixed;
+            pointer-events: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff 0%, #10b981 50%, transparent 70%);
+            animation: stardust-fade 1s ease-out forwards;
+            z-index: 9999;
+            box-shadow: 0 0 6px #10b981, 0 0 10px #10b981;
+        }
+        @keyframes stardust-fade {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -443,6 +460,17 @@ function App() {
         );
     };
 
+    // Star dust effect
+    const createStardust = (e) => {
+        const dust = document.createElement('div');
+        dust.className = 'stardust';
+        dust.style.left = (e.clientX - 4) + 'px';
+        dust.style.top = (e.clientY - 4) + 'px';
+        dust.style.background = `radial-gradient(circle, #fff 0%, ${['#10b981', '#3b82f6', '#a855f7', '#f59e0b', '#ef4444'][Math.floor(Math.random() * 5)]} 50%, transparent 70%)`;
+        document.body.appendChild(dust);
+        setTimeout(() => dust.remove(), 1000);
+    };
+
     const CalendarView = ({groupBy}) => {
         const groups = groupBy === "floor" 
             ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || [], count: (roomsByFloor[f] || []).length}))
@@ -455,7 +483,7 @@ function App() {
                         {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
                     </div>
                 </div>
-                <div className="cal-container">
+                <div className="cal-container" onMouseMove={createStardust}>
                     {groups.map(group => {
                         if (!group.rooms.length) return null;
                         return (
