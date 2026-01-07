@@ -1565,6 +1565,7 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
     const defaultCheckOut = hasIndividualDates ? selected[0].checkOut : (checkOut || getBDDate(1));
     const [form, setForm] = useState({guests: [{name: ""}], phones: [""], email: "", nid: "", dob: "", checkIn: defaultCheckIn, checkOut: defaultCheckOut});
     const [status, setStatus] = useState("");
+    const [bookingType, setBookingType] = useState("confirmed");
     const add = (f) => form[f].length < 3 && setForm({...form, [f]: [...form[f], f === 'guests' ? {name: ""} : ""]});
     const upd = (f, i, v) => { const a = [...form[f]]; f === 'guests' ? a[i].name = v : a[i] = v; setForm({...form, [f]: a}); };
     const rem = (f, i) => form[f].length > 1 && setForm({...form, [f]: form[f].filter((_, idx) => idx !== i)});
@@ -1584,7 +1585,7 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
                 departure: s.checkOut || form.checkOut, 
                 numAdult: s.room.max || 2, 
                 numChild: 0, 
-                status: "confirmed", 
+                status: bookingType, 
                 firstName: names, 
                 email: form.email || "guest@miami.com", 
                 mobile: phones, 
@@ -1633,6 +1634,13 @@ function BookingModal({selected, checkIn, checkOut, onClose}) {
                             </div>
                         );
                     })}
+                </div>
+                <div style={{marginBottom: '16px'}}>
+                    <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>Booking Type</label>
+                    <div style={{display: 'flex', gap: '8px'}}>
+                        <button type="button" onClick={() => setBookingType("confirmed")} style={{flex: 1, padding: '10px 16px', background: bookingType === "confirmed" ? '#2D6A6A' : 'rgba(255,255,255,0.05)', border: bookingType === "confirmed" ? 'none' : '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: bookingType === "confirmed" ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'}}>✓ Confirmed</button>
+                        <button type="button" onClick={() => setBookingType("request")} style={{flex: 1, padding: '10px 16px', background: bookingType === "request" ? '#D4A853' : 'rgba(255,255,255,0.05)', border: bookingType === "request" ? 'none' : '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: bookingType === "request" ? '#1E293B' : 'rgba(255,255,255,0.7)', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'}}>⏳ Request</button>
+                    </div>
                 </div>
                 <form onSubmit={submit}>
                     {!hasIndividualDates && <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-in</label><input type="date" required value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} style={inputStyle}/></div><div><label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Check-out</label><input type="date" required min={form.checkIn} value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} style={inputStyle}/></div></div>}
