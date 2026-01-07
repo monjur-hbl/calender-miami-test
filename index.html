@@ -1489,6 +1489,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
 }
 
 function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInfoModal}) {
+    const [accView, setAccView] = useState("daily"); // "daily" or "bookings"
     const [accDateFrom, setAccDateFrom] = useState(getBDDate(-30));
     const [accDateTo, setAccDateTo] = useState(getBDDate(30));
     const [accFilter, setAccFilter] = useState("all");
@@ -1497,7 +1498,69 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
     const [quickPayAmount, setQuickPayAmount] = useState("");
     const [saving, setSaving] = useState(false);
     
-    // Filter bookings by date range
+    // Daily Cash Flow State
+    const today = getBDDate();
+    const [expenses, setExpenses] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem("miami_daily_expenses_v1") || "{}");
+        } catch { return {}; }
+    });
+    const [newExpenseDesc, setNewExpenseDesc] = useState("");
+    const [newExpenseAmt, setNewExpenseAmt] = useState("");
+    
+    // Save expenses to localStorage
+    const saveExpenses = (updated) => {
+        localStorage.setItem("miami_daily_expenses_v1", JSON.stringify(updated));
+        setExpenses(updated);
+    };
+    
+    const addExpense = () => {
+        if (!newExpenseDesc.trim() || !newExpenseAmt) return;
+        const todayExpenses = expenses[today] || [];
+        const newExp = {id: Date.now(), description: newExpenseDesc.trim(), amount: parseFloat(newExpenseAmt) || 0};
+        const updated = {...expenses, [today]: [...todayExpenses, newExp]};
+        saveExpenses(updated);
+        setNewExpenseDesc("");
+        setNewExpenseAmt("");
+    };
+    
+    const removeExpense = (id) => {
+        const todayExpenses = (expenses[today] || []).filter(e => e.id !== id);
+        const updated = {...expenses, [today]: todayExpenses};
+        saveExpenses(updated);
+    };
+    
+    // Daily Cash Flow Calculations
+    const todayExpensesList = expenses[today] || [];
+    const todayExpensesTotal = todayExpensesList.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    
+    // Bookings checking in/out today
+    const checkInsToday = bookings.filter(b => b.arrival === today);
+    const checkOutsToday = bookings.filter(b => b.departure === today);
+    
+    // Today's Received: deposits from check-ins and check-outs today
+    const todayReceived = [...checkInsToday, ...checkOutsToday].reduce((sum, b) => {
+        return sum + (parseFloat(b.deposit) || 0);
+    }, 0);
+    
+    // Expected Earnings: dues from guests checking out today
+    const expectedEarnings = checkOutsToday.reduce((sum, b) => {
+        const price = parseFloat(b.price) || 0;
+        const deposit = parseFloat(b.deposit) || 0;
+        return sum + Math.max(0, price - deposit);
+    }, 0);
+    
+    // Outstanding: total unpaid from all active/future bookings
+    const outstandingTotal = bookings.filter(b => b.departure >= today).reduce((sum, b) => {
+        const price = parseFloat(b.price) || 0;
+        const deposit = parseFloat(b.deposit) || 0;
+        return sum + Math.max(0, price - deposit);
+    }, 0);
+    
+    // Net Cash Flow Today
+    const netCashFlow = todayReceived - todayExpensesTotal;
+    
+    // Filter bookings by date range (for bookings view)
     const filteredBookings = bookings.filter(b => {
         if (b.arrival < accDateFrom || b.arrival > accDateTo) return false;
         const price = parseFloat(b.price) || 0;
@@ -1573,111 +1636,227 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
     
     const cardStyle = {background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px'};
     const inputStyle = {padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px'};
+    const tabBtnStyle = (active) => ({padding: '10px 20px', background: active ? 'rgba(45,106,106,0.25)' : 'transparent', border: active ? '1px solid rgba(45,106,106,0.4)' : '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: active ? '#2D6A6A' : 'rgba(255,255,255,0.6)', cursor: 'pointer', fontWeight: active ? '600' : '400', fontSize: '14px', transition: 'all 0.2s'});
     
     return (
         <div style={{padding: '16px'}}>
             <h2 style={{fontSize: '18px', fontWeight: '600', marginBottom: '16px'}}>💰 Accounting</h2>
             
-            {/* Summary Cards */}
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px'}}>
-                <div style={{background: 'linear-gradient(145deg, rgba(45,106,106,0.2), rgba(45,106,106,0.05))', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
-                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Total Revenue</div>
-                    <div style={{fontSize: '22px', fontWeight: '700', color: '#2D6A6A'}}>৳{totals.revenue.toLocaleString()}</div>
-                </div>
-                <div style={{background: 'linear-gradient(145deg, rgba(45,106,106,0.2), rgba(45,106,106,0.05))', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
-                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collected</div>
-                    <div style={{fontSize: '22px', fontWeight: '700', color: '#2D6A6A'}}>৳{totals.collected.toLocaleString()}</div>
-                </div>
-                <div style={{background: 'linear-gradient(145deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05))', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
-                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Outstanding</div>
-                    <div style={{fontSize: '22px', fontWeight: '700', color: '#ef4444'}}>৳{totals.due.toLocaleString()}</div>
-                </div>
-                <div style={{background: 'linear-gradient(145deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '1px solid rgba(212,168,83,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
-                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collection Rate</div>
-                    <div style={{fontSize: '22px', fontWeight: '700', color: '#D4A853'}}>{collectionRate}%</div>
-                </div>
+            {/* View Toggle */}
+            <div style={{display: 'flex', gap: '10px', marginBottom: '20px'}}>
+                <button onClick={() => setAccView("daily")} style={tabBtnStyle(accView === "daily")}>📊 Daily Cash Flow</button>
+                <button onClick={() => setAccView("bookings")} style={tabBtnStyle(accView === "bookings")}>📋 All Bookings</button>
             </div>
             
-            {/* Filters */}
-            <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'center'}}>
-                <input type="date" value={accDateFrom} onChange={e => setAccDateFrom(e.target.value)} style={inputStyle}/>
-                <span style={{color: 'rgba(255,255,255,0.4)'}}>→</span>
-                <input type="date" value={accDateTo} onChange={e => setAccDateTo(e.target.value)} style={inputStyle}/>
-                <select value={accFilter} onChange={e => setAccFilter(e.target.value)} style={inputStyle}>
-                    <option value="all">All ({allInRange.length})</option>
-                    <option value="paid">✅ Paid ({totals.fullyPaid})</option>
-                    <option value="partial">⚠️ Partial ({totals.partial})</option>
-                    <option value="unpaid">❌ Unpaid ({totals.unpaid})</option>
-                </select>
-                <input type="text" placeholder="🔍 Search guest..." value={accSearch} onChange={e => setAccSearch(e.target.value)} style={{...inputStyle, flex: 1, minWidth: '150px'}}/>
-            </div>
-            
-            {/* Status Summary */}
-            <div style={{display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap'}}>
-                <span style={{padding: '4px 10px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '20px', fontSize: '12px', color: '#2D6A6A'}}>✅ {totals.fullyPaid} Paid</span>
-                <span style={{padding: '4px 10px', background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '20px', fontSize: '12px', color: '#f97316'}}>⚠️ {totals.partial} Partial</span>
-                <span style={{padding: '4px 10px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '20px', fontSize: '12px', color: '#ef4444'}}>❌ {totals.unpaid} Unpaid</span>
-            </div>
-            
-            {/* Bookings List */}
-            <div style={{display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '55vh', overflowY: 'auto'}}>
-                {filteredBookings.map(b => {
-                    const {num, room} = getRoomInfo(b.roomId, b.unitId);
-                    const price = parseFloat(b.price) || 0;
-                    const deposit = parseFloat(b.deposit) || 0;
-                    const due = price - deposit;
-                    const status = due <= 0 ? 'paid' : deposit > 0 ? 'partial' : 'unpaid';
-                    const statusColor = status === 'paid' ? '#2D6A6A' : status === 'partial' ? '#f97316' : '#ef4444';
-                    const statusIcon = status === 'paid' ? '✅' : status === 'partial' ? '⚠️' : '❌';
+            {/* Daily Cash Flow View */}
+            {accView === "daily" && (
+                <div>
+                    <div style={{fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '16px'}}>📅 Today: {formatDate(today)}</div>
                     
-                    return (
-                        <div key={b.id} style={{...cardStyle, borderLeft: '4px solid ' + statusColor}}>
-                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px'}}>
-                                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                                    <div style={{width: '50px', height: '50px', background: 'linear-gradient(135deg, #2D6A6A, #245858)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700'}}>{num}</div>
-                                    <div>
-                                        <div style={{fontWeight: '600', fontSize: '15px'}}>{b.firstName} {b.lastName}</div>
-                                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.short}</div>
-                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px'}}>{formatDate(b.arrival)} → {formatDate(b.departure)}</div>
-                                    </div>
-                                </div>
-                                <div style={{textAlign: 'right'}}>
-                                    <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Total: ৳{price.toLocaleString()}</div>
-                                    <div style={{fontSize: '12px', color: '#2D6A6A'}}>Paid: ৳{deposit.toLocaleString()}</div>
-                                    <div style={{fontSize: '16px', fontWeight: '700', color: statusColor, marginTop: '2px'}}>{statusIcon} Due: ৳{due.toLocaleString()}</div>
-                                </div>
-                            </div>
-                            
-                            {/* Quick Pay Section */}
-                            {due > 0 && (
-                                <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
-                                    {quickPayId === b.id ? (
-                                        <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
-                                            <input type="number" placeholder="Amount" value={quickPayAmount} onChange={e => setQuickPayAmount(e.target.value)} style={{...inputStyle, width: '120px'}}/>
-                                            <button onClick={() => handleQuickPay(b.id, quickPayAmount, b.deposit)} disabled={saving || !quickPayAmount} style={{padding: '8px 16px', background: '#2D6A6A', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px', opacity: saving || !quickPayAmount ? 0.5 : 1}}>{saving ? '⏳ Saving...' : '💾 Save'}</button>
-                                            <button onClick={() => {setQuickPayId(null); setQuickPayAmount("");}} style={{padding: '8px 12px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', color: '#ef4444', cursor: 'pointer', fontSize: '13px'}}>✕</button>
+                    {/* Daily Summary Cards */}
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '24px'}}>
+                        <div style={{background: 'linear-gradient(145deg, rgba(45,106,106,0.25), rgba(45,106,106,0.08))', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px'}}>💵 Today's Received</div>
+                            <div style={{fontSize: '24px', fontWeight: '700', color: '#2D6A6A'}}>৳{todayReceived.toLocaleString()}</div>
+                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{checkInsToday.length + checkOutsToday.length} movements</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(145deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05))', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px'}}>📤 Today's Expenses</div>
+                            <div style={{fontSize: '24px', fontWeight: '700', color: '#ef4444'}}>৳{todayExpensesTotal.toLocaleString()}</div>
+                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{todayExpensesList.length} items</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(145deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '1px solid rgba(212,168,83,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px'}}>⏳ Expected Earnings</div>
+                            <div style={{fontSize: '24px', fontWeight: '700', color: '#D4A853'}}>৳{expectedEarnings.toLocaleString()}</div>
+                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{checkOutsToday.length} checkouts</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(145deg, rgba(249,115,22,0.2), rgba(249,115,22,0.05))', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px'}}>📊 Outstanding Total</div>
+                            <div style={{fontSize: '24px', fontWeight: '700', color: '#f97316'}}>৳{outstandingTotal.toLocaleString()}</div>
+                            <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>all pending</div>
+                        </div>
+                    </div>
+                    
+                    {/* Net Cash Flow */}
+                    <div style={{background: netCashFlow >= 0 ? 'linear-gradient(145deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05))' : 'linear-gradient(145deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05))', border: '1px solid ' + (netCashFlow >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'), borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'center'}}>
+                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px'}}>💰 Net Cash Flow Today</div>
+                        <div style={{fontSize: '28px', fontWeight: '700', color: netCashFlow >= 0 ? '#22c55e' : '#ef4444'}}>{netCashFlow >= 0 ? '+' : ''}৳{netCashFlow.toLocaleString()}</div>
+                    </div>
+                    
+                    {/* Add Expense Section */}
+                    <div style={{...cardStyle, marginBottom: '16px'}}>
+                        <div style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#ef4444'}}>📤 Add Daily Expense</div>
+                        <div style={{display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center'}}>
+                            <input type="text" placeholder="Description (e.g., Utilities, Supplies)" value={newExpenseDesc} onChange={e => setNewExpenseDesc(e.target.value)} style={{...inputStyle, flex: 2, minWidth: '180px'}}/>
+                            <input type="number" placeholder="Amount" value={newExpenseAmt} onChange={e => setNewExpenseAmt(e.target.value)} style={{...inputStyle, width: '120px'}}/>
+                            <button onClick={addExpense} disabled={!newExpenseDesc.trim() || !newExpenseAmt} style={{padding: '8px 16px', background: newExpenseDesc.trim() && newExpenseAmt ? '#ef4444' : 'rgba(239,68,68,0.3)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: newExpenseDesc.trim() && newExpenseAmt ? 'pointer' : 'not-allowed', fontSize: '13px'}}>➕ Add</button>
+                        </div>
+                    </div>
+                    
+                    {/* Today's Expenses List */}
+                    {todayExpensesList.length > 0 && (
+                        <div style={{...cardStyle}}>
+                            <div style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px'}}>📋 Today's Expenses</div>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto'}}>
+                                {todayExpensesList.map(exp => (
+                                    <div key={exp.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px'}}>
+                                        <div>
+                                            <div style={{fontWeight: '500', fontSize: '14px'}}>{exp.description}</div>
+                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{new Date(exp.id).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</div>
                                         </div>
-                                    ) : (
-                                        <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-                                            <button onClick={() => {setQuickPayId(b.id); setQuickPayAmount(due.toString());}} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px'}}>💵 Add Payment</button>
-                                            <button onClick={() => markFullyPaid(b)} disabled={saving} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px', opacity: saving ? 0.5 : 1}}>{saving ? '⏳' : '✅ Mark Paid'} (৳{due.toLocaleString()})</button>
-                                            <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ Details</button>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                            <span style={{fontWeight: '600', color: '#ef4444'}}>৳{(parseFloat(exp.amount) || 0).toLocaleString()}</span>
+                                            <button onClick={() => removeExpense(exp.id)} style={{padding: '4px 8px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '4px', color: '#ef4444', cursor: 'pointer', fontSize: '12px'}}>🗑️</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Guests Checking Out Today */}
+                    {checkOutsToday.length > 0 && (
+                        <div style={{...cardStyle, marginTop: '16px'}}>
+                            <div style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#D4A853'}}>🚪 Guests Checking Out Today ({checkOutsToday.length})</div>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto'}}>
+                                {checkOutsToday.map(b => {
+                                    const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                                    const price = parseFloat(b.price) || 0;
+                                    const deposit = parseFloat(b.deposit) || 0;
+                                    const due = price - deposit;
+                                    return (
+                                        <div key={b.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: due > 0 ? 'rgba(212,168,83,0.08)' : 'rgba(45,106,106,0.08)', border: '1px solid ' + (due > 0 ? 'rgba(212,168,83,0.3)' : 'rgba(45,106,106,0.3)'), borderRadius: '8px'}}>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                                <div style={{width: '36px', height: '36px', background: 'linear-gradient(135deg, #2D6A6A, #245858)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700'}}>{num}</div>
+                                                <div>
+                                                    <div style={{fontWeight: '500', fontSize: '14px'}}>{b.firstName} {b.lastName}</div>
+                                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{room?.short}</div>
+                                                </div>
+                                            </div>
+                                            <div style={{textAlign: 'right'}}>
+                                                {due > 0 ? (
+                                                    <div>
+                                                        <div style={{fontWeight: '600', color: '#D4A853'}}>Due: ৳{due.toLocaleString()}</div>
+                                                        <button onClick={() => markFullyPaid(b)} disabled={saving} style={{marginTop: '4px', padding: '4px 10px', background: 'rgba(45,106,106,0.2)', border: 'none', borderRadius: '4px', color: '#2D6A6A', cursor: 'pointer', fontSize: '11px'}}>✅ Mark Paid</button>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{color: '#22c55e', fontWeight: '600'}}>✅ Paid</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            {/* Bookings View */}
+            {accView === "bookings" && (
+                <div>
+                    {/* Summary Cards */}
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px'}}>
+                        <div style={{background: 'linear-gradient(145deg, rgba(45,106,106,0.2), rgba(45,106,106,0.05))', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Total Revenue</div>
+                            <div style={{fontSize: '22px', fontWeight: '700', color: '#2D6A6A'}}>৳{totals.revenue.toLocaleString()}</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(145deg, rgba(45,106,106,0.2), rgba(45,106,106,0.05))', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collected</div>
+                            <div style={{fontSize: '22px', fontWeight: '700', color: '#2D6A6A'}}>৳{totals.collected.toLocaleString()}</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(145deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05))', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Outstanding</div>
+                            <div style={{fontSize: '22px', fontWeight: '700', color: '#ef4444'}}>৳{totals.due.toLocaleString()}</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(145deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '1px solid rgba(212,168,83,0.3)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Collection Rate</div>
+                            <div style={{fontSize: '22px', fontWeight: '700', color: '#D4A853'}}>{collectionRate}%</div>
+                        </div>
+                    </div>
+                    
+                    {/* Filters */}
+                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'center'}}>
+                        <input type="date" value={accDateFrom} onChange={e => setAccDateFrom(e.target.value)} style={inputStyle}/>
+                        <span style={{color: 'rgba(255,255,255,0.4)'}}>→</span>
+                        <input type="date" value={accDateTo} onChange={e => setAccDateTo(e.target.value)} style={inputStyle}/>
+                        <select value={accFilter} onChange={e => setAccFilter(e.target.value)} style={inputStyle}>
+                            <option value="all">All ({allInRange.length})</option>
+                            <option value="paid">✅ Paid ({totals.fullyPaid})</option>
+                            <option value="partial">⚠️ Partial ({totals.partial})</option>
+                            <option value="unpaid">❌ Unpaid ({totals.unpaid})</option>
+                        </select>
+                        <input type="text" placeholder="🔍 Search guest..." value={accSearch} onChange={e => setAccSearch(e.target.value)} style={{...inputStyle, flex: 1, minWidth: '150px'}}/>
+                    </div>
+                    
+                    {/* Status Summary */}
+                    <div style={{display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap'}}>
+                        <span style={{padding: '4px 10px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '20px', fontSize: '12px', color: '#2D6A6A'}}>✅ {totals.fullyPaid} Paid</span>
+                        <span style={{padding: '4px 10px', background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '20px', fontSize: '12px', color: '#f97316'}}>⚠️ {totals.partial} Partial</span>
+                        <span style={{padding: '4px 10px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '20px', fontSize: '12px', color: '#ef4444'}}>❌ {totals.unpaid} Unpaid</span>
+                    </div>
+                    
+                    {/* Bookings List */}
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '55vh', overflowY: 'auto'}}>
+                        {filteredBookings.map(b => {
+                            const {num, room} = getRoomInfo(b.roomId, b.unitId);
+                            const price = parseFloat(b.price) || 0;
+                            const deposit = parseFloat(b.deposit) || 0;
+                            const due = price - deposit;
+                            const status = due <= 0 ? 'paid' : deposit > 0 ? 'partial' : 'unpaid';
+                            const statusColor = status === 'paid' ? '#2D6A6A' : status === 'partial' ? '#f97316' : '#ef4444';
+                            const statusIcon = status === 'paid' ? '✅' : status === 'partial' ? '⚠️' : '❌';
+                            
+                            return (
+                                <div key={b.id} style={{...cardStyle, borderLeft: '4px solid ' + statusColor}}>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px'}}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                            <div style={{width: '50px', height: '50px', background: 'linear-gradient(135deg, #2D6A6A, #245858)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700'}}>{num}</div>
+                                            <div>
+                                                <div style={{fontWeight: '600', fontSize: '15px'}}>{b.firstName} {b.lastName}</div>
+                                                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{room?.short}</div>
+                                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px'}}>{formatDate(b.arrival)} → {formatDate(b.departure)}</div>
+                                            </div>
+                                        </div>
+                                        <div style={{textAlign: 'right'}}>
+                                            <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Total: ৳{price.toLocaleString()}</div>
+                                            <div style={{fontSize: '12px', color: '#2D6A6A'}}>Paid: ৳{deposit.toLocaleString()}</div>
+                                            <div style={{fontSize: '16px', fontWeight: '700', color: statusColor, marginTop: '2px'}}>{statusIcon} Due: ৳{due.toLocaleString()}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Quick Pay Section */}
+                                    {due > 0 && (
+                                        <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
+                                            {quickPayId === b.id ? (
+                                                <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
+                                                    <input type="number" placeholder="Amount" value={quickPayAmount} onChange={e => setQuickPayAmount(e.target.value)} style={{...inputStyle, width: '120px'}}/>
+                                                    <button onClick={() => handleQuickPay(b.id, quickPayAmount, b.deposit)} disabled={saving || !quickPayAmount} style={{padding: '8px 16px', background: '#2D6A6A', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px', opacity: saving || !quickPayAmount ? 0.5 : 1}}>{saving ? '⏳ Saving...' : '💾 Save'}</button>
+                                                    <button onClick={() => {setQuickPayId(null); setQuickPayAmount("");}} style={{padding: '8px 12px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', color: '#ef4444', cursor: 'pointer', fontSize: '13px'}}>✕</button>
+                                                </div>
+                                            ) : (
+                                                <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                                                    <button onClick={() => {setQuickPayId(b.id); setQuickPayAmount(due.toString());}} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px'}}>💵 Add Payment</button>
+                                                    <button onClick={() => markFullyPaid(b)} disabled={saving} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px', opacity: saving ? 0.5 : 1}}>{saving ? '⏳' : '✅ Mark Paid'} (৳{due.toLocaleString()})</button>
+                                                    <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ Details</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {due <= 0 && (
+                                        <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
+                                            <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ View Details</button>
                                         </div>
                                     )}
                                 </div>
-                            )}
-                            {due <= 0 && (
-                                <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
-                                    <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ View Details</button>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-                {filteredBookings.length === 0 && (
-                    <div style={{textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)'}}>No bookings found for this period</div>
-                )}
-            </div>
+                            );
+                        })}
+                        {filteredBookings.length === 0 && (
+                            <div style={{textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)'}}>No bookings found for this period</div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
