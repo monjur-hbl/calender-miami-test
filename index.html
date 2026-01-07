@@ -75,8 +75,9 @@
         .card-booked { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); }
         .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #2D6A6A !important; }
         
-        .status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .guest-name { font-size: 11px; font-weight: 500; margin-top: 4px; opacity: 0.9; }
+        .status-text { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; margin-top: auto; padding-top: 4px; }
+        .guest-name { font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+        .referer-text { font-size: 8px; font-weight: 500; opacity: 0.7; margin-top: 2px; text-transform: capitalize; }
         
         .info-btn { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: none; color: white; z-index: 5; }
         .info-btn:hover { background: rgba(255,255,255,0.4); }
@@ -667,8 +668,15 @@ function App() {
             <div className={`status-card ${cardClass}`} onClick={handleClick} style={{...selectionStyle, cursor: isBooked ? 'not-allowed' : 'pointer'}}>
                 {isBooked && displayBooking && <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>}
                 {isCheckInDate && <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#2D6A6A', padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
-                <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
-                {showGuestName && isBooked && displayBooking && <div className="guest-name">{displayBooking.firstName}</div>}
+                {showGuestName && isBooked && displayBooking ? (
+                    <>
+                        <div className="guest-name">{displayBooking.firstName}</div>
+                        <div className="referer-text">{displayBooking.referer || 'Direct'}</div>
+                        <div className="status-text">{displayBooking.status === 'request' ? 'REQUEST' : 'BOOKED'}</div>
+                    </>
+                ) : (
+                    <div className="status-text">{isBooked ? "BOOKED" : "Available"}</div>
+                )}
             </div>
         );
     };
