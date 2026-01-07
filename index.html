@@ -70,9 +70,10 @@
         .status-card { flex: 1; min-width: 100px; min-height: 80px; border-radius: 10px; padding: 10px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .status-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
         
-        /* Only 2 colors: Green (available) and Red (booked) */
+        /* 3 colors: Green (available), Red (confirmed), Yellow/Orange (request) */
         .card-available { background: linear-gradient(145deg, #2D6A6A 0%, #245858 100%); }
         .card-booked { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); }
+        .card-request { background: linear-gradient(145deg, #f59e0b 0%, #d97706 100%); }
         .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #2D6A6A !important; }
         
         .status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -645,8 +646,9 @@ function App() {
         const isCheckInDate = unitSelection && date === unitSelection.checkIn;
         const isInRange = unitSelection && date > unitSelection.checkIn && date < unitSelection.checkOut;
         const isBooked = booking || checkout || checkin;
-        const cardClass = isBooked ? "card-booked" : "card-available";
         const displayBooking = checkin || booking || checkout;
+        const isRequest = displayBooking && displayBooking.status === "request";
+        const cardClass = isBooked ? (isRequest ? "card-request" : "card-booked") : "card-available";
         // Can click if: not booked OR (unit is selected and we're clicking to adjust checkout)
         const canClick = !isBooked || (unitSelection && !isBooked);
         
@@ -667,7 +669,7 @@ function App() {
             <div className={`status-card ${cardClass}`} onClick={handleClick} style={{...selectionStyle, cursor: isBooked ? 'not-allowed' : 'pointer'}}>
                 {isBooked && displayBooking && <button className="info-btn" onClick={(e) => {e.stopPropagation(); setShowInfoModal(displayBooking);}}>ℹ</button>}
                 {isCheckInDate && <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#2D6A6A', padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: '700'}}>IN</div>}
-                <div className="status-text">{isBooked ? "Booked" : "Available"}</div>
+                <div className="status-text">{isBooked ? (isRequest ? "Request" : "Booked") : "Available"}</div>
                 {showGuestName && isBooked && displayBooking && <div className="guest-name">{displayBooking.firstName}</div>}
             </div>
         );
