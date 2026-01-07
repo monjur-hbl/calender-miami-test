@@ -1495,7 +1495,73 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
     const [accSearch, setAccSearch] = useState("");
     const [quickPayId, setQuickPayId] = useState(null);
     const [quickPayAmount, setQuickPayAmount] = useState("");
+    const [quickPayMethod, setQuickPayMethod] = useState("cash");
     const [saving, setSaving] = useState(false);
+    const [showMethodBreakdown, setShowMethodBreakdown] = useState(false);
+    
+    // Payment history from localStorage
+    const [paymentHistory, setPaymentHistory] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem("miami_payment_history_v1") || "{}");
+        } catch { return {}; }
+    });
+    
+    // Payment methods configuration
+    const PAYMENT_METHODS = [
+        {id: "cash", label: "💵 Cash", color: "#22c55e"},
+        {id: "bkash", label: "📱 bKash/MFS", color: "#E2136E"},
+        {id: "bank", label: "🏦 Bank Transfer", color: "#3b82f6"},
+        {id: "card", label: "💳 Card", color: "#8b5cf6"}
+    ];
+    
+    const getMethodInfo = (methodId) => PAYMENT_METHODS.find(m => m.id === methodId) || PAYMENT_METHODS[0];
+    
+    // Save payment to history
+    const savePaymentToHistory = (bookingId, amount, method) => {
+        const today = getBDDate();
+        const bookingKey = `booking_${bookingId}`;
+        const existingPayments = paymentHistory[bookingKey] || [];
+        const newPayment = {
+            id: Date.now(),
+            amount: parseFloat(amount) || 0,
+            method: method,
+            date: today
+        };
+        const updated = {
+            ...paymentHistory,
+            [bookingKey]: [...existingPayments, newPayment]
+        };
+        localStorage.setItem("miami_payment_history_v1", JSON.stringify(updated));
+        setPaymentHistory(updated);
+        return newPayment;
+    };
+    
+    // Get all payments within date range
+    const getPaymentsInRange = () => {
+        const allPayments = [];
+        Object.entries(paymentHistory).forEach(([bookingKey, payments]) => {
+            payments.forEach(p => {
+                if (p.date >= accDateFrom && p.date <= accDateTo) {
+                    allPayments.push({...p, bookingKey});
+                }
+            });
+        });
+        return allPayments;
+    };
+    
+    // Calculate breakdown by payment method
+    const paymentsInRange = getPaymentsInRange();
+    const methodBreakdown = PAYMENT_METHODS.map(method => {
+        const methodPayments = paymentsInRange.filter(p => p.method === method.id);
+        const total = methodPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+        return {...method, total, count: methodPayments.length};
+    });
+    const totalRecorded = methodBreakdown.reduce((sum, m) => sum + m.total, 0);
+    
+    // Get payment history for a specific booking
+    const getBookingPayments = (bookingId) => {
+        return paymentHistory[`booking_${bookingId}`] || [];
+    };
     
     // Filter bookings by date range
     const filteredBookings = bookings.filter(b => {
@@ -1526,11 +1592,11 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
     
     const collectionRate = totals.revenue > 0 ? Math.round((totals.collected / totals.revenue) * 100) : 0;
     
-    const handleQuickPay = async (bookingId, amount, currentDeposit) => {
+    const handleQuickPay = async (bookingId, amount, currentDeposit, method) => {
         setSaving(true);
         try {
             const newDeposit = parseFloat(currentDeposit || 0) + parseFloat(amount || 0);
-            console.log("Updating deposit:", {bookingId, newDeposit});
+            console.log("Updating deposit:", {bookingId, newDeposit, method});
             const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -1540,9 +1606,12 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
             console.log("Update result:", result);
             const success = Array.isArray(result) ? result[0]?.success : result.success;
             if (success) {
+                // Save payment to history with method
+                savePaymentToHistory(bookingId, amount, method);
                 fetchData();
                 setQuickPayId(null);
                 setQuickPayAmount("");
+                setQuickPayMethod("cash");
             } else {
                 alert("Failed to update: " + JSON.stringify(result));
             }
@@ -1553,7 +1622,7 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
         setSaving(false);
     };
     
-    const markFullyPaid = async (b) => {
+    const markFullyPaid = async (b, method) => {
         const due = (parseFloat(b.price) || 0) - (parseFloat(b.deposit) || 0);
         if (due <= 0) return;
         setSaving(true);
@@ -1565,7 +1634,11 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
             });
             const result = await res.json();
             const success = Array.isArray(result) ? result[0]?.success : result.success;
-            if (success) fetchData();
+            if (success) {
+                // Save payment to history with method
+                savePaymentToHistory(b.id, due, method || "cash");
+                fetchData();
+            }
             else alert("Failed: " + JSON.stringify(result));
         } catch(e) { alert("Error: " + e.message); }
         setSaving(false);
@@ -1598,6 +1671,35 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
                 </div>
             </div>
             
+            {/* Payment Method Breakdown Toggle */}
+            <div style={{marginBottom: '16px'}}>
+                <button onClick={() => setShowMethodBreakdown(!showMethodBreakdown)} style={{padding: '10px 16px', background: showMethodBreakdown ? 'rgba(45,106,106,0.2)' : 'rgba(255,255,255,0.05)', border: '1px solid ' + (showMethodBreakdown ? 'rgba(45,106,106,0.4)' : 'rgba(255,255,255,0.1)'), borderRadius: '8px', color: showMethodBreakdown ? '#2D6A6A' : 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '13px', fontWeight: '500'}}>
+                    {showMethodBreakdown ? '📊 Hide' : '📊 Show'} Payment Channels
+                </button>
+            </div>
+            
+            {/* Payment Method Breakdown */}
+            {showMethodBreakdown && (
+                <div style={{...cardStyle, marginBottom: '20px'}}>
+                    <div style={{fontSize: '14px', fontWeight: '600', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <span>💳 Payment Channels Breakdown</span>
+                        <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>Recorded: ৳{totalRecorded.toLocaleString()}</span>
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px'}}>
+                        {methodBreakdown.map(method => (
+                            <div key={method.id} style={{background: `linear-gradient(145deg, ${method.color}20, ${method.color}08)`, border: `1px solid ${method.color}40`, borderRadius: '10px', padding: '14px', textAlign: 'center'}}>
+                                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '6px'}}>{method.label}</div>
+                                <div style={{fontSize: '20px', fontWeight: '700', color: method.color}}>৳{method.total.toLocaleString()}</div>
+                                <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>{method.count} payments</div>
+                            </div>
+                        ))}
+                    </div>
+                    {paymentsInRange.length === 0 && (
+                        <div style={{textAlign: 'center', padding: '16px', color: 'rgba(255,255,255,0.4)', fontSize: '13px'}}>No payment records in this date range. Records are created when you add payments.</div>
+                    )}
+                </div>
+            )}
+            
             {/* Filters */}
             <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'center'}}>
                 <input type="date" value={accDateFrom} onChange={e => setAccDateFrom(e.target.value)} style={inputStyle}/>
@@ -1629,6 +1731,7 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
                     const status = due <= 0 ? 'paid' : deposit > 0 ? 'partial' : 'unpaid';
                     const statusColor = status === 'paid' ? '#2D6A6A' : status === 'partial' ? '#f97316' : '#ef4444';
                     const statusIcon = status === 'paid' ? '✅' : status === 'partial' ? '⚠️' : '❌';
+                    const bookingPayments = getBookingPayments(b.id);
                     
                     return (
                         <div key={b.id} style={{...cardStyle, borderLeft: '4px solid ' + statusColor}}>
@@ -1648,19 +1751,46 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
                                 </div>
                             </div>
                             
+                            {/* Payment History for this booking */}
+                            {bookingPayments.length > 0 && (
+                                <div style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)'}}>
+                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px'}}>Payment History:</div>
+                                    <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
+                                        {bookingPayments.map(p => {
+                                            const method = getMethodInfo(p.method);
+                                            return (
+                                                <span key={p.id} style={{padding: '3px 8px', background: `${method.color}15`, border: `1px solid ${method.color}30`, borderRadius: '4px', fontSize: '11px', color: method.color}}>
+                                                    ৳{(p.amount || 0).toLocaleString()} • {method.label.split(' ')[1] || method.label}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                            
                             {/* Quick Pay Section */}
                             {due > 0 && (
                                 <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)'}}>
                                     {quickPayId === b.id ? (
                                         <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
-                                            <input type="number" placeholder="Amount" value={quickPayAmount} onChange={e => setQuickPayAmount(e.target.value)} style={{...inputStyle, width: '120px'}}/>
-                                            <button onClick={() => handleQuickPay(b.id, quickPayAmount, b.deposit)} disabled={saving || !quickPayAmount} style={{padding: '8px 16px', background: '#2D6A6A', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px', opacity: saving || !quickPayAmount ? 0.5 : 1}}>{saving ? '⏳ Saving...' : '💾 Save'}</button>
-                                            <button onClick={() => {setQuickPayId(null); setQuickPayAmount("");}} style={{padding: '8px 12px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', color: '#ef4444', cursor: 'pointer', fontSize: '13px'}}>✕</button>
+                                            <input type="number" placeholder="Amount" value={quickPayAmount} onChange={e => setQuickPayAmount(e.target.value)} style={{...inputStyle, width: '100px'}}/>
+                                            <select value={quickPayMethod} onChange={e => setQuickPayMethod(e.target.value)} style={{...inputStyle, minWidth: '130px'}}>
+                                                {PAYMENT_METHODS.map(m => (
+                                                    <option key={m.id} value={m.id}>{m.label}</option>
+                                                ))}
+                                            </select>
+                                            <button onClick={() => handleQuickPay(b.id, quickPayAmount, b.deposit, quickPayMethod)} disabled={saving || !quickPayAmount} style={{padding: '8px 16px', background: '#2D6A6A', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px', opacity: saving || !quickPayAmount ? 0.5 : 1}}>{saving ? '⏳ Saving...' : '💾 Save'}</button>
+                                            <button onClick={() => {setQuickPayId(null); setQuickPayAmount(""); setQuickPayMethod("cash");}} style={{padding: '8px 12px', background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', color: '#ef4444', cursor: 'pointer', fontSize: '13px'}}>✕</button>
                                         </div>
                                     ) : (
                                         <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-                                            <button onClick={() => {setQuickPayId(b.id); setQuickPayAmount(due.toString());}} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px'}}>💵 Add Payment</button>
-                                            <button onClick={() => markFullyPaid(b)} disabled={saving} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px', opacity: saving ? 0.5 : 1}}>{saving ? '⏳' : '✅ Mark Paid'} (৳{due.toLocaleString()})</button>
+                                            <button onClick={() => {setQuickPayId(b.id); setQuickPayAmount(due.toString()); setQuickPayMethod("cash");}} style={{padding: '6px 12px', background: 'rgba(45,106,106,0.15)', border: '1px solid rgba(45,106,106,0.3)', borderRadius: '6px', color: '#2D6A6A', cursor: 'pointer', fontSize: '12px'}}>💵 Add Payment</button>
+                                            {/* Quick payment method buttons */}
+                                            <div style={{display: 'flex', gap: '4px'}}>
+                                                {PAYMENT_METHODS.map(m => (
+                                                    <button key={m.id} onClick={() => markFullyPaid(b, m.id)} disabled={saving} title={`Pay ৳${due.toLocaleString()} via ${m.label}`} style={{padding: '6px 10px', background: `${m.color}15`, border: `1px solid ${m.color}30`, borderRadius: '6px', color: m.color, cursor: 'pointer', fontSize: '11px', opacity: saving ? 0.5 : 1}}>{m.label.split(' ')[0]}</button>
+                                                ))}
+                                            </div>
                                             <button onClick={() => setShowInfoModal(b)} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '12px'}}>ℹ️ Details</button>
                                         </div>
                                     )}
