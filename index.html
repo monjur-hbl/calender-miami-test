@@ -2492,78 +2492,152 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
             
             {/* Top Bar - Always Sticky */}
             <div className="top-bar">
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
+                {isMobile ? (
+                    /* MOBILE TOP BAR */
                     <div>
-                        <h1 style={{fontSize: '18px', fontWeight: '700'}}>🏨 Miami Beach Resort</h1>
-                        <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)}, {time} <span style={{background: 'rgba(45,106,106,0.3)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontSize: '10px', color: '#2D6A6A'}}>Local Time</span></p>
-                    </div>
-                    <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                        {/* Real-time connection status indicator */}
-                        <div style={{
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '6px', 
-                            padding: '6px 12px', 
-                            background: realtimeStatus === 'connected' ? 'rgba(34,197,94,0.15)' : realtimeStatus === 'connecting' ? 'rgba(234,179,8,0.15)' : 'rgba(239,68,68,0.15)',
-                            border: `1px solid ${realtimeStatus === 'connected' ? 'rgba(34,197,94,0.4)' : realtimeStatus === 'connecting' ? 'rgba(234,179,8,0.4)' : 'rgba(239,68,68,0.4)'}`,
-                            borderRadius: '8px'
-                        }}>
-                            <span style={{
-                                width: '8px', 
-                                height: '8px', 
-                                borderRadius: '50%', 
-                                background: realtimeStatus === 'connected' ? '#22c55e' : realtimeStatus === 'connecting' ? '#eab308' : '#ef4444',
-                                animation: realtimeStatus === 'connected' ? 'pulse-dot 2s ease-in-out infinite' : 'none'
-                            }}></span>
-                            <span style={{fontSize: '10px', fontWeight: '600', color: realtimeStatus === 'connected' ? '#22c55e' : realtimeStatus === 'connecting' ? '#eab308' : '#ef4444'}}>
-                                {realtimeStatus === 'connected' ? '● LIVE' : realtimeStatus === 'connecting' ? '○ Connecting...' : '✕ Offline'}
-                            </span>
-                        </div>
-                        <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
-                        <button onClick={fetchData} disabled={loading} style={{padding: '14px 20px', background: '#2D6A6A', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>{loading ? '⏳' : '🔄'}</button>
-                        {isEditing && <span style={{fontSize: '11px', color: '#f59e0b', marginLeft: '8px'}}>⏸️ Auto-refresh paused</span>}
-                        {currentUser ? (
-                            <div style={{display:'flex',alignItems:'center',gap:'8px',marginLeft:'8px'}}>
-                                <span style={{fontSize:'11px',color:'rgba(255,255,255,0.6)',background:'rgba(45,106,106,0.3)',padding:'4px 8px',borderRadius:'6px'}}>👤 {currentUser.name}</span>
-                                <button onClick={handleLogout} style={{padding:'8px 12px',background:'rgba(239,68,68,0.2)',border:'1px solid rgba(239,68,68,0.4)',borderRadius:'8px',color:'#ef4444',fontSize:'12px',cursor:'pointer',fontWeight:'600'}}>Logout</button>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                            <div>
+                                <h1 style={{fontSize: '16px', fontWeight: '700', marginBottom: '4px'}}>🏨 Miami Beach Resort</h1>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                    {/* LIVE indicator */}
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                        padding: '3px 8px', borderRadius: '6px',
+                                        background: realtimeStatus === 'connected' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                                        border: `1px solid ${realtimeStatus === 'connected' ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`
+                                    }}>
+                                        <span style={{width: '6px', height: '6px', borderRadius: '50%', background: realtimeStatus === 'connected' ? '#22c55e' : '#ef4444', animation: realtimeStatus === 'connected' ? 'pulse-dot 2s ease-in-out infinite' : 'none'}}></span>
+                                        <span style={{fontSize: '9px', fontWeight: '600', color: realtimeStatus === 'connected' ? '#22c55e' : '#ef4444'}}>{realtimeStatus === 'connected' ? 'LIVE' : 'OFFLINE'}</span>
+                                    </div>
+                                    {/* Refresh Grid text button */}
+                                    <button onClick={fetchData} disabled={loading} style={{background: 'none', border: 'none', color: '#2D6A6A', fontSize: '10px', fontWeight: '600', cursor: 'pointer', padding: '0', textDecoration: 'underline'}}>
+                                        {loading ? '⏳ Refreshing...' : '🔄 Refresh Grid'}
+                                    </button>
+                                </div>
                             </div>
-                        ) : (
-                            <button onClick={function(){setShowLoginModal(true);}} style={{padding:'8px 16px',background:'linear-gradient(135deg,#2D6A6A,#245858)',border:'none',borderRadius:'8px',color:'#fff',fontWeight:'600',cursor:'pointer',fontSize:'12px',marginLeft:'8px'}}>🔐 Login</button>
-                        )}
+                            {/* Search icon on top right */}
+                            <button onClick={() => setShowSearchModal(true)} style={{background: 'rgba(45,106,106,0.2)', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '8px', padding: '8px 10px', color: '#fff', cursor: 'pointer'}}>
+                                🔍
+                            </button>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    /* DESKTOP TOP BAR */
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
+                        <div>
+                            <h1 style={{fontSize: '18px', fontWeight: '700'}}>🏨 Miami Beach Resort</h1>
+                            <p style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px'}}>Cox's Bazar • {formatDate(today)}, {time} <span style={{background: 'rgba(45,106,106,0.3)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontSize: '10px', color: '#2D6A6A'}}>Local Time</span></p>
+                        </div>
+                        <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                            {/* Real-time connection status indicator */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 12px',
+                                background: realtimeStatus === 'connected' ? 'rgba(34,197,94,0.15)' : realtimeStatus === 'connecting' ? 'rgba(234,179,8,0.15)' : 'rgba(239,68,68,0.15)',
+                                border: `1px solid ${realtimeStatus === 'connected' ? 'rgba(34,197,94,0.4)' : realtimeStatus === 'connecting' ? 'rgba(234,179,8,0.4)' : 'rgba(239,68,68,0.4)'}`,
+                                borderRadius: '8px'
+                            }}>
+                                <span style={{
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    background: realtimeStatus === 'connected' ? '#22c55e' : realtimeStatus === 'connecting' ? '#eab308' : '#ef4444',
+                                    animation: realtimeStatus === 'connected' ? 'pulse-dot 2s ease-in-out infinite' : 'none'
+                                }}></span>
+                                <span style={{fontSize: '10px', fontWeight: '600', color: realtimeStatus === 'connected' ? '#22c55e' : realtimeStatus === 'connecting' ? '#eab308' : '#ef4444'}}>
+                                    {realtimeStatus === 'connected' ? '● LIVE' : realtimeStatus === 'connecting' ? '○ Connecting...' : '✕ Offline'}
+                                </span>
+                            </div>
+                            <button className="search-btn" onClick={() => setShowSearchModal(true)}>🔍 Search Guest</button>
+                            <button onClick={fetchData} disabled={loading} style={{padding: '14px 20px', background: '#2D6A6A', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '14px'}}>{loading ? '⏳' : '🔄'}</button>
+                            {isEditing && <span style={{fontSize: '11px', color: '#f59e0b', marginLeft: '8px'}}>⏸️ Auto-refresh paused</span>}
+                            {currentUser ? (
+                                <div style={{display:'flex',alignItems:'center',gap:'8px',marginLeft:'8px'}}>
+                                    <span style={{fontSize:'11px',color:'rgba(255,255,255,0.6)',background:'rgba(45,106,106,0.3)',padding:'4px 8px',borderRadius:'6px'}}>👤 {currentUser.name}</span>
+                                    <button onClick={handleLogout} style={{padding:'8px 12px',background:'rgba(239,68,68,0.2)',border:'1px solid rgba(239,68,68,0.4)',borderRadius:'8px',color:'#ef4444',fontSize:'12px',cursor:'pointer',fontWeight:'600'}}>Logout</button>
+                                </div>
+                            ) : (
+                                <button onClick={function(){setShowLoginModal(true);}} style={{padding:'8px 16px',background:'linear-gradient(135deg,#2D6A6A,#245858)',border:'none',borderRadius:'8px',color:'#fff',fontWeight:'600',cursor:'pointer',fontSize:'12px',marginLeft:'8px'}}>🔐 Login</button>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
             
             {/* Tabs - Sticky */}
             <div className="tabs-wrapper">
-                {/* When rooms selected: Show only booking bar, hide tabs */}
+                {/* When rooms selected:
+                    - MOBILE: Hide tabs completely (booking bar appears at bottom)
+                    - DESKTOP: Show booking bar in place of tabs */}
                 {selected.length > 0 ? (
-                    <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', padding: '4px 0'}}>
-                        <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
-                            {selected.map(s => {
-                                const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
-                                return (
-                                    <div key={s.unitKey} className="compact-room-chip">
-                                        <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
-                                        <span className="room-num">{s.unit.n}</span>
-                                        <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
-                                    </div>
-                                );
-                            })}
-                            <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
-                            <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
+                    isMobile ? (
+                        /* MOBILE: Hide tabs when selecting - show small indicator instead */
+                        <div style={{display: 'flex', justifyContent: 'center', padding: '8px 0'}}>
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                padding: '8px 16px', background: 'rgba(45,106,106,0.2)',
+                                borderRadius: '8px', border: '1px solid rgba(45,106,106,0.4)'
+                            }}>
+                                <span style={{fontSize: '12px', fontWeight: '600', color: '#2D6A6A'}}>
+                                    {selected.length} room{selected.length > 1 ? 's' : ''} selected
+                                </span>
+                                <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>
+                                    • Book at bottom ↓
+                                </span>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        /* DESKTOP: Booking bar in place of tabs */
+                        <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', padding: '4px 0'}}>
+                            <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
+                                {selected.map(s => {
+                                    const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+                                    return (
+                                        <div key={s.unitKey} className="compact-room-chip">
+                                            <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
+                                            <span className="room-num">{s.unit.n}</span>
+                                            <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
+                                        </div>
+                                    );
+                                })}
+                                <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
+                                <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
+                            </div>
+                        </div>
+                    )
                 ) : (
                     <>
                         {isMobile ? (
-                            <select value={effectiveTab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '0', width: '100%', maxWidth: '300px'}}>
-                                {tabs.filter(t => canAccessTab(t.id)).map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                            </select>
+                            /* MOBILE TABS: Only Today, By Floor, Search & Book - centered buttons */
+                            <div style={{display: 'flex', justifyContent: 'center', gap: '8px', padding: '4px 0'}}>
+                                <button
+                                    onClick={() => setTab('today')}
+                                    className={`nav-btn ${effectiveTab === 'today' ? 'active' : ''}`}
+                                    style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
+                                >
+                                    Today
+                                </button>
+                                <button
+                                    onClick={() => { setTab('calendar'); setCalDays(7); setCalendarViewBy('floor'); }}
+                                    className={`nav-btn ${effectiveTab === 'calendar' ? 'active' : ''}`}
+                                    style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
+                                >
+                                    By Floor
+                                </button>
+                                <button
+                                    onClick={() => setTab('searchbook')}
+                                    className={`nav-btn ${effectiveTab === 'searchbook' ? 'active' : ''}`}
+                                    style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
+                                >
+                                    Search & Book
+                                </button>
+                            </div>
                         ) : (
                             <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
                         )}
-                        {effectiveTab === "calendar" && (
+                        {effectiveTab === "calendar" && !isMobile && (
                             <>
                                 <div className="date-controls" style={{marginTop: '10px'}}>
                                     <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}><input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/></div>
@@ -8418,7 +8492,64 @@ function WhatsAppTab() {
                 )}
             </div>
             
-            {/* Status Bar */}
+            {/* MOBILE BOTTOM BOOKING BAR - Fixed at bottom when rooms selected */}
+            {isMobile && selected.length > 0 && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.98) 100%)',
+                    borderTop: '2px solid #2D6A6A',
+                    padding: '12px 16px',
+                    zIndex: 1000,
+                    boxShadow: '0 -4px 20px rgba(0,0,0,0.5)'
+                }}>
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap'}}>
+                        {/* Selected rooms chips */}
+                        <div style={{display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flex: 1}}>
+                            {selected.slice(0, 3).map(s => {
+                                const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+                                return (
+                                    <div key={s.unitKey} style={{
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                        padding: '4px 8px', background: 'rgba(45,106,106,0.3)',
+                                        border: '1px solid rgba(45,106,106,0.5)', borderRadius: '6px',
+                                        position: 'relative'
+                                    }}>
+                                        <button onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}
+                                            style={{position: 'absolute', top: '-6px', right: '-6px', width: '16px', height: '16px',
+                                                borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff',
+                                                fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>×</button>
+                                        <span style={{fontWeight: '700', fontSize: '14px'}}>{s.unit.n}</span>
+                                        <span style={{fontSize: '9px', color: 'rgba(255,255,255,0.6)'}}>{formatDate(s.checkIn)}</span>
+                                    </div>
+                                );
+                            })}
+                            {selected.length > 3 && (
+                                <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>+{selected.length - 3} more</span>
+                            )}
+                        </div>
+                        {/* Action buttons */}
+                        <div style={{display: 'flex', gap: '8px'}}>
+                            <button onClick={() => setSelected([])} style={{
+                                padding: '10px 14px', background: 'rgba(255,255,255,0.1)',
+                                border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px',
+                                color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+                            }}>Clear</button>
+                            <button onClick={() => setShowBookModal(true)} style={{
+                                padding: '10px 20px', background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                                border: 'none', borderRadius: '8px', color: '#fff',
+                                fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+                                boxShadow: '0 2px 10px rgba(220,38,38,0.4)'
+                            }}>Book {selected.length}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Status Bar - hide on mobile when booking bar is shown */}
+            {!(isMobile && selected.length > 0) && (
             <div style={{padding: '12px 20px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                     <div style={{width: '10px', height: '10px', borderRadius: '50%', background: waStatus === 'connected' ? '#25D366' : waStatus === 'qr_ready' ? '#f59e0b' : waStatus === 'error' ? '#ef4444' : '#6b7280'}}></div>
@@ -8430,6 +8561,7 @@ function WhatsAppTab() {
                     whatsapp-service
                 </div>
             </div>
+            )}
         </div>
     );
 }
