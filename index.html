@@ -1969,7 +1969,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                         <h3 style={{fontSize: '18px', fontWeight: '600'}}>📅 Today - {formatDate(today)}</h3>
                         <div className="view-selector" style={{marginBottom: '0'}}>
                             <button className={`view-btn ${todayViewBy === 'overview' ? 'active' : ''}`} onClick={() => setTodayViewBy('overview')}>📊 Overview</button>
-                            <button className={`view-btn ${todayViewBy === 'floor' ? 'active' : ''}`} onClick={() => setTodayViewBy('floor')}>🏢 By Floor</button>
+                            <button className={`view-btn ${todayViewBy === 'floor' ? 'active' : ''}`} onClick={() => setTodayViewBy('floor')}>🏢 Floor Calendar</button>
                             <button className={`view-btn ${todayViewBy === 'category' ? 'active' : ''}`} onClick={() => setTodayViewBy('category')}>📁 By Category</button>
                             <button className={`view-btn ${todayViewBy === 'group' ? 'active' : ''}`} onClick={() => setTodayViewBy('group')}>👥 By Group</button>
                         </div>
@@ -2803,7 +2803,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                     {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
                                 </div>
                                 <div className="view-selector" style={{marginTop: '10px', marginBottom: '0'}}>
-                                    <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 By Floor</button>
+                                    <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 Floor Calendar</button>
                                     <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
                                 </div>
                             </>
@@ -2829,7 +2829,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                             <div className="date-search-row">
                                 <div className="date-field" onClick={() => checkinRef.current?.showPicker()}><label>Check-in</label><input ref={checkinRef} type="date" value={searchCheckIn} onChange={handleCheckInChange} className="date-input" style={{cursor: 'pointer'}}/></div>
                                 <div className="date-field" onClick={() => checkoutRef.current?.showPicker()}><label>Check-out</label><input ref={checkoutRef} type="date" value={searchCheckOut} min={searchCheckIn} onChange={e => setSearchCheckOut(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/></div>
-                                <div className="date-field"><label>Group By</label><select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector"><option value="floor">By Floor</option><option value="category">By Category</option></select></div>
+                                <div className="date-field"><label>Group By</label><select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector"><option value="floor">Floor Calendar</option><option value="category">By Category</option></select></div>
                             </div>
                             <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#2D6A6A', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
                             {(() => {
@@ -3766,7 +3766,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                                     <p style={{color: 'rgba(255,255,255,0.6)', fontSize: '13px'}}>{formatDate(hkDate)}</p>
                                                 </div>
                                                 <div style={{display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '3px'}}>
-                                                    <button onClick={() => setHkRoomBoardView('floor')} style={{padding: '8px 16px', borderRadius: '6px', border: 'none', background: hkRoomBoardView === 'floor' ? '#2D6A6A' : 'transparent', color: hkRoomBoardView === 'floor' ? '#fff' : 'rgba(255,255,255,0.6)', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>By Floor</button>
+                                                    <button onClick={() => setHkRoomBoardView('floor')} style={{padding: '8px 16px', borderRadius: '6px', border: 'none', background: hkRoomBoardView === 'floor' ? '#2D6A6A' : 'transparent', color: hkRoomBoardView === 'floor' ? '#fff' : 'rgba(255,255,255,0.6)', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>Floor Calendar</button>
                                                     <button onClick={() => setHkRoomBoardView('category')} style={{padding: '8px 16px', borderRadius: '6px', border: 'none', background: hkRoomBoardView === 'category' ? '#2D6A6A' : 'transparent', color: hkRoomBoardView === 'category' ? '#fff' : 'rgba(255,255,255,0.6)', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>By Category</button>
                                                 </div>
                                             </div>
