@@ -127,6 +127,35 @@
         .modal { background: linear-gradient(180deg, #1a2636 0%, #162030 100%); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 28px; cursor: pointer; }
+
+        /* Landscape Modal - Desktop Two-Column Layout */
+        .modal-landscape { max-width: 900px; max-height: 85vh; padding: 24px; }
+        .modal-landscape .modal-content-wrapper { display: flex; flex-direction: column; height: 100%; }
+        .modal-landscape .modal-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .modal-landscape .modal-col { display: flex; flex-direction: column; }
+        .modal-landscape .modal-col-scroll { max-height: calc(85vh - 180px); overflow-y: auto; padding-right: 8px; }
+        .modal-landscape .modal-col-scroll::-webkit-scrollbar { width: 6px; }
+        .modal-landscape .modal-col-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+        .modal-landscape .modal-col-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        /* Sticky Book Button - Desktop (top) */
+        .sticky-book-btn-desktop { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, #1a2636 100%, transparent 100%); padding: 12px 0 16px 0; margin: -12px 0 16px 0; }
+
+        /* Sticky Book Button - Mobile (bottom) */
+        .sticky-book-btn-mobile { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; background: linear-gradient(180deg, transparent 0%, #1a2636 20%, #162030 100%); z-index: 1001; display: none; }
+
+        /* Responsive: Portrait for mobile */
+        @media (max-width: 768px) {
+            .modal-landscape { max-width: 100%; max-height: 100vh; border-radius: 0; padding: 16px; padding-bottom: 90px; }
+            .modal-landscape .modal-two-col { grid-template-columns: 1fr; gap: 16px; }
+            .modal-landscape .modal-col-scroll { max-height: none; overflow-y: visible; padding-right: 0; }
+            .sticky-book-btn-desktop { display: none; }
+            .sticky-book-btn-mobile { display: block; }
+        }
+
+        @media (min-width: 769px) {
+            .sticky-book-btn-mobile { display: none; }
+        }
         
         .info-section { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
         .info-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 4px; }
@@ -250,7 +279,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v28.2-add-payment</div>
+<div class="version-tag">v28.3-landscape-modal</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -7767,33 +7796,50 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
     const inputStyle = {width: '100%', padding: '14px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '10px', color: '#fff', fontSize: '15px', fontWeight: '500'};
     const nights = getTotalNights();
     
+    // Room numbers for sticky button display
+    const roomNumbers = roomSelections.map(s => s.unit.n).join(', ');
+
     return (
         <div className="modal-overlay">
-            <div className="modal" style={{maxHeight: '90vh', overflowY: 'auto', background: '#1a2332'}}>
-                <div className="modal-header" style={{borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '20px'}}><h3 style={{fontSize: '20px', fontWeight: '700'}}>➕ New Booking</h3><button className="modal-close" onClick={onClose}>×</button></div>
-                
-                {/* Selected Rooms with Editable Dates */}
-                <div style={{marginBottom: '24px'}}>
-                    {roomSelections.map((s, index) => {
-                        const n = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
-                        return (
-                            <div key={s.unitKey || s.key || index} style={{padding: '14px 16px', background: 'linear-gradient(135deg, rgba(45,106,106,0.25) 0%, rgba(45,106,106,0.1) 100%)', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '10px', marginBottom: '8px'}}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
-                                    <span style={{fontSize: '18px', fontWeight: '700', color: '#4ade80'}}>{s.unit.n}</span>
-                                    <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{s.room?.short || ''}</span>
-                                </div>
-                                <div style={{display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap'}}>
-                                    <input type="date" value={s.checkIn} onChange={e => updateRoomDate(index, 'checkIn', e.target.value)} style={{padding: '8px 10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '13px', flex: '1', minWidth: '120px'}}/>
-                                    <span style={{color: 'rgba(255,255,255,0.5)'}}>→</span>
-                                    <input type="date" value={s.checkOut} min={s.checkIn} onChange={e => updateRoomDate(index, 'checkOut', e.target.value)} style={{padding: '8px 10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '13px', flex: '1', minWidth: '120px'}}/>
-                                    <span style={{color: '#D4A853', fontWeight: '700', fontSize: '13px', background: 'rgba(212,168,83,0.2)', padding: '6px 10px', borderRadius: '6px'}}>({n}N)</span>
-                                </div>
-                            </div>
-                        );
-                    })}
+            <div className="modal modal-landscape" style={{background: '#1a2332'}}>
+                <div className="modal-header" style={{borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px'}}>
+                    <h3 style={{fontSize: '20px', fontWeight: '700'}}>➕ New Booking</h3>
+                    <button className="modal-close" onClick={onClose}>×</button>
                 </div>
-                
-                <form onSubmit={submit}>
+
+                {/* Desktop Sticky Book Button - Top */}
+                <div className="sticky-book-btn-desktop">
+                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '14px 20px', background: status === "loading" ? 'rgba(45,106,106,0.5)' : 'linear-gradient(135deg, #2D6A6A 0%, #245858 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 4px 15px rgba(45,106,106,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                        {status === "loading" ? "⏳ Creating..." : (<>✓ Create Booking <span style={{background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '14px'}}>Room {roomNumbers}</span> <span style={{background: 'rgba(212,168,83,0.3)', padding: '4px 8px', borderRadius: '6px', fontSize: '13px', color: '#D4A853'}}>{nights}N</span></>)}
+                    </button>
+                </div>
+
+                <form id="booking-form" onSubmit={submit}>
+                    <div className="modal-two-col">
+                        {/* LEFT COLUMN - Room & Guest Info */}
+                        <div className="modal-col">
+                            <div className="modal-col-scroll">
+                                {/* Selected Rooms with Editable Dates */}
+                                <div style={{marginBottom: '20px'}}>
+                                    <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '10px', fontWeight: '600'}}>🛏️ Selected Rooms</label>
+                                    {roomSelections.map((s, index) => {
+                                        const n = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
+                                        return (
+                                            <div key={s.unitKey || s.key || index} style={{padding: '12px 14px', background: 'linear-gradient(135deg, rgba(45,106,106,0.25) 0%, rgba(45,106,106,0.1) 100%)', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '10px', marginBottom: '8px'}}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+                                                    <span style={{fontSize: '16px', fontWeight: '700', color: '#4ade80'}}>{s.unit.n}</span>
+                                                    <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{s.room?.short || ''}</span>
+                                                </div>
+                                                <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
+                                                    <input type="date" value={s.checkIn} onChange={e => updateRoomDate(index, 'checkIn', e.target.value)} style={{padding: '6px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px', flex: '1', minWidth: '100px'}}/>
+                                                    <span style={{color: 'rgba(255,255,255,0.4)', fontSize: '12px'}}>→</span>
+                                                    <input type="date" value={s.checkOut} min={s.checkIn} onChange={e => updateRoomDate(index, 'checkOut', e.target.value)} style={{padding: '6px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px', flex: '1', minWidth: '100px'}}/>
+                                                    <span style={{color: '#D4A853', fontWeight: '700', fontSize: '12px', background: 'rgba(212,168,83,0.2)', padding: '4px 8px', borderRadius: '6px'}}>({n}N)</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                     
                     {/* Guest Info */}
                     <div style={{marginBottom: '18px'}}>
@@ -7831,16 +7877,16 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     </div>
                     
                     {/* Booking Status */}
-                    <div style={{marginBottom: '16px', padding: '16px', background: 'rgba(30,41,59,0.8)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)'}}>
+                    <div style={{marginBottom: '16px', padding: '14px', background: 'rgba(30,41,59,0.8)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)'}}>
                         <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '10px', fontWeight: '600'}}>📋 Booking Status</label>
-                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
-                            <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} style={{...inputStyle, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '14px', fontWeight: '500'}}>
+                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                            <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} style={{...inputStyle, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '13px', fontWeight: '500', padding: '10px'}}>
                                 <option value="confirmed">✅ Confirmed</option>
                                 <option value="request">⏳ Request</option>
                                 <option value="new">🆕 New</option>
                                 <option value="black">⬛ Black (Block)</option>
                             </select>
-                            <select value={form.subStatus} onChange={e => setForm({...form, subStatus: e.target.value})} style={{...inputStyle, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '14px'}}>
+                            <select value={form.subStatus} onChange={e => setForm({...form, subStatus: e.target.value})} style={{...inputStyle, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '13px', padding: '10px'}}>
                                 <option value="none">Sub-status...</option>
                                 <option value="walkin">🚶 Walk-in</option>
                                 <option value="actionRequired">⚠️ Action Required</option>
@@ -7848,12 +7894,18 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                             </select>
                         </div>
                         {form.status === 'black' && (
-                            <div style={{marginTop: '10px', padding: '10px', background: 'rgba(55,65,81,0.5)', borderRadius: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '8px'}}>
-                                <span>ℹ️</span> Black booking blocks dates without a guest (maintenance, owner use, etc.)
+                            <div style={{marginTop: '8px', padding: '8px', background: 'rgba(55,65,81,0.5)', borderRadius: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                <span>ℹ️</span> Black booking blocks dates without a guest
                             </div>
                         )}
                     </div>
-                    
+                            </div>{/* End modal-col-scroll */}
+                        </div>{/* End LEFT COLUMN */}
+
+                        {/* RIGHT COLUMN - Payment & Summary */}
+                        <div className="modal-col">
+                            <div className="modal-col-scroll">
+
                     {/* Payment Section - Redesigned */}
                     <div style={{marginBottom: '16px', padding: '16px', background: 'linear-gradient(135deg, rgba(45,106,106,0.15) 0%, rgba(45,106,106,0.05) 100%)', borderRadius: '12px', border: '1px solid rgba(45,106,106,0.25)'}}>
                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px'}}>
@@ -8119,21 +8171,24 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     </div>
                     
                     {/* Notes */}
-                    <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} placeholder="📝 Notes (optional)" rows={2} style={{...inputStyle, marginBottom: '20px', resize: 'none', minHeight: '60px'}}/>
-                    
+                    <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} placeholder="📝 Notes (optional)" rows={2} style={{...inputStyle, marginBottom: '16px', resize: 'none', minHeight: '50px'}}/>
+
                     {/* Error Display */}
                     {status.startsWith("error") && (
-                        <div style={{padding: '12px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', borderRadius: '10px', color: '#fca5a5', fontSize: '13px', marginBottom: '16px', fontWeight: '500'}}>{status}</div>
+                        <div style={{padding: '10px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', borderRadius: '8px', color: '#fca5a5', fontSize: '12px', marginBottom: '12px', fontWeight: '500'}}>{status}</div>
                     )}
-                    
-                    {/* Action Buttons */}
-                    <div style={{display: 'flex', gap: '14px', marginTop: '8px'}}>
-                        <button type="button" onClick={onClose} style={{flex: 1, padding: '16px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: '600', cursor: 'pointer', fontSize: '15px'}}>Cancel</button>
-                        <button type="submit" disabled={status === "loading"} style={{flex: 2, padding: '16px', background: status === "loading" ? 'rgba(45,106,106,0.5)' : 'linear-gradient(135deg, #2D6A6A 0%, #245858 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', opacity: status === "loading" ? 0.7 : 1, fontSize: '16px', boxShadow: status === "loading" ? 'none' : '0 4px 15px rgba(45,106,106,0.4)', pointerEvents: status === "loading" ? 'none' : 'auto'}}>
-                            {status === "loading" ? "⏳ Creating Booking..." : `✓ Create Booking ${nights > 0 ? `(${nights}N)` : ''}`}
-                        </button>
-                    </div>
+
+                            </div>{/* End modal-col-scroll */}
+                        </div>{/* End RIGHT COLUMN */}
+                    </div>{/* End modal-two-col */}
                 </form>
+
+                {/* Mobile Sticky Book Button - Bottom */}
+                <div className="sticky-book-btn-mobile">
+                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '16px 20px', background: status === "loading" ? 'rgba(45,106,106,0.5)' : 'linear-gradient(135deg, #2D6A6A 0%, #245858 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 -4px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                        {status === "loading" ? "⏳ Creating..." : (<>✓ Create Booking <span style={{background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '6px', fontSize: '14px'}}>Room {roomNumbers}</span> <span style={{background: 'rgba(212,168,83,0.3)', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', color: '#D4A853'}}>{nights}N</span></>)}
+                    </button>
+                </div>
             </div>
         </div>
     );
