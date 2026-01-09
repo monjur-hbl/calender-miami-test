@@ -103,6 +103,8 @@
         .card-selected-preview { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 0 0 3px rgba(239,68,68,0.5); animation: pulse-selection 1.5s ease-in-out infinite; }
         .card-ready-checkin { background: linear-gradient(145deg, #10b981 0%, #059669 100%); box-shadow: 0 0 0 2px rgba(16,185,129,0.4); animation: pulse-ready 2s ease-in-out infinite; }
         .card-checkout-pending { background: linear-gradient(145deg, #D4A853 0%, #B8942F 100%); box-shadow: 0 0 0 2px rgba(212,168,83,0.4); }
+        .card-overbooking { background: linear-gradient(145deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 0 0 3px rgba(220,38,38,0.6); animation: pulse-overbooking 0.8s ease-in-out infinite; }
+        @keyframes pulse-overbooking { 0%, 100% { box-shadow: 0 0 0 3px rgba(220,38,38,0.6); } 50% { box-shadow: 0 0 0 5px rgba(220,38,38,0.4), 0 0 15px rgba(220,38,38,0.3); } }
         @keyframes pulse-selection { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
         @keyframes pulse-ready { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
         @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
@@ -1010,6 +1012,19 @@ function App() {
     }, [fetchData]);
 
 const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure && b.status !== "cancelled" && b.status !== "inquiry"); if (roomId === 583468 && unitId === 8 && !window._logged507) { console.log("🔍 Room 507 check:", {d, result: result ? result.firstName : "NOT FOUND", allBookings: bookings.filter(b => b.roomId === 583468 && b.unitId === 8)}); window._logged507 = true; } return result; }, [bookings]);
+
+    // Get ALL bookings for a room/date (to detect overbookings)
+    const getAllBookingsForCell = useCallback((roomId, unitId, d) => {
+        return bookings.filter(b =>
+            b.roomId === roomId &&
+            b.unitId === unitId &&
+            d >= b.arrival &&
+            d < b.departure &&
+            b.status !== "cancelled" &&
+            b.status !== "inquiry"
+        );
+    }, [bookings]);
+
     const getCheckout = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.departure === d), [bookings]);
     const getCheckin = useCallback((roomId, unitId, d) => bookings.find(b => b.roomId === roomId && b.unitId === unitId && b.arrival === d), [bookings]);
 
@@ -1393,54 +1408,65 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         const isCheckOutDate = unitSelection && date === unitSelection.checkOut;
         const isInRange = unitSelection && date > unitSelection.checkIn && date < unitSelection.checkOut;
         const isSelected = isCheckInDate || isInRange || isCheckOutDate;
-        
+
+        // Get ALL bookings for this cell to detect overbookings
+        const allBookingsForCell = getAllBookingsForCell(room.id, unit.id, date);
+        const isOverbooked = allBookingsForCell.length > 1;
+
         // Check for booking staying tonight (arrival <= date < departure)
         const booking = getBooking(room.id, unit.id, date);
-        
+
         // Only confirmed bookings block the room - cancelled/inquiry don't
         const isCancelled = booking && booking.status === "cancelled";
         const isInquiry = booking && booking.status === "inquiry";
-        
+
         // Simple logic: is room ACTUALLY booked tonight?
         const isBooked = booking && !isCancelled && !isInquiry;
-        
-        // Get CSS class - SIMPLE: only BOOKED or Available
+
+        // Get CSS class - BOOKED, OVERBOOKING, or Available
         const getFinalCardClass = () => {
             if (isSelected) return "card-selected-preview";
+            if (isOverbooked) return "card-overbooking"; // Overbooking takes priority - needs immediate attention!
             if (isBooked) return "card-booked";
             return "card-available"; // Everything else (no booking, cancelled, inquiry) = available
         };
-        
-        // Get status text - SIMPLE: only BOOKED or Available
+
+        // Get status text
         const getFinalStatusText = () => {
             if (isSelected) {
                 if (isCheckInDate) return "CHECK-IN";
                 if (isCheckOutDate) return "CHECK-OUT";
                 if (isInRange) return "NIGHT STAY";
             }
+            if (isOverbooked) return `OVERBOOK (${allBookingsForCell.length})`;
             if (isBooked) return "BOOKED";
             return "Available"; // Everything else = available
         };
-        
+
         const finalCardClass = getFinalCardClass();
         const finalStatusText = getFinalStatusText();
-        
-        // Click handler: booked = show info, available = select for booking
+
+        // Click handler: booked/overbooked = show info, available = select for booking
         const handleClick = () => {
-            if (isBooked) {
-                setShowInfoModal(booking);
+            if (isBooked || isOverbooked) {
+                // For overbookings, show the first booking - user can see count in the card
+                setShowInfoModal(booking || allBookingsForCell[0]);
             } else {
                 toggleSelect(room, unit, date);
             }
         };
-        
+
         // Should we show a guest name? Only for actual bookings
-        const shouldShowName = isBooked && booking;
-        
+        const shouldShowName = (isBooked || isOverbooked) && booking;
+        // For overbooking, show multiple names
+        const displayName = isOverbooked
+            ? allBookingsForCell.map(b => b.firstName).join(" / ")
+            : (booking ? booking.firstName : "");
+
         return (
             <div className={`status-card ${finalCardClass}`} onClick={handleClick} style={{cursor: 'pointer'}}>
                 <div className="status-text">{finalStatusText}</div>
-                {showGuestName && shouldShowName && <div className="guest-name">{booking.firstName}</div>}
+                {showGuestName && shouldShowName && <div className="guest-name">{displayName}</div>}
             </div>
         );
     };
@@ -7224,7 +7250,13 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
     };
     
     const submit = async (e) => {
-        e.preventDefault(); setStatus("loading");
+        e.preventDefault();
+        // Prevent double submission - return if already loading
+        if (status === "loading") {
+            console.log("⚠️ Submission already in progress, ignoring duplicate click");
+            return;
+        }
+        setStatus("loading");
         try {
             const names = form.guests.map(g => g.name).filter(Boolean).join(", ");
             const phones = form.phones.filter(Boolean).join(", ");
@@ -7851,8 +7883,8 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     {/* Action Buttons */}
                     <div style={{display: 'flex', gap: '14px', marginTop: '8px'}}>
                         <button type="button" onClick={onClose} style={{flex: 1, padding: '16px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: '600', cursor: 'pointer', fontSize: '15px'}}>Cancel</button>
-                        <button type="submit" disabled={status === "loading"} style={{flex: 2, padding: '16px', background: 'linear-gradient(135deg, #2D6A6A 0%, #245858 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: status === "loading" ? 0.6 : 1, fontSize: '16px', boxShadow: '0 4px 15px rgba(45,106,106,0.4)'}}>
-                            {status === "loading" ? "⏳ Creating..." : `✓ Create Booking ${nights > 0 ? `(${nights}N)` : ''}`}
+                        <button type="submit" disabled={status === "loading"} style={{flex: 2, padding: '16px', background: status === "loading" ? 'rgba(45,106,106,0.5)' : 'linear-gradient(135deg, #2D6A6A 0%, #245858 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', opacity: status === "loading" ? 0.7 : 1, fontSize: '16px', boxShadow: status === "loading" ? 'none' : '0 4px 15px rgba(45,106,106,0.4)', pointerEvents: status === "loading" ? 'none' : 'auto'}}>
+                            {status === "loading" ? "⏳ Creating Booking..." : `✓ Create Booking ${nights > 0 ? `(${nights}N)` : ''}`}
                         </button>
                     </div>
                 </form>
