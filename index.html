@@ -8475,13 +8475,19 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
 // WhatsApp Integration Tab Component
 function WhatsAppTab() {
     const WA_SERVICE = "https://whatsapp-service-1006186358018.us-central1.run.app";
-    
+
     const [waStatus, setWaStatus] = React.useState('loading');
     const [waQrCode, setWaQrCode] = React.useState(null);
     const [waConnectedAs, setWaConnectedAs] = React.useState(null);
     const [waError, setWaError] = React.useState(null);
     const [waChecking, setWaChecking] = React.useState(false);
-    
+    const [messages, setMessages] = React.useState([]);
+    const [selectedChat, setSelectedChat] = React.useState(null);
+    const [replyText, setReplyText] = React.useState('');
+    const [sending, setSending] = React.useState(false);
+    const [loadingMessages, setLoadingMessages] = React.useState(false);
+    const messagesEndRef = React.useRef(null);
+
     const checkStatus = React.useCallback(async () => {
         try {
             setWaChecking(true);
@@ -8500,25 +8506,55 @@ function WhatsAppTab() {
             setWaChecking(false);
         }
     }, []);
-    
+
+    const fetchMessages = React.useCallback(async () => {
+        try {
+            setLoadingMessages(true);
+            const res = await fetch(WA_SERVICE + '/messages');
+            if (!res.ok) throw new Error('Failed to fetch messages');
+            const data = await res.json();
+            if (data.success && data.messages) {
+                setMessages(data.messages);
+            }
+        } catch (err) {
+            console.error('Fetch messages error:', err);
+        } finally {
+            setLoadingMessages(false);
+        }
+    }, []);
+
     React.useEffect(() => {
         checkStatus();
-        const interval = setInterval(checkStatus, 3000);
-        return () => clearInterval(interval);
+        const statusInterval = setInterval(checkStatus, 5000);
+        return () => clearInterval(statusInterval);
     }, [checkStatus]);
-    
+
+    React.useEffect(() => {
+        if (waStatus === 'connected') {
+            fetchMessages();
+            const msgInterval = setInterval(fetchMessages, 10000);
+            return () => clearInterval(msgInterval);
+        }
+    }, [waStatus, fetchMessages]);
+
+    React.useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, selectedChat]);
+
     const handleLogout = async () => {
         if (!confirm('Disconnect WhatsApp? You will need to scan QR again.')) return;
         try {
             await fetch(WA_SERVICE + '/logout', { method: 'POST' });
             setWaStatus('disconnected');
             setWaConnectedAs(null);
+            setMessages([]);
+            setSelectedChat(null);
             checkStatus();
         } catch (err) {
             alert('Error: ' + err.message);
         }
     };
-    
+
     const handleRestart = async () => {
         try {
             setWaStatus('loading');
@@ -8528,114 +8564,325 @@ function WhatsAppTab() {
             alert('Error: ' + err.message);
         }
     };
-    
-    return (
-        <div style={{height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', background: '#111b21'}}>
-            {/* Header */}
-            <div style={{padding: '16px 20px', background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                    <span style={{fontSize: '28px'}}>💬</span>
-                    <div>
-                        <h2 style={{fontSize: '20px', fontWeight: '700', margin: 0}}>WhatsApp Integration</h2>
-                        <p style={{fontSize: '12px', opacity: 0.8, margin: 0}}>
-                            {waStatus === 'connected' ? 'Connected as ' + (waConnectedAs?.name || waConnectedAs?.phone || 'Unknown') : 'Scan QR code to connect'}
-                        </p>
+
+    const handleSendReply = async () => {
+        if (!replyText.trim() || !selectedChat || sending) return;
+        setSending(true);
+        try {
+            const res = await fetch(WA_SERVICE + '/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: selectedChat, message: replyText.trim() })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setReplyText('');
+                fetchMessages();
+            } else {
+                alert('Failed to send: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Error sending message: ' + err.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const markAsRead = async (msgId) => {
+        try {
+            await fetch(WA_SERVICE + '/messages/' + msgId + '/read', { method: 'POST' });
+            setMessages(prev => prev.map(m => m.id === msgId ? {...m, read: true} : m));
+        } catch (err) {
+            console.error('Mark read error:', err);
+        }
+    };
+
+    // Group messages by phone number
+    const chatGroups = React.useMemo(() => {
+        const groups = {};
+        messages.forEach(msg => {
+            if (!groups[msg.from]) {
+                groups[msg.from] = { phone: msg.from, messages: [], unread: 0, lastMessage: null };
+            }
+            groups[msg.from].messages.push(msg);
+            if (!msg.read) groups[msg.from].unread++;
+            if (!groups[msg.from].lastMessage || new Date(msg.timestamp) > new Date(groups[msg.from].lastMessage.timestamp)) {
+                groups[msg.from].lastMessage = msg;
+            }
+        });
+        return Object.values(groups).sort((a, b) =>
+            new Date(b.lastMessage?.timestamp || 0) - new Date(a.lastMessage?.timestamp || 0)
+        );
+    }, [messages]);
+
+    const selectedChatMessages = React.useMemo(() => {
+        if (!selectedChat) return [];
+        return messages.filter(m => m.from === selectedChat).sort((a, b) =>
+            new Date(a.timestamp) - new Date(b.timestamp)
+        );
+    }, [messages, selectedChat]);
+
+    const formatTime = (ts) => {
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 86400000 && d.getDate() === now.getDate()) {
+            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        } else if (diff < 172800000) {
+            return 'Yesterday';
+        }
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    const formatPhone = (phone) => {
+        if (phone.length === 13 && phone.startsWith('880')) {
+            return '+880 ' + phone.slice(3, 5) + ' ' + phone.slice(5, 9) + ' ' + phone.slice(9);
+        }
+        return '+' + phone;
+    };
+
+    // Not connected states
+    if (waStatus !== 'connected') {
+        return (
+            <div style={{height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', background: '#111b21'}}>
+                {/* Header */}
+                <div style={{padding: '16px 20px', background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                        <span style={{fontSize: '28px'}}>💬</span>
+                        <div>
+                            <h2 style={{fontSize: '20px', fontWeight: '700', margin: 0}}>WhatsApp Integration</h2>
+                            <p style={{fontSize: '12px', opacity: 0.8, margin: 0}}>Scan QR code to connect</p>
+                        </div>
                     </div>
-                </div>
-                <div style={{display: 'flex', gap: '10px'}}>
-                    {waStatus === 'connected' && (
-                        <button onClick={handleLogout} style={{padding: '8px 16px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '8px', color: '#ef4444', fontWeight: '600', cursor: 'pointer', fontSize: '13px'}}>
-                            Disconnect
-                        </button>
-                    )}
                     <button onClick={handleRestart} style={{padding: '8px 16px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px'}}>
                         🔄 Restart
                     </button>
                 </div>
-            </div>
-            
-            {/* Main Content */}
-            <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', overflowY: 'auto'}}>
-                {/* Loading/Initializing State */}
-                {(waStatus === 'loading' || waStatus === 'connecting' || waStatus === 'initializing') && (
-                    <div style={{textAlign: 'center'}}>
-                        <div style={{fontSize: '60px', marginBottom: '20px', animation: 'waPulse 1.5s infinite'}}>⏳</div>
-                        <style>{'.waPulse { animation: waPulse 1.5s infinite; } @keyframes waPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }'}</style>
-                        <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '10px'}}>
-                            {waStatus === 'connecting' ? 'Connecting to WhatsApp...' : waStatus === 'initializing' ? 'Starting WhatsApp...' : 'Loading Service...'}
-                        </h3>
-                        <p style={{color: 'rgba(255,255,255,0.5)'}}>This may take a minute...</p>
-                    </div>
-                )}
-                
-                {/* QR Code State */}
-                {waStatus === 'qr_ready' && waQrCode && (
-                    <div style={{textAlign: 'center', background: 'rgba(255,255,255,0.05)', padding: '40px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)'}}>
-                        <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '20px'}}>📱 Scan with WhatsApp</h3>
-                        <div style={{background: '#fff', padding: '16px', borderRadius: '12px', display: 'inline-block', marginBottom: '20px'}}>
-                            <img src={waQrCode} alt="QR Code" style={{width: '280px', height: '280px', display: 'block'}}/>
+
+                {/* Main Content */}
+                <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', overflowY: 'auto'}}>
+                    {(waStatus === 'loading' || waStatus === 'connecting' || waStatus === 'initializing' || waStatus === 'reconnecting') && (
+                        <div style={{textAlign: 'center'}}>
+                            <div style={{fontSize: '60px', marginBottom: '20px'}}>⏳</div>
+                            <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '10px'}}>
+                                {waStatus === 'connecting' ? 'Connecting...' : waStatus === 'reconnecting' ? 'Reconnecting...' : 'Starting WhatsApp...'}
+                            </h3>
+                            <p style={{color: 'rgba(255,255,255,0.5)'}}>This may take a minute...</p>
                         </div>
-                        <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: '8px'}}>
-                            Open WhatsApp → Settings → Linked Devices → Link a Device
-                        </p>
-                        <p style={{color: 'rgba(255,255,255,0.4)', fontSize: '12px'}}>
-                            {waChecking ? '🔄 Checking...' : '⏳ Waiting for scan'}
+                    )}
+
+                    {waStatus === 'qr_ready' && waQrCode && (
+                        <div style={{textAlign: 'center', background: 'rgba(255,255,255,0.05)', padding: '40px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)'}}>
+                            <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '20px'}}>📱 Scan with WhatsApp</h3>
+                            <div style={{background: '#fff', padding: '16px', borderRadius: '12px', display: 'inline-block', marginBottom: '20px'}}>
+                                <img src={waQrCode} alt="QR Code" style={{width: '280px', height: '280px', display: 'block'}}/>
+                            </div>
+                            <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: '8px'}}>
+                                Open WhatsApp → Settings → Linked Devices → Link a Device
+                            </p>
+                            <p style={{color: 'rgba(255,255,255,0.4)', fontSize: '12px'}}>
+                                {waChecking ? '🔄 Checking...' : '⏳ Waiting for scan'}
+                            </p>
+                        </div>
+                    )}
+
+                    {waStatus === 'disconnected' && !waQrCode && (
+                        <div style={{textAlign: 'center'}}>
+                            <div style={{fontSize: '60px', marginBottom: '20px'}}>📱</div>
+                            <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '12px'}}>WhatsApp Disconnected</h3>
+                            <p style={{color: 'rgba(255,255,255,0.5)', marginBottom: '20px'}}>Click to generate QR code</p>
+                            <button onClick={handleRestart} style={{padding: '14px 28px', background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>
+                                🔄 Generate QR Code
+                            </button>
+                        </div>
+                    )}
+
+                    {waStatus === 'error' && (
+                        <div style={{textAlign: 'center', maxWidth: '500px'}}>
+                            <div style={{fontSize: '60px', marginBottom: '20px'}}>⚠️</div>
+                            <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '12px', color: '#f59e0b'}}>Service Error</h3>
+                            <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: '20px'}}>{waError}</p>
+                            <button onClick={handleRestart} style={{padding: '12px 24px', background: 'linear-gradient(135deg, #25D366, #128C7E)', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>
+                                🔄 Restart Service
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Connected state with chat interface
+    return (
+        <div style={{height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', background: '#111b21'}}>
+            {/* Header */}
+            <div style={{padding: '12px 20px', background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                    <span style={{fontSize: '24px'}}>💬</span>
+                    <div>
+                        <h2 style={{fontSize: '18px', fontWeight: '700', margin: 0}}>WhatsApp</h2>
+                        <p style={{fontSize: '11px', opacity: 0.8, margin: 0}}>
+                            ✅ {waConnectedAs?.name || waConnectedAs?.phone || 'Connected'}
                         </p>
                     </div>
-                )}
-                
-                {/* Connected State */}
-                {waStatus === 'connected' && (
-                    <div style={{textAlign: 'center', maxWidth: '500px'}}>
-                        <div style={{width: '100px', height: '100px', background: 'linear-gradient(135deg, #25D366, #128C7E)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: '50px'}}>✅</div>
-                        <h3 style={{fontSize: '26px', fontWeight: '700', marginBottom: '12px', color: '#25D366'}}>WhatsApp Connected!</h3>
-                        {waConnectedAs && (
-                            <div style={{background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '24px'}}>
-                                <div style={{fontSize: '18px', fontWeight: '600'}}>{waConnectedAs.name || 'WhatsApp User'}</div>
-                                <div style={{color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginTop: '4px'}}>+{waConnectedAs.phone}</div>
+                </div>
+                <div style={{display: 'flex', gap: '8px'}}>
+                    <button onClick={fetchMessages} style={{padding: '6px 12px', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '12px'}}>
+                        🔄
+                    </button>
+                    <button onClick={handleLogout} style={{padding: '6px 12px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '6px', color: '#ef4444', fontWeight: '600', cursor: 'pointer', fontSize: '12px'}}>
+                        Disconnect
+                    </button>
+                </div>
+            </div>
+
+            {/* Chat Interface */}
+            <div style={{flex: 1, display: 'flex', overflow: 'hidden'}}>
+                {/* Chat List */}
+                <div style={{width: '320px', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', background: '#1e2a30'}}>
+                    <div style={{padding: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                        <div style={{fontSize: '14px', fontWeight: '600', color: 'rgba(255,255,255,0.8)'}}>
+                            Incoming Messages {messages.length > 0 && `(${messages.length})`}
+                        </div>
+                    </div>
+                    <div style={{flex: 1, overflowY: 'auto'}}>
+                        {loadingMessages && chatGroups.length === 0 && (
+                            <div style={{padding: '40px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)'}}>
+                                Loading messages...
                             </div>
                         )}
-                        <p style={{color: 'rgba(255,255,255,0.6)', lineHeight: '1.6'}}>
-                            You can now send booking confirmations directly to guests from the booking details!
-                        </p>
+                        {!loadingMessages && chatGroups.length === 0 && (
+                            <div style={{padding: '40px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)'}}>
+                                <div style={{fontSize: '40px', marginBottom: '12px'}}>📭</div>
+                                <div>No messages yet</div>
+                                <div style={{fontSize: '12px', marginTop: '8px'}}>Incoming messages will appear here</div>
+                            </div>
+                        )}
+                        {chatGroups.map(chat => (
+                            <div
+                                key={chat.phone}
+                                onClick={() => {
+                                    setSelectedChat(chat.phone);
+                                    chat.messages.filter(m => !m.read).forEach(m => markAsRead(m.id));
+                                }}
+                                style={{
+                                    padding: '12px 16px',
+                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                    cursor: 'pointer',
+                                    background: selectedChat === chat.phone ? 'rgba(37,211,102,0.15)' : 'transparent',
+                                    transition: 'background 0.2s'
+                                }}
+                            >
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px'}}>
+                                    <div style={{fontWeight: '600', fontSize: '14px', color: '#fff'}}>
+                                        {formatPhone(chat.phone)}
+                                    </div>
+                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>
+                                        {chat.lastMessage && formatTime(chat.lastMessage.timestamp)}
+                                    </div>
+                                </div>
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                    <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px'}}>
+                                        {chat.lastMessage?.text || 'No messages'}
+                                    </div>
+                                    {chat.unread > 0 && (
+                                        <div style={{background: '#25D366', color: '#fff', fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '10px', minWidth: '20px', textAlign: 'center'}}>
+                                            {chat.unread}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                )}
-                
-                {/* Disconnected State */}
-                {waStatus === 'disconnected' && !waQrCode && (
-                    <div style={{textAlign: 'center'}}>
-                        <div style={{fontSize: '60px', marginBottom: '20px'}}>📱</div>
-                        <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '12px'}}>WhatsApp Disconnected</h3>
-                        <p style={{color: 'rgba(255,255,255,0.5)', marginBottom: '20px'}}>Click Restart to generate a new QR code</p>
-                        <button onClick={handleRestart} style={{padding: '14px 28px', background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>
-                            🔄 Generate QR Code
-                        </button>
-                    </div>
-                )}
-                
-                {/* Error State */}
-                {waStatus === 'error' && (
-                    <div style={{textAlign: 'center', maxWidth: '500px'}}>
-                        <div style={{fontSize: '60px', marginBottom: '20px'}}>⚠️</div>
-                        <h3 style={{fontSize: '22px', fontWeight: '600', marginBottom: '12px', color: '#f59e0b'}}>Service Not Available</h3>
-                        <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: '20px'}}>{waError}</p>
-                        <button onClick={checkStatus} style={{padding: '12px 24px', background: 'linear-gradient(135deg, #25D366, #128C7E)', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: '600', cursor: 'pointer'}}>
-                            🔄 Retry Connection
-                        </button>
-                    </div>
-                )}
-            </div>
-            
-            {/* Status Bar */}
-            <div style={{padding: '12px 20px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px'}}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                    <div style={{width: '10px', height: '10px', borderRadius: '50%', background: waStatus === 'connected' ? '#25D366' : waStatus === 'qr_ready' ? '#f59e0b' : waStatus === 'error' ? '#ef4444' : '#6b7280'}}></div>
-                    <span style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)'}}>
-                        Status: {waStatus === 'connected' ? 'Connected' : waStatus === 'qr_ready' ? 'Waiting for scan' : waStatus === 'initializing' ? 'Starting...' : waStatus === 'error' ? 'Unavailable' : 'Loading'}
-                    </span>
                 </div>
-                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.4)'}}>
-                    whatsapp-service v1.2
+
+                {/* Chat Messages */}
+                <div style={{flex: 1, display: 'flex', flexDirection: 'column', background: '#0b141a'}}>
+                    {!selectedChat ? (
+                        <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'rgba(255,255,255,0.4)'}}>
+                            <div style={{fontSize: '80px', marginBottom: '20px', opacity: 0.3}}>💬</div>
+                            <div style={{fontSize: '18px'}}>Select a chat to view messages</div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Chat Header */}
+                            <div style={{padding: '12px 16px', background: '#1e2a30', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                <button onClick={() => setSelectedChat(null)} style={{background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px', padding: '4px'}}>
+                                    ←
+                                </button>
+                                <div style={{width: '40px', height: '40px', background: 'linear-gradient(135deg, #25D366, #128C7E)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px'}}>
+                                    👤
+                                </div>
+                                <div>
+                                    <div style={{fontWeight: '600', fontSize: '15px'}}>{formatPhone(selectedChat)}</div>
+                                    <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{selectedChatMessages.length} messages</div>
+                                </div>
+                            </div>
+
+                            {/* Messages */}
+                            <div style={{flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                                {selectedChatMessages.map(msg => (
+                                    <div key={msg.id} style={{
+                                        alignSelf: 'flex-start',
+                                        maxWidth: '70%',
+                                        background: '#1e2a30',
+                                        padding: '10px 14px',
+                                        borderRadius: '12px',
+                                        borderTopLeftRadius: '4px'
+                                    }}>
+                                        <div style={{fontSize: '14px', lineHeight: '1.4', wordBreak: 'break-word'}}>{msg.text}</div>
+                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px', textAlign: 'right'}}>
+                                            {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Reply Input */}
+                            <div style={{padding: '12px 16px', background: '#1e2a30', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '10px', alignItems: 'flex-end'}}>
+                                <textarea
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }}
+                                    placeholder="Type a message..."
+                                    style={{
+                                        flex: 1,
+                                        background: '#2a3942',
+                                        border: 'none',
+                                        borderRadius: '20px',
+                                        padding: '10px 16px',
+                                        color: '#fff',
+                                        fontSize: '14px',
+                                        resize: 'none',
+                                        minHeight: '40px',
+                                        maxHeight: '120px',
+                                        outline: 'none'
+                                    }}
+                                    rows={1}
+                                />
+                                <button
+                                    onClick={handleSendReply}
+                                    disabled={!replyText.trim() || sending}
+                                    style={{
+                                        width: '44px',
+                                        height: '44px',
+                                        borderRadius: '50%',
+                                        background: replyText.trim() ? 'linear-gradient(135deg, #25D366, #128C7E)' : 'rgba(255,255,255,0.1)',
+                                        border: 'none',
+                                        color: '#fff',
+                                        fontSize: '18px',
+                                        cursor: replyText.trim() ? 'pointer' : 'not-allowed',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    {sending ? '⏳' : '➤'}
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
