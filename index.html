@@ -7288,20 +7288,13 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                 // Calculate deposit for this room
                 const roomDeposit = advanceAmt / roomSelections.length;
                 
-                // Create invoice items for proper Beds24 invoice generation
-                // Beds24 API invoice item types:
-                // - type: "charge" (1) = Room price/accommodation charge
-                // - type: "payment" (200) = Payment received
+                // Create payment invoice items (charges are auto-generated via actions.autoInvoiceItemCharge)
+                // Beds24 API V2 invoice item format:
+                // - type: "charge" or "payment"
+                // - description: string
+                // - qty: integer (positive)
+                // - amount: number (the value)
                 const invoiceItems = [];
-
-                // Add accommodation charge using Beds24 template variables
-                // Beds24 API uses 'amount' field (not 'price') for invoice items
-                invoiceItems.push({
-                    type: "charge",
-                    description: "[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]",
-                    qty: 1,
-                    amount: roomPrice
-                });
 
                 // Add payment if advance was paid
                 if (roomDeposit > 0) {
@@ -7319,28 +7312,39 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     });
                 }
                 
-                return {
-                    propertyId: PROPERTY, 
-                    roomId: s.room.id, 
-                    unitId: s.unit.id, 
-                    arrival: s.checkIn, 
-                    departure: s.checkOut, 
-                    numAdult: s.room.max || 2, 
-                    numChild: 0, 
+                // Build booking object
+                const bookingData = {
+                    propertyId: PROPERTY,
+                    roomId: s.room.id,
+                    unitId: s.unit.id,
+                    arrival: s.checkIn,
+                    departure: s.checkOut,
+                    numAdult: s.room.max || 2,
+                    numChild: 0,
                     status: form.status,
                     subStatus: form.subStatus !== "none" ? form.subStatus : undefined,
-                    firstName: names, 
-                    email: form.email || "guest@miami.com", 
-                    mobile: phones, 
-                    custom4: form.nid || "", 
+                    firstName: names,
+                    email: form.email || "guest@miami.com",
+                    mobile: phones,
+                    custom4: form.nid || "",
                     custom5: form.dob || "",
                     price: roomPrice,
                     deposit: roomDeposit,
                     notes: form.notes || "",
                     referer: "miami_frontdesk",
                     groupId: roomSelections.length > 1 ? groupId : undefined,
-                    invoiceItems: invoiceItems
+                    // Use Beds24 actions for automatic invoice generation
+                    actions: {
+                        autoInvoiceItemCharge: true  // Auto-create charge from price field
+                    }
                 };
+
+                // Add payment invoice items if any (charges are auto-generated via actions)
+                if (invoiceItems.length > 0) {
+                    bookingData.invoiceItems = invoiceItems;
+                }
+
+                return bookingData;
             });
             
             console.log("Booking data to send:", JSON.stringify(data, null, 2));
