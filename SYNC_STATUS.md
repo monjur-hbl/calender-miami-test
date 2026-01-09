@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-09 18:05 BST
+> **Last Updated**: 2026-01-09 19:00 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v27.5-auto-invoice | GitHub Pages | ✅ Live |
+| Dashboard | v28.0-guest-pricing | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -41,13 +41,15 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 
 ## Key Features by Version
 
-### Dashboard v27.5-auto-invoice (2026-01-09)
-- **NEW**: Uses `actions.autoInvoiceItemCharge: true` for Beds24 invoice generation
-- **NEW**: Charges auto-created from price field using Beds24 property defaults
-- **NEW**: Payments added via invoiceItems with correct format (type, description, qty, amount)
+### Dashboard v28.0-guest-pricing (2026-01-09)
+- **NEW**: Adults/Children selectors (1-10 adults, 0-6 children)
+- **NEW**: Price Type selector: "Total Stay" or "Per Night"
+- **NEW**: Per-night auto-calculation: price × nights × rooms
+- **NEW**: rateDescription sent to Beds24 with pricing breakdown
+- **NEW**: Invoice charge uses Beds24 template variables `[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]`
+- Explicit invoice items (charge + payment) for reliable Beds24 integration
 - Double-click prevention on booking submit
 - Overbooking detection with pulsing red indicator
-- Shows "OVERBOOK (N)" with all guest names
 - Dynamic room count from API (not hardcoded 45)
 - Bangladesh timezone (Asia/Dhaka, GMT+6)
 - GitHub Pages auto-deploy via Actions

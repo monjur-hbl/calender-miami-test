@@ -6,9 +6,22 @@ All notable changes to this project are documented here.
 
 ## [2026-01-09] - Booking System Fixes
 
-### Dashboard (v27.5-auto-invoice) - calender-miami-test
+### Dashboard (v28.0-guest-pricing) - calender-miami-test
 
-#### Fixed - Invoice Generation (18:05 BST) - RECOMMENDED APPROACH
+#### Feature - Guest Count & Per-Night Pricing (19:00 BST)
+- **Adults/Children Selectors**: Dropdown to select 1-10 adults and 0-6 children
+- **Price Type Selector**: Choose "Total Stay" or "Per Night"
+- **Per-Night Calculation**: Auto-calculates total = price × nights × rooms
+- **rateDescription**: Sent to Beds24 with pricing breakdown (e.g., "৳4500 per night × 2 nights = ৳9000")
+- **Invoice Template Variables**: Charge description uses `[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]`
+- **Explicit Invoice Items**: Both charge and payment sent in invoiceItems array
+
+#### Fixed - Invoice Generation (18:30 BST)
+- **Root Cause Found**: `autoInvoiceItemCharge` only works when NO invoiceItems are sent
+- **Solution**: Explicitly send both charge and payment in invoiceItems array
+- **Charge Format**: Uses Beds24 template variables for description
+
+#### Previous Attempt - autoInvoiceItemCharge (18:05 BST)
 - **autoInvoiceItemCharge Action**: Uses Beds24's recommended approach for invoice generation
 - **How It Works**:
   - Added `actions: { autoInvoiceItemCharge: true }` to booking data
