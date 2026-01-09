@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v28.0-guest-pricing | GitHub Pages | ✅ Live |
+| Dashboard | v28.1-edit-guests | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -41,12 +41,14 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 
 ## Key Features by Version
 
-### Dashboard v28.0-guest-pricing (2026-01-09)
-- **NEW**: Adults/Children selectors (1-10 adults, 0-6 children)
-- **NEW**: Price Type selector: "Total Stay" or "Per Night"
-- **NEW**: Per-night auto-calculation: price × nights × rooms
-- **NEW**: rateDescription sent to Beds24 with pricing breakdown
-- **NEW**: Invoice charge uses Beds24 template variables `[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]`
+### Dashboard v28.1-edit-guests (2026-01-09)
+- **NEW**: Edit Adults/Children for existing bookings
+- **NEW**: Display Adults/Children count in booking modal
+- Adults/Children selectors (1-10 adults, 0-6 children)
+- Price Type selector: "Total Stay" or "Per Night"
+- Per-night auto-calculation: price × nights × rooms
+- rateDescription sent to Beds24 with pricing breakdown
+- Invoice charge uses Beds24 template variables `[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]`
 - Explicit invoice items (charge + payment) for reliable Beds24 integration
 - Double-click prevention on booking submit
 - Overbooking detection with pulsing red indicator
@@ -138,8 +140,10 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
-| 18:05 | Dashboard | Use autoInvoiceItemCharge action (Beds24 recommended) | ✅ Deployed |
-| 17:50 | Dashboard | Invoice items use `amount` field | ✅ Deployed |
+| 19:00 | Dashboard | Edit Adults/Children for existing bookings (v28.1) | ✅ Deployed |
+| 18:30 | Dashboard | Adults/Children + Per-Night pricing (v28.0) | ✅ Deployed |
+| 18:15 | Dashboard | Template variables for charge description | ✅ Deployed |
+| 18:05 | Dashboard | Explicit charge + payment in invoiceItems | ✅ Deployed |
 | 17:35 | Miami API | Token selection fix (READ vs WRITE) | ✅ Deployed to Cloud Run |
 | 17:30 | Dashboard | Double-click prevention on booking submit | ✅ Deployed |
 | 17:30 | Dashboard | Overbooking detection/display | ✅ Deployed |
