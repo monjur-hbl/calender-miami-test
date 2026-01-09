@@ -1,6 +1,6 @@
 # Miami Beach Resort Dashboard
 
-> **VERSION**: v27.2-dynamic-rooms (2026-01-09)
+> **VERSION**: v27.5-auto-invoice (2026-01-09)
 > **FIRST**: Check SYNC_STATUS.md in parent project for full sync status
 
 ---
@@ -60,7 +60,7 @@ const occupancyRate = Math.round((occupiedUnits / totalRooms) * 100);
 ## File Structure
 ```
 dashboard/
-├── index.html              # Main app (v27.2-dynamic-rooms)
+├── index.html              # Main app (v27.5-auto-invoice)
 ├── js/                     # Modular JS (reference only)
 │   ├── config.js
 │   ├── app.js
