@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-09 20:00 BST
+> **Last Updated**: 2026-01-09 22:30 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v28.4-compact-bar | GitHub Pages | ✅ Live |
+| Dashboard | v29.2-hide-tabs | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -41,11 +41,13 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 
 ## Key Features by Version
 
-### Dashboard v28.4-compact-bar (2026-01-09)
-- **NEW**: Compact selection bar in Search & Book tab
+### Dashboard v29.2-hide-tabs (2026-01-09)
+- **NEW**: Hide tabs when rooms selected - only booking bar visible
+- **NEW**: Fully responsive calendar grid (3d, 7d, 15d, 30d all fit screen)
+- **NEW**: Compact selection bar in sticky header, above tabs
 - **NEW**: Small room chips with room number and dates (side by side)
 - **NEW**: Red "Book" button at end of selection bar
-- **NEW**: Desktop: sticky top bar | Mobile: fixed bottom bar
+- **NEW**: Saves screen space on smaller screens
 - Landscape two-column layout for New Booking modal on desktop
 - Sticky "Create Booking" button - top on desktop, bottom on mobile
 - Room number and nights displayed in sticky book button
@@ -152,6 +154,8 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
+| 22:30 | Dashboard | Hide tabs when selecting, responsive grid (v29.2) | ✅ Deployed |
+| 21:30 | Dashboard | Responsive calendar grid for all day ranges (v29.0) | ✅ Deployed |
 | 20:30 | Dashboard | Compact selection bar in Search & Book (v28.4) | ✅ Deployed |
 | 20:00 | Dashboard | Landscape modal + sticky book button (v28.3) | ✅ Deployed |
 | 19:30 | Dashboard | Add Payment feature with method selector (v28.2) | ✅ Deployed |
