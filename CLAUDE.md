@@ -1,60 +1,96 @@
-# Miami Beach Resort - Hotel Management System
+# Miami Beach Resort Dashboard
 
-## IMPORTANT: Room Inventory Rules
+> **VERSION**: v27.2-dynamic-rooms (2026-01-09)
+> **FIRST**: Check SYNC_STATUS.md in parent project for full sync status
 
-### TOTAL ROOMS = 45 (Fixed Constant)
-The property has exactly **45 room units**. This is defined as `TOTAL_ROOMS = 45` in dashboard/index.html.
+---
 
-**NEVER** use `allRooms.length` or `stayingGuests.length` for occupancy calculations.
-**ALWAYS** use `TOTAL_ROOMS` constant for:
-- Occupancy rate calculations
-- Available rooms calculations
-- Any total room count display
+## BEFORE YOU START
+
+1. Pull latest: `git pull`
+2. Check cloud APIs are responding
+3. Read critical rules below
+
+---
+
+## CRITICAL RULES (MUST FOLLOW)
+
+1. **NEVER** use `allRooms.length` for occupancy - use `totalRooms` state variable
+2. **NEVER** use useState inside conditionals, IIFEs, or callbacks - FREEZES APP
+3. **NEVER** display 'Beds24' in UI - use 'Miami Beach Resort'
+4. **ALWAYS** use Bangladesh timezone (Asia/Dhaka, GMT+6)
+5. **ALWAYS** count unique room/unit combinations for occupancy
+
+---
+
+## Room Inventory Rules
+
+### TOTAL ROOMS - Dynamic (NOT a constant!)
+Room count is **DYNAMIC** - fetched from API, admin can change for maintenance.
+
+**Fetched from**: `GET /room-config` on miami-api
+**Stored in**: `totalRooms` React state (default: 45)
+**Firestore**: `room_config` collection, `total_rooms` document
 
 ### Correct Occupancy Calculation
 ```javascript
-// Use TOTAL_ROOMS constant
-const totalUnits = TOTAL_ROOMS;  // Always 45
-// Count unique occupied room/unit combinations (not booking count!)
+// totalRooms is a STATE VARIABLE, not a constant!
+const totalUnits = totalRooms;  // Fetched from /room-config
 const occupiedSet = new Set(stayingGuests.map(b => `${b.roomId}-${b.unitId}`));
 const occupiedUnits = occupiedSet.size;
-const availableUnits = TOTAL_ROOMS - occupiedUnits;
-const occupancyRate = Math.round((occupiedUnits / TOTAL_ROOMS) * 100);
+const availableUnits = totalRooms - occupiedUnits;
+const occupancyRate = Math.round((occupiedUnits / totalRooms) * 100);
 ```
 
 ---
 
-## Project Overview
-Hotel management system for Miami Beach Resort, Cox's Bazar, Bangladesh.
-Front desk dashboard with booking management, housekeeping, accounting.
+## API Endpoints
+
+| Endpoint | URL |
+|----------|-----|
+| Miami API | https://miami-api-1006186358018.us-central1.run.app |
+| HK API | https://hk-api-1006186358018.us-central1.run.app |
+| Beds24 Proxy | https://beds24-proxy-1006186358018.us-central1.run.app |
+| Dashboard | https://monjur-hbl.github.io/calender-miami-test/ |
+
+**Property ID**: 279646
+
+---
+
+## File Structure
+```
+dashboard/
+├── index.html              # Main app (v27.2-dynamic-rooms)
+├── js/                     # Modular JS (reference only)
+│   ├── config.js
+│   ├── app.js
+│   ├── components/
+│   └── utils/
+├── css/
+│   └── styles.css          # Extracted CSS (reference)
+├── .github/workflows/
+│   └── pages.yml           # GitHub Pages deployment
+└── CLAUDE.md               # This file
+```
+
+---
+
+## Deployment
+```bash
+git add . && git commit -m "message" && git push
+# Auto-deploys via GitHub Actions (.github/workflows/pages.yml)
+```
+
+---
 
 ## Tech Stack
-- Frontend: Single-file React app (dashboard/index.html) with Tailwind CSS
-- Backend: Node.js/Express on Google Cloud Run (hk-api/)
-- Database: Firestore (database ID: hk-miami)
-- Hosting: GitHub Pages (dashboard), Cloud Run (APIs)
-- Property API: Beds24 via proxy
+- Frontend: Single-file React with inline Babel compilation
+- Hosting: GitHub Pages
+- APIs: Cloud Run (Node.js/Express)
+- Database: Firestore
 
-## Repository Structure
-```
-dashboard/           # Web dashboard
-  └── index.html    # Main app - FIX THE BUG HERE
-hk-api/             # Backend API  
-  └── server.js     # Express server with webhooks
-```
-
-## CRITICAL RULES
-1. ⚠️ NEVER use useState inside conditionals, IIFEs, or callbacks - FREEZES APP
-2. NEVER display 'Beds24' in UI - use 'Miami Beach Resort'
-3. Use `deposit` field for payment tracking (not `paid`)
-4. Revenue = checkout date based
-
-## API Endpoints
-- Beds24 Proxy: https://beds24-proxy-1006186358018.us-central1.run.app
-- HK API: https://hk-api-1006186358018.us-central1.run.app
-- Property ID: 279646
+---
 
 ## Git Info
-- Repo: monjur-hbl/calender-miami-test
-- After fix: git add . && git commit -m 'Fix: Remove duplicate room entries in stats' && git push
-
+- **Repo**: https://github.com/monjur-hbl/calender-miami-test
+- **Branch**: main
