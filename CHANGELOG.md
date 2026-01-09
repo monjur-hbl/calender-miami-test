@@ -6,13 +6,22 @@ All notable changes to this project are documented here.
 
 ## [2026-01-09] - Booking System Fixes
 
-### Dashboard (v27.2) - calender-miami-test
+### Dashboard (v27.4-invoice-fix) - calender-miami-test
 
-#### Fixed
+#### Fixed - Invoice Items (17:50 BST)
+- **Invoice Item Field Name**: Changed `price` to `amount` for Beds24 API V2 compatibility
+- **Charges Section**: Accommodation charges now appear correctly in Beds24 Charges & Payments tab
+- **Payments Section**: Cash/payment received now appears correctly with proper amount
+- **Affected Areas**:
+  - New booking creation (accommodation charge + advance payment)
+  - Payment update - simple mode (payment received + price changes)
+  - Payment update - advanced mode (per-room payment distribution)
+
+#### Fixed - Double Booking Prevention (17:30 BST)
 - **Double Booking Prevention**: Added guard in submit function to prevent multiple submissions when clicking Create Booking button rapidly
 - **Button Disabled State**: Submit button now properly disabled with visual feedback (`pointerEvents: none`, `cursor: not-allowed`, muted colors) during booking creation
 
-#### Added
+#### Added - Overbooking Detection (17:30 BST)
 - **Overbooking Detection**: New `getAllBookingsForCell()` function that returns ALL bookings for a room/date (not just the first one)
 - **Overbooking Visual Indicator**:
   - New `.card-overbooking` CSS class with dark red gradient and pulsing animation
@@ -20,9 +29,9 @@ All notable changes to this project are documented here.
   - Shows all guest names separated by " / "
   - High-visibility pulsing red glow to alert staff
 
-### Miami API (v7.0) - miami-api
+### Miami API (v7.1-token-fix) - miami-api
 
-#### Fixed
+#### Fixed (17:35 BST)
 - **Token Selection for Write Operations**: `fetchBeds24()` now correctly selects token based on HTTP method:
   - `READ_TOKEN` (permanent) for GET requests
   - `WRITE_TOKEN` (auto-refreshed) for POST/PUT/DELETE requests
@@ -95,6 +104,28 @@ StatusCard Component
 Staff Action
     ↓ Manual correction in Beds24 or contact guests
 ```
+
+### Beds24 Invoice Items API Format
+
+```javascript
+// CORRECT format (Beds24 API V2)
+invoiceItems: [{
+    type: "charge",           // "charge" or "payment"
+    description: "Room 101",  // Text description
+    qty: 1,                   // Quantity (positive)
+    amount: 3000              // ← IMPORTANT: Use 'amount', NOT 'price'
+}]
+
+// For payments received:
+invoiceItems: [{
+    type: "payment",
+    description: "Cash Received",
+    qty: 1,
+    amount: 500               // Payment amount
+}]
+```
+
+**Common Mistake**: Using `price` instead of `amount` - this causes invoice items to show 0.00 in Beds24.
 
 ---
 

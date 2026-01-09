@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-09 17:35 BST
+> **Last Updated**: 2026-01-09 17:50 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v27.3-overbooking | GitHub Pages | ✅ Live |
+| Dashboard | v27.4-invoice-fix | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -41,10 +41,12 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 
 ## Key Features by Version
 
-### Dashboard v27.3-overbooking (2026-01-09)
-- **NEW**: Double-click prevention on booking submit
-- **NEW**: Overbooking detection with pulsing red indicator
-- **NEW**: Shows "OVERBOOK (N)" with all guest names
+### Dashboard v27.4-invoice-fix (2026-01-09)
+- **NEW**: Invoice items now use correct `amount` field (was `price`)
+- **NEW**: Charges & Payments sections in Beds24 now populate correctly
+- Double-click prevention on booking submit
+- Overbooking detection with pulsing red indicator
+- Shows "OVERBOOK (N)" with all guest names
 - Dynamic room count from API (not hardcoded 45)
 - Bangladesh timezone (Asia/Dhaka, GMT+6)
 - GitHub Pages auto-deploy via Actions
@@ -133,9 +135,10 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
+| 17:50 | Dashboard | Invoice items use `amount` field (Beds24 API fix) | ✅ Deployed |
+| 17:35 | Miami API | Token selection fix (READ vs WRITE) | ✅ Deployed to Cloud Run |
 | 17:30 | Dashboard | Double-click prevention on booking submit | ✅ Deployed |
 | 17:30 | Dashboard | Overbooking detection/display | ✅ Deployed |
-| 17:35 | Miami API | Token selection fix (READ vs WRITE) | ✅ Deployed to Cloud Run |
 | 16:00 | Dashboard | Calendar showing all future bookings | ✅ Deployed |
 | 15:00 | Dashboard | Occupancy summary row | ✅ Deployed |
 | 14:00 | Dashboard | Payment invoice format fix | ✅ Deployed |
@@ -146,6 +149,7 @@ git add . && git commit -m "message" && git push
 
 ```bash
 # Dashboard (calender-miami-test)
+2a3b814 Fix: Use 'amount' instead of 'price' for Beds24 invoice items
 8898a5f Fix: Prevent double booking submission + show overbookings
 
 # Miami API (miami-api)
