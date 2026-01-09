@@ -44,6 +44,9 @@ let isConnecting = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
 
+// In-memory message store (backup if Firestore fails)
+let inMemoryMessages = [];
+
 // Auth directory for local file storage (ephemeral but works with Baileys)
 const AUTH_DIR = '/tmp/whatsapp_auth';
 
@@ -292,17 +295,28 @@ async function initWhatsApp() {
                                  '[Media]';
                     console.log(`📩 Message from ${from}: ${text.substring(0, 50)}`);
 
-                    // Store message in Firestore
+                    const msgData = {
+                        id: msg.key.id || Date.now().toString(),
+                        from,
+                        text: text.substring(0, 1000),
+                        timestamp: new Date().toISOString(),
+                        messageId: msg.key.id,
+                        read: false
+                    };
+
+                    // Store in memory first (always works)
+                    inMemoryMessages.unshift(msgData);
+                    if (inMemoryMessages.length > 100) {
+                        inMemoryMessages = inMemoryMessages.slice(0, 100);
+                    }
+                    console.log(`✅ Message stored in memory (total: ${inMemoryMessages.length})`);
+
+                    // Try to store in Firestore (may fail if no index)
                     try {
-                        await firestore.collection('whatsapp_messages').add({
-                            from,
-                            text: text.substring(0, 1000),
-                            timestamp: new Date().toISOString(),
-                            messageId: msg.key.id,
-                            read: false
-                        });
+                        await firestore.collection('whatsapp_messages').doc(msgData.id).set(msgData);
+                        console.log('✅ Message also stored in Firestore');
                     } catch (err) {
-                        console.error('Error storing message:', err.message);
+                        console.log('Firestore save skipped:', err.message);
                     }
                 }
             }
@@ -328,7 +342,7 @@ async function initWhatsApp() {
 app.get('/', (req, res) => {
     res.json({
         service: 'whatsapp-service',
-        version: '1.2.0',
+        version: '1.3.0',
         status: connectionStatus
     });
 });
@@ -427,32 +441,20 @@ app.post('/send', async (req, res) => {
     }
 });
 
-// Get recent messages
+// Get recent messages (from in-memory store)
 app.get('/messages', async (req, res) => {
-    try {
-        const snapshot = await firestore
-            .collection('whatsapp_messages')
-            .orderBy('timestamp', 'desc')
-            .limit(50)
-            .get();
-
-        const messages = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-
-        res.json({ success: true, messages });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+    // Return in-memory messages (always available)
+    // Firestore is used as backup but has index issues
+    res.json({ success: true, messages: inMemoryMessages });
 });
 
-// Mark message as read
+// Mark message as read (in-memory)
 app.post('/messages/:id/read', async (req, res) => {
     try {
-        await firestore.collection('whatsapp_messages').doc(req.params.id).update({
-            read: true
-        });
+        const msg = inMemoryMessages.find(m => m.id === req.params.id);
+        if (msg) {
+            msg.read = true;
+        }
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -461,7 +463,7 @@ app.post('/messages/:id/read', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`WhatsApp service v1.2.0 running on port ${PORT}`);
+    console.log(`WhatsApp service v1.3.0 running on port ${PORT}`);
     console.log(`Project: ${PROJECT_ID}`);
 
     // Auto-initialize on startup
