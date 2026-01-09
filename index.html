@@ -392,7 +392,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v28.7-desktop-top-bar</div>
+<div class="version-tag">v28.8-centered-bar</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -4919,10 +4919,10 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
 
                     {effectiveTab === "whatsapp" && <WhatsAppTab />}
 
-            {/* Compact Selection Bar - Desktop (top, fixed) for all tabs except searchbook */}
+            {/* Compact Selection Bar - Desktop (top, fixed, centered) for all tabs except searchbook */}
             {selected.length > 0 && tab !== "searchbook" && (
-                <div className="selection-bar-desktop" style={{position: 'fixed', top: '70px', left: '16px', right: '16px', zIndex: 150, maxWidth: '800px', margin: '0 auto'}}>
-                    <div className="compact-selection-bar">
+                <div className="selection-bar-desktop" style={{position: 'fixed', top: '70px', left: '50%', transform: 'translateX(-50%)', zIndex: 150, maxWidth: 'calc(100% - 32px)'}}>
+                    <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
                         {selected.map(s => {
                             const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
                             return (
