@@ -52,20 +52,25 @@
         .day-btn.active { background: #2D6A6A; color: white; }
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
-        /* Sticky Date Header - sticks below tabs-wrapper (top-bar 58px + tabs-wrapper ~170px) */
-        .date-header-wrapper { position: sticky; top: 228px; z-index: 140; background: #1E293B; padding: 12px 16px; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
-        .date-header-wrapper::-webkit-scrollbar { display: none; }
+        /* Calendar Scroll Container - wraps date header, occupancy, and rooms */
+        .calendar-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .calendar-scroll-wrapper::-webkit-scrollbar { height: 8px; }
+        .calendar-scroll-wrapper::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+        .calendar-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .calendar-scroll-inner { min-width: max-content; }
+
+        /* Sticky Date Header - sticks below tabs-wrapper */
+        .date-header-wrapper { position: sticky; top: 228px; z-index: 140; background: #1E293B; padding: 12px 16px; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .date-header-inner { display: flex; gap: 6px; padding-left: 140px; }
-        .date-cell { flex: 1; min-width: 80px; text-align: center; padding: 10px 6px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .date-cell { flex: 0 0 80px; min-width: 80px; text-align: center; padding: 10px 6px; background: rgba(255,255,255,0.05); border-radius: 10px; }
         .date-cell.today { background: #2D6A6A; }
         .date-day { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); }
         .date-num { font-size: 20px; font-weight: 700; margin-top: 2px; }
 
         /* Occupancy Summary Row - Sticky below dates */
-        .occupancy-row-wrapper { position: sticky; top: 318px; z-index: 139; background: #1E293B; padding: 8px 16px 8px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
-        .occupancy-row-wrapper::-webkit-scrollbar { display: none; }
+        .occupancy-row-wrapper { position: sticky; top: 318px; z-index: 139; background: #1E293B; padding: 8px 16px 8px; }
         .occupancy-row-inner { display: flex; gap: 6px; padding-left: 140px; }
-        .occupancy-cell { flex: 1; min-width: 80px; text-align: center; padding: 6px 4px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .occupancy-cell { flex: 0 0 80px; min-width: 80px; text-align: center; padding: 6px 4px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
         .occupancy-cell .occ-available { font-size: 14px; font-weight: 700; color: #10b981; }
         .occupancy-cell .occ-occupied { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
         .occupancy-cell.full { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
@@ -74,7 +79,7 @@
         .occupancy-cell.low .occ-available { color: #f59e0b; }
 
         /* Calendar Container */
-        .cal-container { padding: 0 16px 100px; overflow-x: auto; }
+        .cal-container { padding: 0 16px 100px; }
         
         /* Floor Header */
         .floor-header { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 10px; margin: 12px 0 10px 0; }
@@ -88,8 +93,8 @@
         .room-type { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.2; }
         .room-cap { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
         
-        /* Status Card - Responsive to fill available space */
-        .status-card { flex: 1; min-width: 80px; min-height: 80px; border-radius: 10px; padding: 10px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        /* Status Card - Fixed width to match date cells */
+        .status-card { flex: 0 0 80px; min-width: 80px; min-height: 80px; border-radius: 10px; padding: 10px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .status-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
         
         /* Only 2 colors: Green (available) and Red (booked) */
@@ -336,10 +341,10 @@
             .stat-label { font-size: 7px; }
             .tabs-row { gap: 6px; }
             .nav-btn { padding: 12px 16px; font-size: 13px; }
-            .status-card { flex: 1; min-width: 70px; min-height: 65px; padding: 8px; }
+            .status-card { flex: 0 0 70px; min-width: 70px; min-height: 65px; padding: 8px; }
             .room-label { min-width: 100px; max-width: 100px; }
-            .date-cell { flex: 1; min-width: 70px; }
-            .occupancy-cell { min-width: 70px; }
+            .date-cell { flex: 0 0 70px; min-width: 70px; }
+            .occupancy-cell { flex: 0 0 70px; min-width: 70px; }
             .occupancy-cell .occ-available { font-size: 12px; }
             .occupancy-cell .occ-occupied { font-size: 9px; }
             .date-header-inner { padding-left: 106px; }
@@ -387,7 +392,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v28.5-compact-bar-all</div>
+<div class="version-tag">v28.6-sync-scroll</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -1639,45 +1644,47 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         };
 
         return (
-            <>
-                {/* Sticky Date Header */}
-                <div className="date-header-wrapper">
-                    <div className="date-header-inner">
-                        {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
+            <div className="calendar-scroll-wrapper">
+                <div className="calendar-scroll-inner">
+                    {/* Sticky Date Header */}
+                    <div className="date-header-wrapper">
+                        <div className="date-header-inner">
+                            {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
+                        </div>
                     </div>
-                </div>
-                {/* Sticky Occupancy Summary Row */}
-                <div className="occupancy-row-wrapper">
-                    <div className="occupancy-row-inner">
-                        {days.map(d => {
-                            const { occupied, available } = getOccupancyForDate(d);
-                            const cellClass = available === 0 ? 'full' : available <= 5 ? 'low' : '';
+                    {/* Sticky Occupancy Summary Row */}
+                    <div className="occupancy-row-wrapper">
+                        <div className="occupancy-row-inner">
+                            {days.map(d => {
+                                const { occupied, available } = getOccupancyForDate(d);
+                                const cellClass = available === 0 ? 'full' : available <= 5 ? 'low' : '';
+                                return (
+                                    <div key={d} className={`occupancy-cell ${cellClass}`}>
+                                        <div className="occ-available">{available} avail</div>
+                                        <div className="occ-occupied">{occupied} booked</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="cal-container" onMouseMove={createStardust}>
+                        {groups.map(group => {
+                            if (!group.rooms.length) return null;
                             return (
-                                <div key={d} className={`occupancy-cell ${cellClass}`}>
-                                    <div className="occ-available">{available} avail</div>
-                                    <div className="occ-occupied">{occupied} booked</div>
+                                <div key={group.key}>
+                                    <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.count} rooms</span></div>
+                                    {group.rooms.map(({room, unit}) => (
+                                        <div key={`${room.id}-${unit.id}`} className="room-row">
+                                            <div className="room-label"><div className="room-num">{unit.n}</div><div className="room-type">{room.short}</div><div className="room-cap">👤 {room.max}A</div></div>
+                                            {days.map(d => <StatusCard key={d} room={room} unit={unit} date={d}/>)}
+                                        </div>
+                                    ))}
                                 </div>
                             );
                         })}
                     </div>
                 </div>
-                <div className="cal-container" onMouseMove={createStardust}>
-                    {groups.map(group => {
-                        if (!group.rooms.length) return null;
-                        return (
-                            <div key={group.key}>
-                                <div className="floor-header"><span style={{fontWeight: 600}}>{group.title}</span><span style={{color: 'rgba(255,255,255,0.5)', fontSize: 13}}>{group.count} rooms</span></div>
-                                {group.rooms.map(({room, unit}) => (
-                                    <div key={`${room.id}-${unit.id}`} className="room-row">
-                                        <div className="room-label"><div className="room-num">{unit.n}</div><div className="room-type">{room.short}</div><div className="room-cap">👤 {room.max}A</div></div>
-                                        {days.map(d => <StatusCard key={d} room={room} unit={unit} date={d}/>)}
-                                    </div>
-                                ))}
-                            </div>
-                        );
-                    })}
-                </div>
-            </>
+            </div>
         );
     };
 
