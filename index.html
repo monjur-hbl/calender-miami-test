@@ -60,7 +60,19 @@
         .date-cell.today { background: #2D6A6A; }
         .date-day { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); }
         .date-num { font-size: 20px; font-weight: 700; margin-top: 2px; }
-        
+
+        /* Occupancy Summary Row - Sticky below dates */
+        .occupancy-row-wrapper { position: sticky; top: 318px; z-index: 139; background: #1E293B; padding: 8px 16px 8px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
+        .occupancy-row-wrapper::-webkit-scrollbar { display: none; }
+        .occupancy-row-inner { display: flex; gap: 6px; padding-left: 140px; }
+        .occupancy-cell { flex: 1; min-width: 80px; text-align: center; padding: 6px 4px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .occupancy-cell .occ-available { font-size: 14px; font-weight: 700; color: #10b981; }
+        .occupancy-cell .occ-occupied { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .occupancy-cell.full { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
+        .occupancy-cell.full .occ-available { color: #ef4444; }
+        .occupancy-cell.low { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); }
+        .occupancy-cell.low .occ-available { color: #f59e0b; }
+
         /* Calendar Container */
         .cal-container { padding: 0 16px 100px; overflow-x: auto; }
         
@@ -172,6 +184,7 @@
         @media (max-width: 1200px) {
             .status-card { min-width: 90px; min-height: 70px; }
             .date-cell { min-width: 90px; }
+            .occupancy-cell { min-width: 90px; }
         }
         @media (max-width: 900px) {
             .stats-row { gap: 6px; }
@@ -187,9 +200,14 @@
             .status-card { flex: 1; min-width: 70px; min-height: 65px; padding: 8px; }
             .room-label { min-width: 100px; max-width: 100px; }
             .date-cell { flex: 1; min-width: 70px; }
+            .occupancy-cell { min-width: 70px; }
+            .occupancy-cell .occ-available { font-size: 12px; }
+            .occupancy-cell .occ-occupied { font-size: 9px; }
             .date-header-inner { padding-left: 106px; }
+            .occupancy-row-inner { padding-left: 106px; }
             .search-btn { padding: 10px 16px; font-size: 13px; }
             .date-header-wrapper { top: 218px; }
+            .occupancy-row-wrapper { top: 303px; }
         }
 
         /* Today view hover effects */
@@ -1439,15 +1457,45 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
     };
 
     const CalendarView = ({groupBy}) => {
-        const groups = groupBy === "floor" 
+        const groups = groupBy === "floor"
             ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || [], count: (roomsByFloor[f] || []).length}))
             : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u})), count: r.units.length}));
+
+        // Calculate occupancy for each day
+        const getOccupancyForDate = (date) => {
+            const occupiedSet = new Set();
+            bookings.forEach(b => {
+                if (b.status === 'cancelled' || b.status === 'inquiry') return;
+                if (b.arrival <= date && b.departure > date) {
+                    occupiedSet.add(`${b.roomId}-${b.unitId}`);
+                }
+            });
+            const occupied = occupiedSet.size;
+            const available = totalRooms - occupied;
+            return { occupied, available };
+        };
+
         return (
             <>
                 {/* Sticky Date Header */}
                 <div className="date-header-wrapper">
                     <div className="date-header-inner">
                         {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
+                    </div>
+                </div>
+                {/* Sticky Occupancy Summary Row */}
+                <div className="occupancy-row-wrapper">
+                    <div className="occupancy-row-inner">
+                        {days.map(d => {
+                            const { occupied, available } = getOccupancyForDate(d);
+                            const cellClass = available === 0 ? 'full' : available <= 5 ? 'low' : '';
+                            return (
+                                <div key={d} className={`occupancy-cell ${cellClass}`}>
+                                    <div className="occ-available">{available} avail</div>
+                                    <div className="occ-occupied">{occupied} booked</div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
                 <div className="cal-container" onMouseMove={createStardust}>
