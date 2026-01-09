@@ -5431,6 +5431,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
 
             if (isAdvancedMode) {
                 // Advanced mode: Update each room's deposit individually with invoice items
+                // Beds24 API uses 'amount' field (not 'price') for invoice items
                 const updates = [];
                 for (const b of groupBookings) {
                     const addAmount = parseFloat(roomPayments[b.id]) || 0;
@@ -5443,7 +5444,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                                 type: "payment",
                                 description: "Cash Received",
                                 qty: 1,
-                                price: addAmount
+                                amount: addAmount
                             }]
                         });
                     }
@@ -5481,6 +5482,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                 };
 
                 // Build invoice items with correct Beds24 types
+                // Beds24 API uses 'amount' field (not 'price') for invoice items
                 const invoiceItems = [];
 
                 // If deposit increased, add payment invoice item (type: payment)
@@ -5489,7 +5491,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                         type: "payment",
                         description: "Cash Received",
                         qty: 1,
-                        price: newDeposit - oldDeposit
+                        amount: newDeposit - oldDeposit
                     });
                 }
 
@@ -5499,7 +5501,7 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                         type: "charge",
                         description: "[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]",
                         qty: 1,
-                        price: newPrice
+                        amount: newPrice
                     });
                 }
 
@@ -7293,11 +7295,12 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                 const invoiceItems = [];
 
                 // Add accommodation charge using Beds24 template variables
+                // Beds24 API uses 'amount' field (not 'price') for invoice items
                 invoiceItems.push({
                     type: "charge",
                     description: "[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]",
                     qty: 1,
-                    price: roomPrice
+                    amount: roomPrice
                 });
 
                 // Add payment if advance was paid
@@ -7312,7 +7315,7 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                         type: "payment",
                         description: paymentDesc,
                         qty: 1,
-                        price: roomDeposit
+                        amount: roomDeposit
                     });
                 }
                 
