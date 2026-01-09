@@ -14,14 +14,8 @@
     <!-- Firebase SDK for real-time notifications -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <!-- Configuration (loaded before app) -->
-    <script src="js/config.js"></script>
-    <!-- Utilities (loaded before app) -->
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/utils/api.js"></script>
-    <!-- External Stylesheet -->
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- Inline styles for components not in external CSS -->
+    <!-- Note: Modular files available in js/ and css/ folders for reference -->
+    <!-- For production with ES modules, migrate to Vite build system -->
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1E293B; min-height: 100vh; color: #fff; }
@@ -236,7 +230,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v27.1-modular</div>
+<div class="version-tag">v27.2-dynamic-rooms</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
