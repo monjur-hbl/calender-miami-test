@@ -250,7 +250,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v27.6-explicit-charge</div>
+<div class="version-tag">v27.7-template-vars</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -7297,16 +7297,11 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                 // Since we need to send payments, we must also explicitly send the charge.
                 const invoiceItems = [];
 
-                // Add accommodation charge
-                // Format: "[ROOMNAME] [CHECKIN] - [CHECKOUT]" e.g. "Room 101 10 Jan - 12 Jan"
-                const arrDate = new Date(s.checkIn);
-                const depDate = new Date(s.checkOut);
-                const arrStr = arrDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                const depStr = depDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                const chargeDesc = `${s.room.name || s.unit.name || 'Accommodation'} ${arrStr} - ${depStr}`;
+                // Add accommodation charge using Beds24 template variables
+                // [ROOMNAME1] = Room name, [FIRSTNIGHT] = Check-in date, [LEAVINGDAY] = Check-out date
                 invoiceItems.push({
                     type: "charge",
-                    description: chargeDesc,
+                    description: "[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]",
                     qty: 1,
                     amount: roomPrice
                 });
