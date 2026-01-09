@@ -227,7 +227,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v26.4-tz-fix</div>
+<div class="version-tag">v27.0-dynamic-rooms</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -404,9 +404,9 @@ const getFloor = (n) => Math.floor(parseInt(n) / 100);
 const FLOORS = [1, 2, 3, 4, 5, 6];
 const floorName = (f) => f === 1 ? "1st" : f === 2 ? "2nd" : f === 3 ? "3rd" : f + "th";
 
-// TOTAL AVAILABLE ROOMS (TAR) - Fixed constant for the property
-// This is the official room inventory count - DO NOT use allRooms.length for occupancy calculations
-const TOTAL_ROOMS = 45;
+// TOTAL AVAILABLE ROOMS (TAR) - Fetched dynamically from API
+// Admin can change this when rooms go under maintenance
+// DO NOT hardcode - always use the dynamic value from state
 
 const getRoomInfo = (roomId, unitId) => {
     const r = ROOMS.find(x => x.id === roomId);
@@ -456,6 +456,7 @@ function App() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [totalRooms, setTotalRooms] = useState(45); // Dynamic room count from API (default 45)
     const [realtimeStatus, setRealtimeStatus] = useState("connecting"); // "connected", "disconnected", "connecting"
     const [lastNotification, setLastNotification] = useState(null);
     const notificationUnsubscribeRef = React.useRef(null);
@@ -830,6 +831,20 @@ function App() {
         return g;
     }, [allRooms]);
 
+    // Fetch dynamic room count from API (admin can change for maintenance)
+    const fetchRoomConfig = useCallback(async () => {
+        try {
+            const res = await fetch(`${PROXY}/room-config`);
+            const data = await res.json();
+            if (data.success && data.totalRooms) {
+                setTotalRooms(data.totalRooms);
+                console.log(`🏨 Room config: ${data.totalRooms} total rooms (source: ${data.source})`);
+            }
+        } catch (error) {
+            console.warn('Could not fetch room config, using default:', error);
+        }
+    }, []);
+
     // Booking cache for faster loads
     const bookingCacheRef = React.useRef({ data: null, timestamp: 0 });
     const CACHE_TTL = 30000; // 30 seconds cache
@@ -912,9 +927,10 @@ function App() {
         isEditingRef.current = isEditing;
     }, [isEditing]);
 
-    useEffect(() => { 
-        fetchData(); 
-        
+    useEffect(() => {
+        fetchData();
+        fetchRoomConfig(); // Fetch dynamic room count on load
+
         // Set up Firestore real-time listener for booking notifications
         const setupRealtimeListener = () => {
             try {
@@ -1188,9 +1204,9 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         let occ=0, cin=0, cout=0;
         allRooms.forEach(({room, unit}) => getBooking(room.id, unit.id, today) ? occ++ : null);
         bookings.forEach(b => { if(b.arrival === today) cin++; if(b.departure === today) cout++; });
-        // Use TOTAL_ROOMS constant for accurate occupancy calculations
-        return {total: TOTAL_ROOMS, occ, avail: TOTAL_ROOMS - occ, cin, cout};
-    }, [allRooms, bookings, getBooking, today]);
+        // Use dynamic totalRooms from API for accurate occupancy calculations
+        return {total: totalRooms, occ, avail: totalRooms - occ, cin, cout};
+    }, [allRooms, bookings, getBooking, today, totalRooms]);
 
     const tomorrow = getBDDate(1);
     
@@ -1615,8 +1631,8 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                         const checkIns = bookings.filter(b => b.arrival === selectedDate && b.status !== 'cancelled' && b.status !== 'inquiry');
                         const checkOuts = bookings.filter(b => b.departure === selectedDate && b.status !== 'cancelled' && b.status !== 'inquiry');
                         const stayingGuests = bookings.filter(b => b.arrival <= selectedDate && b.departure > selectedDate && b.status !== 'cancelled' && b.status !== 'inquiry');
-                        // Use TOTAL_ROOMS constant for occupancy calculations
-                        const totalUnits = TOTAL_ROOMS;
+                        // Use dynamic totalRooms from API for occupancy calculations
+                        const totalUnits = totalRooms;
                         // Count unique occupied room/unit combinations
                         const occupiedSet = new Set(stayingGuests.map(b => `${b.roomId}-${b.unitId}`));
                         const occupiedUnits = occupiedSet.size;
@@ -2985,7 +3001,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                 
                                 {hkTab === 'dashboard' && (() => {
                                     const hkData = hkDay === 'today' ? hkDataToday : hkDataTomorrow;
-                                    const totalRooms = TOTAL_ROOMS;
+                                    const hkTotalRooms = totalRooms; // Use dynamic totalRooms from state
                                     const occupiedToday = hkDataToday.stayover.length + hkDataToday.checkin.length;
                                     const departuresToday = hkDataToday.checkout.length + hkDataToday.turnover.length;
                                     const arrivalsToday = hkDataToday.checkin.length + hkDataToday.turnover.length;
@@ -4575,8 +4591,8 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                 const checkIns = bookings.filter(b => b.arrival === dashDate && b.status !== 'cancelled' && b.status !== 'inquiry');
                                 const checkOuts = bookings.filter(b => b.departure === dashDate && b.status !== 'cancelled' && b.status !== 'inquiry');
                                 const stayingGuests = bookings.filter(b => b.arrival <= dashDate && b.departure > dashDate && b.status !== 'cancelled' && b.status !== 'inquiry');
-                                // Use TOTAL_ROOMS constant for accurate occupancy
-                                const totalUnits = TOTAL_ROOMS;
+                                // Use dynamic totalRooms from API for accurate occupancy
+                                const totalUnits = totalRooms;
                                 // Count unique occupied room/unit combinations
                                 const occupiedSet = new Set(stayingGuests.map(b => `${b.roomId}-${b.unitId}`));
                                 const occupiedUnits = occupiedSet.size;
