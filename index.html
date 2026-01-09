@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v29.6</title>
+    <title>Miami Beach Resort v29.7</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -21,111 +21,39 @@
         html, body { overflow-x: hidden; width: 100%; max-width: 100vw; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1E293B; min-height: 100vh; color: #fff; position: relative; }
 
-        /* Golden Light Border Animation - Mobile Only */
-        /* Thin traveling light that moves around border like a rocket with trail */
-        @media (max-width: 768px) {
-            /* Static thin border */
-            body::before {
-                content: '';
-                position: fixed;
-                inset: 0;
-                pointer-events: none;
-                z-index: 9998;
-                border: 2px solid rgba(212,168,83,0.15);
-                border-radius: 0;
-            }
-            /* Traveling light particle */
-            body::after {
-                content: '';
-                position: fixed;
-                width: 12px;
-                height: 12px;
-                background: radial-gradient(circle, #FFD700 0%, #D4A853 50%, transparent 70%);
-                border-radius: 50%;
-                pointer-events: none;
-                z-index: 9999;
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6);
-                animation: golden-light-travel 6s linear infinite;
-            }
+        /* Fireworks Animation for Room Selection */
+        .firework-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
         }
-        /* Trail elements using CSS custom properties */
-        @property --trail-opacity {
-            syntax: '<number>';
-            initial-value: 0.6;
-            inherits: false;
+        .firework {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: firework-explode 1s ease-out forwards;
         }
-        /* Keyframes: Left middle -> Left bottom -> Right bottom -> Right top -> Left top -> Left middle */
-        @keyframes golden-light-travel {
-            0% {
-                left: 0;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
-            }
-            12.5% {
-                left: 0;
-                top: calc(100% - 6px);
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
-            }
-            12.6% {
-                left: 0;
-                top: calc(100% - 6px);
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            -20px 0 10px -5px rgba(255,215,0,0.3), -40px 0 8px -8px rgba(212,168,83,0.15);
-            }
-            37.5% {
-                left: calc(100% - 6px);
-                top: calc(100% - 6px);
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            -20px 0 10px -5px rgba(255,215,0,0.3), -40px 0 8px -8px rgba(212,168,83,0.15);
-            }
-            37.6% {
-                left: calc(100% - 6px);
-                top: calc(100% - 6px);
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            0 20px 10px -5px rgba(255,215,0,0.3), 0 40px 8px -8px rgba(212,168,83,0.15);
-            }
-            62.5% {
-                left: calc(100% - 6px);
-                top: 6px;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            0 20px 10px -5px rgba(255,215,0,0.3), 0 40px 8px -8px rgba(212,168,83,0.15);
-            }
-            62.6% {
-                left: calc(100% - 6px);
-                top: 6px;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            20px 0 10px -5px rgba(255,215,0,0.3), 40px 0 8px -8px rgba(212,168,83,0.15);
-            }
-            87.5% {
-                left: 6px;
-                top: 6px;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            20px 0 10px -5px rgba(255,215,0,0.3), 40px 0 8px -8px rgba(212,168,83,0.15);
-            }
-            87.6% {
-                left: 6px;
-                top: 6px;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
-            }
-            100% {
-                left: 0;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
-                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
-            }
+        @keyframes firework-explode {
+            0% { transform: scale(0); opacity: 1; }
+            50% { opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .spark {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: spark-fly 0.8s ease-out forwards;
+        }
+        @keyframes spark-fly {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { opacity: 0; }
         }
         
         /* Top Bar - Always sticky */
@@ -525,7 +453,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v29.6-top-booking</div>
+<div class="version-tag">v29.7-fireworks</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -686,6 +614,53 @@ const getBDTimestamp = () => {
 const formatDate = (d) => new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const shortDay = (d) => new Date(d+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"});
 const dayNum = (d) => new Date(d+"T12:00:00").getDate();
+
+// Fireworks celebration when selecting a room (money = celebration!)
+const triggerFireworks = () => {
+    const container = document.createElement('div');
+    container.className = 'firework-container';
+    document.body.appendChild(container);
+
+    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE'];
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    // Create multiple bursts
+    for (let burst = 0; burst < 3; burst++) {
+        setTimeout(() => {
+            const burstX = centerX + (Math.random() - 0.5) * 200;
+            const burstY = centerY + (Math.random() - 0.5) * 150;
+
+            // Create sparks for each burst
+            for (let i = 0; i < 30; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'spark';
+                spark.style.left = burstX + 'px';
+                spark.style.top = burstY + 'px';
+                spark.style.background = colors[Math.floor(Math.random() * colors.length)];
+                spark.style.boxShadow = `0 0 6px ${spark.style.background}`;
+
+                const angle = (Math.PI * 2 * i) / 30 + Math.random() * 0.5;
+                const velocity = 80 + Math.random() * 120;
+                const endX = Math.cos(angle) * velocity;
+                const endY = Math.sin(angle) * velocity;
+
+                spark.style.animation = `spark-fly 0.8s ease-out forwards`;
+                spark.style.setProperty('--end-x', endX + 'px');
+                spark.style.setProperty('--end-y', endY + 'px');
+                spark.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${endX}px, ${endY}px) scale(0.3)`, opacity: 0 }
+                ], { duration: 600 + Math.random() * 400, easing: 'ease-out', fill: 'forwards' });
+
+                container.appendChild(spark);
+            }
+        }, burst * 150);
+    }
+
+    // Remove container after animation
+    setTimeout(() => container.remove(), 1500);
+};
 
 const ROOMS = [
     {id:583459, name:"Royal Sea View Couple", short:"Royal Sea View", max:2, units:[{id:1,n:"601"},{id:2,n:"602"},{id:3,n:"603"},{id:4,n:"604"}]},
@@ -1952,12 +1927,13 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                 // Add to selection with today as check-in
                 const tomorrow = getBDDate(1);
                 setSelected([...selected, {
-                    room, 
-                    unit, 
+                    room,
+                    unit,
                     unitKey,
                     checkIn: today,
                     checkOut: tomorrow
                 }]);
+                triggerFireworks(); // Celebrate the selection!
             }
         };
         
@@ -2069,6 +2045,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                                         setSelected(selected.filter(s => s.unitKey !== unitKey));
                                                     } else {
                                                         setSelected([...selected, {unitKey, room, unit, checkIn: selectedDate, checkOut: checkOutDate}]);
+                                                        triggerFireworks(); // Celebrate the selection!
                                                     }
                                                 }} style={{background: isSelected ? 'linear-gradient(145deg, #2D6A6A, #245858)' : 'rgba(255,255,255,0.05)', border: isSelected ? '2px solid #fff' : '2px solid transparent', borderRadius: '10px', padding: '12px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s'}}>
                                                     <div style={{fontWeight: '700', color: isSelected ? '#fff' : '#22c55e', fontSize: '22px'}}>{unit.n}</div>
@@ -2848,7 +2825,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                                         <div key={`${room.id}-${unit.id}`} onClick={() => {
                                                             const unitKey = `${room.id}-${unit.id}`;
                                                             if (isSelected) setSelected(selected.filter(x => x.unitKey !== unitKey));
-                                                            else setSelected([...selected, {unitKey, room, unit, checkIn: searchCheckIn, checkOut: searchCheckOut}]);
+                                                            else { setSelected([...selected, {unitKey, room, unit, checkIn: searchCheckIn, checkOut: searchCheckOut}]); triggerFireworks(); }
                                                         }} style={{background: isSelected ? 'linear-gradient(145deg, #2D6A6A, #245858)' : 'rgba(255,255,255,0.03)', border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', cursor: 'pointer'}}>
                                                             <div style={{fontSize: '22px', fontWeight: '700'}}>{unit.n}</div>
                                                             <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '4px'}}>{room.short}</div>
