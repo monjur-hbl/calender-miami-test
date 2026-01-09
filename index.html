@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v29.9</title>
+    <title>Miami Beach Resort v30.0</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -453,7 +453,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v29.9-whatsapp-chat</div>
+<div class="version-tag">v30.0-whatsapp-ui</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -8486,7 +8486,12 @@ function WhatsAppTab() {
     const [replyText, setReplyText] = React.useState('');
     const [sending, setSending] = React.useState(false);
     const [loadingMessages, setLoadingMessages] = React.useState(false);
+    const [showMediaPicker, setShowMediaPicker] = React.useState(false);
+    const [selectedMedia, setSelectedMedia] = React.useState(null);
+    const [mediaCaption, setMediaCaption] = React.useState('');
+    const [uploadingMedia, setUploadingMedia] = React.useState(false);
     const messagesEndRef = React.useRef(null);
+    const fileInputRef = React.useRef(null);
 
     const checkStatus = React.useCallback(async () => {
         try {
@@ -8532,7 +8537,7 @@ function WhatsAppTab() {
     React.useEffect(() => {
         if (waStatus === 'connected') {
             fetchMessages();
-            const msgInterval = setInterval(fetchMessages, 10000);
+            const msgInterval = setInterval(fetchMessages, 5000);
             return () => clearInterval(msgInterval);
         }
     }, [waStatus, fetchMessages]);
@@ -8577,7 +8582,7 @@ function WhatsAppTab() {
             const data = await res.json();
             if (data.success) {
                 setReplyText('');
-                fetchMessages();
+                setTimeout(fetchMessages, 500);
             } else {
                 alert('Failed to send: ' + (data.error || 'Unknown error'));
             }
@@ -8585,6 +8590,62 @@ function WhatsAppTab() {
             alert('Error sending message: ' + err.message);
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            let mediaType = 'document';
+            if (file.type.startsWith('image/')) mediaType = 'image';
+            else if (file.type.startsWith('video/')) mediaType = 'video';
+            else if (file.type.startsWith('audio/')) mediaType = 'audio';
+
+            setSelectedMedia({
+                base64,
+                filename: file.name,
+                mimetype: file.type,
+                type: mediaType,
+                size: file.size
+            });
+            setShowMediaPicker(true);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleSendMedia = async () => {
+        if (!selectedMedia || !selectedChat || uploadingMedia) return;
+        setUploadingMedia(true);
+        try {
+            const res = await fetch(WA_SERVICE + '/send-media', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone: selectedChat,
+                    mediaBase64: selectedMedia.base64,
+                    mimetype: selectedMedia.mimetype,
+                    type: selectedMedia.type,
+                    filename: selectedMedia.filename,
+                    caption: mediaCaption
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setSelectedMedia(null);
+                setMediaCaption('');
+                setShowMediaPicker(false);
+                setTimeout(fetchMessages, 500);
+            } else {
+                alert('Failed to send: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Error sending media: ' + err.message);
+        } finally {
+            setUploadingMedia(false);
         }
     };
 
@@ -8597,17 +8658,27 @@ function WhatsAppTab() {
         }
     };
 
-    // Group messages by phone number
+    // Group messages by chatJid (handles both sent and received)
     const chatGroups = React.useMemo(() => {
         const groups = {};
         messages.forEach(msg => {
-            if (!groups[msg.from]) {
-                groups[msg.from] = { phone: msg.from, messages: [], unread: 0, lastMessage: null };
+            const chatKey = msg.chatJid || (msg.fromMe ? msg.chatJid : msg.from + '@s.whatsapp.net');
+            const displayPhone = msg.chatJid ? msg.chatJid.split('@')[0] : msg.from;
+
+            if (!groups[displayPhone]) {
+                groups[displayPhone] = {
+                    phone: displayPhone,
+                    chatJid: msg.chatJid,
+                    name: msg.chatName || displayPhone,
+                    messages: [],
+                    unread: 0,
+                    lastMessage: null
+                };
             }
-            groups[msg.from].messages.push(msg);
-            if (!msg.read) groups[msg.from].unread++;
-            if (!groups[msg.from].lastMessage || new Date(msg.timestamp) > new Date(groups[msg.from].lastMessage.timestamp)) {
-                groups[msg.from].lastMessage = msg;
+            groups[displayPhone].messages.push(msg);
+            if (!msg.read && !msg.fromMe) groups[displayPhone].unread++;
+            if (!groups[displayPhone].lastMessage || new Date(msg.timestamp) > new Date(groups[displayPhone].lastMessage.timestamp)) {
+                groups[displayPhone].lastMessage = msg;
             }
         });
         return Object.values(groups).sort((a, b) =>
@@ -8617,9 +8688,10 @@ function WhatsAppTab() {
 
     const selectedChatMessages = React.useMemo(() => {
         if (!selectedChat) return [];
-        return messages.filter(m => m.from === selectedChat).sort((a, b) =>
-            new Date(a.timestamp) - new Date(b.timestamp)
-        );
+        return messages.filter(m => {
+            const msgPhone = m.chatJid ? m.chatJid.split('@')[0] : m.from;
+            return msgPhone === selectedChat;
+        }).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     }, [messages, selectedChat]);
 
     const formatTime = (ts) => {
@@ -8635,17 +8707,31 @@ function WhatsAppTab() {
     };
 
     const formatPhone = (phone) => {
-        if (phone.length === 13 && phone.startsWith('880')) {
-            return '+880 ' + phone.slice(3, 5) + ' ' + phone.slice(5, 9) + ' ' + phone.slice(9);
+        if (!phone) return 'Unknown';
+        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        if (cleanPhone.length === 13 && cleanPhone.startsWith('880')) {
+            return '+880 ' + cleanPhone.slice(3, 5) + ' ' + cleanPhone.slice(5, 9) + ' ' + cleanPhone.slice(9);
         }
-        return '+' + phone;
+        return '+' + cleanPhone;
+    };
+
+    const getMessageIcon = (type) => {
+        switch(type) {
+            case 'image': return '🖼️';
+            case 'video': return '🎬';
+            case 'audio': return '🎵';
+            case 'document': return '📄';
+            case 'location': return '📍';
+            case 'sticker': return '😀';
+            case 'contact': return '👤';
+            default: return '';
+        }
     };
 
     // Not connected states
     if (waStatus !== 'connected') {
         return (
             <div style={{height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', background: '#111b21'}}>
-                {/* Header */}
                 <div style={{padding: '16px 20px', background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'}}>
                     <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                         <span style={{fontSize: '28px'}}>💬</span>
@@ -8659,7 +8745,6 @@ function WhatsAppTab() {
                     </button>
                 </div>
 
-                {/* Main Content */}
                 <div style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', overflowY: 'auto'}}>
                     {(waStatus === 'loading' || waStatus === 'connecting' || waStatus === 'initializing' || waStatus === 'reconnecting') && (
                         <div style={{textAlign: 'center'}}>
@@ -8742,7 +8827,7 @@ function WhatsAppTab() {
                 <div style={{width: '320px', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', background: '#1e2a30'}}>
                     <div style={{padding: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
                         <div style={{fontSize: '14px', fontWeight: '600', color: 'rgba(255,255,255,0.8)'}}>
-                            Incoming Messages {messages.length > 0 && `(${messages.length})`}
+                            Chats {chatGroups.length > 0 && `(${chatGroups.length})`}
                         </div>
                     </div>
                     <div style={{flex: 1, overflowY: 'auto'}}>
@@ -8754,8 +8839,8 @@ function WhatsAppTab() {
                         {!loadingMessages && chatGroups.length === 0 && (
                             <div style={{padding: '40px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)'}}>
                                 <div style={{fontSize: '40px', marginBottom: '12px'}}>📭</div>
-                                <div>No messages yet</div>
-                                <div style={{fontSize: '12px', marginTop: '8px'}}>Incoming messages will appear here</div>
+                                <div>No chats yet</div>
+                                <div style={{fontSize: '12px', marginTop: '8px'}}>Messages will appear here</div>
                             </div>
                         )}
                         {chatGroups.map(chat => (
@@ -8763,7 +8848,7 @@ function WhatsAppTab() {
                                 key={chat.phone}
                                 onClick={() => {
                                     setSelectedChat(chat.phone);
-                                    chat.messages.filter(m => !m.read).forEach(m => markAsRead(m.id));
+                                    chat.messages.filter(m => !m.read && !m.fromMe).forEach(m => markAsRead(m.id));
                                 }}
                                 style={{
                                     padding: '12px 16px',
@@ -8775,15 +8860,16 @@ function WhatsAppTab() {
                             >
                                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px'}}>
                                     <div style={{fontWeight: '600', fontSize: '14px', color: '#fff'}}>
-                                        {formatPhone(chat.phone)}
+                                        {chat.name !== chat.phone ? chat.name : formatPhone(chat.phone)}
                                     </div>
-                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>
+                                    <div style={{fontSize: '11px', color: chat.unread > 0 ? '#25D366' : 'rgba(255,255,255,0.4)'}}>
                                         {chat.lastMessage && formatTime(chat.lastMessage.timestamp)}
                                     </div>
                                 </div>
                                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                     <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px'}}>
-                                        {chat.lastMessage?.text || 'No messages'}
+                                        {chat.lastMessage?.fromMe && <span style={{color: '#25D366'}}>✓✓ </span>}
+                                        {getMessageIcon(chat.lastMessage?.type)} {chat.lastMessage?.text || 'No messages'}
                                     </div>
                                     {chat.unread > 0 && (
                                         <div style={{background: '#25D366', color: '#fff', fontSize: '11px', fontWeight: '700', padding: '2px 6px', borderRadius: '10px', minWidth: '20px', textAlign: 'center'}}>
@@ -8819,28 +8905,114 @@ function WhatsAppTab() {
                                 </div>
                             </div>
 
-                            {/* Messages */}
-                            <div style={{flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            {/* Messages - WhatsApp style: received LEFT, sent RIGHT */}
+                            <div style={{flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.02\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'}}>
                                 {selectedChatMessages.map(msg => (
                                     <div key={msg.id} style={{
-                                        alignSelf: 'flex-start',
+                                        alignSelf: msg.fromMe ? 'flex-end' : 'flex-start',
                                         maxWidth: '70%',
-                                        background: '#1e2a30',
-                                        padding: '10px 14px',
-                                        borderRadius: '12px',
-                                        borderTopLeftRadius: '4px'
+                                        background: msg.fromMe ? '#005c4b' : '#1e2a30',
+                                        padding: '8px 12px',
+                                        borderRadius: msg.fromMe ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
                                     }}>
+                                        {msg.type && msg.type !== 'text' && (
+                                            <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px'}}>
+                                                {getMessageIcon(msg.type)} {msg.type.charAt(0).toUpperCase() + msg.type.slice(1)}
+                                            </div>
+                                        )}
+                                        {msg.location && (
+                                            <div style={{marginBottom: '6px'}}>
+                                                <a
+                                                    href={`https://maps.google.com/?q=${msg.location.latitude},${msg.location.longitude}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{color: '#25D366', textDecoration: 'underline', fontSize: '12px'}}
+                                                >
+                                                    📍 Open in Maps
+                                                </a>
+                                            </div>
+                                        )}
                                         <div style={{fontSize: '14px', lineHeight: '1.4', wordBreak: 'break-word'}}>{msg.text}</div>
-                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px', textAlign: 'right'}}>
+                                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '4px', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '4px'}}>
                                             {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                            {msg.fromMe && (
+                                                <span style={{color: msg.deliveryStatus >= 3 ? '#53bdeb' : 'rgba(255,255,255,0.5)'}}>
+                                                    {msg.deliveryStatus >= 3 ? '✓✓' : msg.deliveryStatus === 2 ? '✓✓' : '✓'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Reply Input */}
+                            {/* Media Preview Modal */}
+                            {showMediaPicker && selectedMedia && (
+                                <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000}}>
+                                    <div style={{background: '#1e2a30', borderRadius: '16px', padding: '20px', maxWidth: '400px', width: '90%'}}>
+                                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+                                            <h3 style={{margin: 0, fontSize: '16px'}}>Send {selectedMedia.type}</h3>
+                                            <button onClick={() => { setShowMediaPicker(false); setSelectedMedia(null); setMediaCaption(''); }} style={{background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer'}}>×</button>
+                                        </div>
+                                        <div style={{background: '#0b141a', padding: '16px', borderRadius: '8px', marginBottom: '16px', textAlign: 'center'}}>
+                                            {selectedMedia.type === 'image' && (
+                                                <img src={`data:${selectedMedia.mimetype};base64,${selectedMedia.base64}`} style={{maxWidth: '100%', maxHeight: '200px', borderRadius: '8px'}} alt="Preview"/>
+                                            )}
+                                            {selectedMedia.type !== 'image' && (
+                                                <div style={{fontSize: '48px', marginBottom: '8px'}}>{getMessageIcon(selectedMedia.type)}</div>
+                                            )}
+                                            <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '8px'}}>{selectedMedia.filename}</div>
+                                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>{(selectedMedia.size / 1024).toFixed(1)} KB</div>
+                                        </div>
+                                        {(selectedMedia.type === 'image' || selectedMedia.type === 'video') && (
+                                            <input
+                                                type="text"
+                                                placeholder="Add a caption..."
+                                                value={mediaCaption}
+                                                onChange={(e) => setMediaCaption(e.target.value)}
+                                                style={{width: '100%', padding: '10px', background: '#2a3942', border: 'none', borderRadius: '8px', color: '#fff', marginBottom: '16px', boxSizing: 'border-box'}}
+                                            />
+                                        )}
+                                        <button
+                                            onClick={handleSendMedia}
+                                            disabled={uploadingMedia}
+                                            style={{width: '100%', padding: '12px', background: 'linear-gradient(135deg, #25D366, #128C7E)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: uploadingMedia ? 'not-allowed' : 'pointer'}}
+                                        >
+                                            {uploadingMedia ? '⏳ Sending...' : `Send ${selectedMedia.type}`}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Reply Input with Media Button */}
                             <div style={{padding: '12px 16px', background: '#1e2a30', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '10px', alignItems: 'flex-end'}}>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                                    style={{display: 'none'}}
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    style={{
+                                        width: '44px',
+                                        height: '44px',
+                                        borderRadius: '50%',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none',
+                                        color: '#fff',
+                                        fontSize: '20px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                    title="Attach file"
+                                >
+                                    📎
+                                </button>
                                 <textarea
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
