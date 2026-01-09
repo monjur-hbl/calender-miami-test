@@ -13,7 +13,7 @@
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
-| WhatsApp Service | v1.3.0 | Cloud Run | ✅ Live |
+| WhatsApp Service | v1.4.0 | Cloud Run | ✅ Live |
 
 ---
 
@@ -113,15 +113,18 @@ curl https://whatsapp-service-1006186358018.us-central1.run.app/status
 - Automatic token refresh
 - Rate limiting and caching
 
-### WhatsApp Service v1.3.0 (2026-01-10) - ✅ UPDATED
+### WhatsApp Service v1.4.0 (2026-01-10) - ✅ FULL FEATURES
 - **Baileys library** for WhatsApp Web multi-device connection
 - QR code generation for WhatsApp login
 - Session persistence via Firestore backup
-- Send/receive WhatsApp messages
-- **In-memory message storage** (fixes Firestore index issue)
-- Endpoints: `/status`, `/restart`, `/logout`, `/send`, `/messages`
+- **Send/receive text messages** (both sent & received visible)
+- **Send/receive media** (images, videos, audio, documents)
+- **Location sharing** (send locations with coordinates)
+- **Group messaging** (send to groups, list groups)
+- **Read receipts** (delivery status tracking)
+- **Status/stories viewing** (view contact statuses)
+- Endpoints: `/status`, `/restart`, `/logout`, `/send`, `/send-media`, `/send-location`, `/read`, `/messages`, `/chats`, `/groups`, `/statuses`
 - Cloud Run: min-instances=1 for WebSocket persistence
-- Auth storage: `/tmp` local + Firestore backup
 
 ---
 
@@ -201,6 +204,7 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
+| 01:10 | WhatsApp Service | v1.4.0 - Full features (media, groups, location, read receipts) | ✅ Deployed |
 | 00:55 | WhatsApp Service | v1.3.0 - In-memory message storage fix | ✅ Deployed |
 | 00:15 | WhatsApp Service | v1.2.0 - Baileys + Firestore auth, QR code working | ✅ Deployed |
 | 00:00 | Dashboard | Fireworks on unit selection, renamed "Floor Calendar" (v29.7) | ✅ Deployed |
