@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-09 19:00 BST
+> **Last Updated**: 2026-01-09 19:30 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v28.1-edit-guests | GitHub Pages | ✅ Live |
+| Dashboard | v28.2-add-payment | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -41,9 +41,13 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 
 ## Key Features by Version
 
-### Dashboard v28.1-edit-guests (2026-01-09)
-- **NEW**: Edit Adults/Children for existing bookings
-- **NEW**: Display Adults/Children count in booking modal
+### Dashboard v28.2-add-payment (2026-01-09)
+- **NEW**: Add Payment button to record payments after booking creation
+- **NEW**: Payment method selector (Cash, Bkash, Nagad, Card, Bank Transfer, Other)
+- **NEW**: Payment reference/transaction ID field
+- **NEW**: Payment preview before submission
+- Edit Adults/Children for existing bookings
+- Display Adults/Children count in booking modal
 - Adults/Children selectors (1-10 adults, 0-6 children)
 - Price Type selector: "Total Stay" or "Per Night"
 - Per-night auto-calculation: price × nights × rooms
@@ -140,6 +144,7 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
+| 19:30 | Dashboard | Add Payment feature with method selector (v28.2) | ✅ Deployed |
 | 19:00 | Dashboard | Edit Adults/Children for existing bookings (v28.1) | ✅ Deployed |
 | 18:30 | Dashboard | Adults/Children + Per-Night pricing (v28.0) | ✅ Deployed |
 | 18:15 | Dashboard | Template variables for charge description | ✅ Deployed |
