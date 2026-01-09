@@ -5394,11 +5394,15 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
     };
     
     // Save payment - handles both simple and advanced modes
+    // Beds24 API Invoice Item Types:
+    // - type: "charge" (1) = Room price/accommodation
+    // - type: "payment" (200) = Generic payment received
+    // - qty: positive for charges/payments, negative was old method
     const savePayment = async () => {
         setSaving(true);
         try {
             const isAdvancedMode = groupBookings.length > 1 && paymentMode === 'advanced';
-            
+
             if (isAdvancedMode) {
                 // Advanced mode: Update each room's deposit individually with invoice items
                 const updates = [];
@@ -5407,26 +5411,26 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                     if (addAmount > 0) {
                         const currentDeposit = parseFloat(b.deposit) || 0;
                         updates.push({
-                            id: b.id, 
+                            id: b.id,
                             deposit: currentDeposit + addAmount,
                             invoiceItems: [{
+                                type: "payment",
                                 description: "Cash Received",
-                                qty: -1,
-                                price: addAmount,
-                                status: ""
+                                qty: 1,
+                                price: addAmount
                             }]
                         });
                     }
                 }
-                
+
                 if (updates.length === 0) {
                     alert("Please enter payment amount for at least one room");
                     setSaving(false);
                     return;
                 }
-                
+
                 console.log("Updating deposits with invoice items (advanced mode):", updates);
-                const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                const res = await fetch(PROXY + "?endpoint=bookings", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify(updates)
@@ -5439,45 +5443,46 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                 }
             } else {
                 // Simple mode: Update the form values (price and deposit)
-                // Convert to numbers for Beds24 API
                 const newPrice = parseFloat(form.price) || 0;
                 const newDeposit = parseFloat(form.deposit) || 0;
                 const oldPrice = parseFloat(booking.price) || 0;
                 const oldDeposit = parseFloat(booking.deposit) || 0;
-                
+
                 const updateData = {
-                    id: booking.id, 
-                    price: newPrice, 
+                    id: booking.id,
+                    price: newPrice,
                     deposit: newDeposit
                 };
-                
-                // If deposit increased, add payment invoice item
+
+                // Build invoice items with correct Beds24 types
                 const invoiceItems = [];
+
+                // If deposit increased, add payment invoice item (type: payment)
                 if (newDeposit > oldDeposit) {
                     invoiceItems.push({
+                        type: "payment",
                         description: "Cash Received",
-                        qty: -1,
-                        price: newDeposit - oldDeposit,
-                        status: ""
+                        qty: 1,
+                        price: newDeposit - oldDeposit
                     });
                 }
-                
-                // If price changed, update accommodation invoice item using Beds24 template
+
+                // If price changed, update accommodation charge (type: charge)
                 if (newPrice !== oldPrice) {
                     invoiceItems.push({
+                        type: "charge",
                         description: "[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]",
                         qty: 1,
-                        price: newPrice,
-                        status: ""
+                        price: newPrice
                     });
                 }
-                
+
                 if (invoiceItems.length > 0) {
                     updateData.invoiceItems = invoiceItems;
                 }
-                
+
                 console.log("Updating payment with invoice items (simple mode):", updateData);
-                const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                const res = await fetch(PROXY + "?endpoint=bookings", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify([updateData])
@@ -6233,21 +6238,21 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
                         if (paymentAmt > 0) {
                             const currentDeposit = parseFloat(b.deposit) || 0;
                             updates.push({
-                                id: b.id, 
+                                id: b.id,
                                 deposit: currentDeposit + paymentAmt,
                                 invoiceItems: [{
+                                    type: "payment",
                                     description: paymentDesc,
-                                    qty: -1,
-                                    price: paymentAmt,
-                                    status: ""
+                                    qty: 1,
+                                    price: paymentAmt
                                 }]
                             });
                         }
                     }
-                    
+
                     if (updates.length > 0) {
                         console.log("Syncing payments with invoice items (advanced):", updates);
-                        const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                        const res = await fetch(PROXY + "?endpoint=bookings", {
                             method: "POST",
                             headers: {"Content-Type": "application/json"},
                             body: JSON.stringify(updates)
@@ -6265,20 +6270,20 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
                     const currentDeposit = parseFloat(booking.deposit) || 0;
                     const paymentAmt = parseFloat(transForm.amount) || 0;
                     const newDeposit = currentDeposit + paymentAmt;
-                    
+
                     const updateData = {
-                        id: booking.id, 
+                        id: booking.id,
                         deposit: newDeposit,
                         invoiceItems: [{
+                            type: "payment",
                             description: paymentDesc,
-                            qty: -1,
-                            price: paymentAmt,
-                            status: ""
+                            qty: 1,
+                            price: paymentAmt
                         }]
                     };
-                    
+
                     console.log("Syncing payment with invoice item (simple):", updateData);
-                    const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+                    const res = await fetch(PROXY + "?endpoint=bookings", {
                         method: "POST",
                         headers: {"Content-Type": "application/json"},
                         body: JSON.stringify([updateData])
@@ -6466,7 +6471,7 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
         try {
             const paymentAmt = parseFloat(amount || 0);
             const newDeposit = parseFloat(currentDeposit || 0) + paymentAmt;
-            
+
             // Format description like Beds24: "Bkash Received TX123" or "Cash Received"
             let paymentDesc = method === 'bkash' ? 'Bkash Received' :
                               method === 'nagad' ? 'Nagad Received' :
@@ -6475,20 +6480,20 @@ function AccountingTab({bookings, getRoomInfo, formatDate, fetchData, setShowInf
                               method === 'card' ? 'Card Payment' :
                               method === 'cash' ? 'Cash Received' :
                               'Payment Received';
-            
+
             const updateData = {
-                id: bookingId, 
+                id: bookingId,
                 deposit: newDeposit,
                 invoiceItems: [{
+                    type: "payment",
                     description: paymentDesc,
-                    qty: -1,
-                    price: paymentAmt,
-                    status: ""
+                    qty: 1,
+                    price: paymentAmt
                 }]
             };
-            
+
             console.log("Quick pay with invoice item:", updateData);
-            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {
+            const res = await fetch(PROXY + "?endpoint=bookings", {
                 method: "POST", headers: {"Content-Type": "application/json"},
                 body: JSON.stringify([updateData])
             });
@@ -7250,17 +7255,19 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                 const roomDeposit = advanceAmt / roomSelections.length;
                 
                 // Create invoice items for proper Beds24 invoice generation
+                // Beds24 API invoice item types:
+                // - type: "charge" (1) = Room price/accommodation charge
+                // - type: "payment" (200) = Payment received
                 const invoiceItems = [];
-                
+
                 // Add accommodation charge using Beds24 template variables
-                // [ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY] will be rendered by Beds24
                 invoiceItems.push({
+                    type: "charge",
                     description: "[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]",
                     qty: 1,
-                    price: roomPrice,
-                    status: ""
+                    price: roomPrice
                 });
-                
+
                 // Add payment if advance was paid
                 if (roomDeposit > 0) {
                     const method = PAYMENT_METHODS.find(m => m.id === form.paymentMethod);
@@ -7270,10 +7277,10 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                         paymentDesc += " " + form.transactionId.toUpperCase();
                     }
                     invoiceItems.push({
+                        type: "payment",
                         description: paymentDesc,
-                        qty: -1,
-                        price: roomDeposit,
-                        status: ""
+                        qty: 1,
+                        price: roomDeposit
                     });
                 }
                 
@@ -7302,8 +7309,8 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
             });
             
             console.log("Booking data to send:", JSON.stringify(data, null, 2));
-            
-            const res = await fetch(PROXY + "?endpoint=bookings&action=write", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+
+            const res = await fetch(PROXY + "?endpoint=bookings", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
             const result = await res.json();
             console.log("Beds24 response:", result);
             
