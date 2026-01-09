@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v29.7-fireworks | GitHub Pages | ✅ Live |
+| Dashboard | v30.0-whatsapp-ui | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -204,6 +204,7 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
+| 01:30 | Dashboard | v30.0 - WhatsApp UI: proper alignment, media upload, read receipts | ✅ Deployed |
 | 01:10 | WhatsApp Service | v1.4.0 - Full features (media, groups, location, read receipts) | ✅ Deployed |
 | 00:55 | WhatsApp Service | v1.3.0 - In-memory message storage fix | ✅ Deployed |
 | 00:15 | WhatsApp Service | v1.2.0 - Baileys + Firestore auth, QR code working | ✅ Deployed |
