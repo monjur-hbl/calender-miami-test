@@ -60,11 +60,7 @@ const occupancyRate = Math.round((occupiedUnits / totalRooms) * 100);
 ## File Structure
 ```
 dashboard/
-<<<<<<< Updated upstream
 ├── index.html              # Main app (v28.1-edit-guests)
-=======
-├── index.html              # Main app (v28.0-guest-pricing)
->>>>>>> Stashed changes
 ├── js/                     # Modular JS (reference only)
 │   ├── config.js
 │   ├── app.js
