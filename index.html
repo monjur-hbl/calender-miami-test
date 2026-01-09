@@ -250,7 +250,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v27.7-template-vars</div>
+<div class="version-tag">v28.0-guest-pricing</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -7163,17 +7163,21 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
     };
     
     const [form, setForm] = useState({
-        guests: [{name: ""}], 
-        phones: [""], 
-        email: "", 
-        nid: "", 
-        dob: "", 
-        checkIn: defaultCheckIn, 
+        guests: [{name: ""}],
+        phones: [""],
+        email: "",
+        nid: "",
+        dob: "",
+        checkIn: defaultCheckIn,
         checkOut: defaultCheckOut,
         status: "confirmed",
         subStatus: "none",
-        // New pricing fields
+        // Guest count
+        numAdult: "2",
+        numChild: "0",
+        // Pricing fields
         pricingMode: "simple", // simple or advanced
+        priceType: "total", // "total" or "perNight"
         rackRate: "",
         salePrice: "",
         discountType: "percent", // percent or amount
@@ -7186,17 +7190,31 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
     const [status, setStatus] = useState("");
     const [createdBooking, setCreatedBooking] = useState(null);
     
+    // Calculate total nights across all room selections
+    const totalNights = useMemo(() => {
+        if (roomSelections.length === 0) return 1;
+        // For multi-room, use the first room's nights (they usually have same dates)
+        const s = roomSelections[0];
+        return Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
+    }, [roomSelections]);
+
     // Calculate pricing based on inputs
     const calculatePricing = () => {
-        const rackRate = parseFloat(form.rackRate) || 0;
-        const salePrice = parseFloat(form.salePrice) || 0;
+        const rackRateInput = parseFloat(form.rackRate) || 0;
+        const salePriceInput = parseFloat(form.salePrice) || 0;
         const discountValue = parseFloat(form.discountValue) || 0;
         const advance = parseFloat(form.advancePayment) || 0;
-        
+        const isPerNight = form.priceType === 'perNight';
+        const numRooms = Math.max(1, roomSelections.length);
+
+        // Convert to total if per-night selected
+        const rackRate = isPerNight ? rackRateInput * totalNights * numRooms : rackRateInput;
+        const salePrice = isPerNight ? salePriceInput * totalNights * numRooms : salePriceInput;
+
         let finalPrice = salePrice;
         let discountAmount = 0;
         let discountPercent = 0;
-        
+
         if (rackRate > 0) {
             if (form.discountType === 'percent' && discountValue > 0) {
                 // Calculate sale price from discount %
@@ -7217,10 +7235,25 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                 finalPrice = rackRate;
             }
         }
-        
+
         const due = Math.max(0, finalPrice - advance);
-        
-        return { rackRate, salePrice: finalPrice, discountAmount, discountPercent, advance, due, finalPrice };
+
+        // Per-night values for display
+        const perNightPrice = numRooms > 0 && totalNights > 0 ? finalPrice / (totalNights * numRooms) : finalPrice;
+
+        return {
+            rackRate,
+            salePrice: finalPrice,
+            discountAmount,
+            discountPercent,
+            advance,
+            due,
+            finalPrice,
+            perNightPrice,
+            totalNights,
+            numRooms,
+            isPerNight
+        };
     };
     
     const pricing = calculatePricing();
@@ -7322,6 +7355,10 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     });
                 }
 
+                // Build rateDescription for pricing breakdown
+                const perNightRate = nights > 0 ? roomPrice / nights : roomPrice;
+                const rateDesc = `৳${perNightRate.toLocaleString()} per night × ${nights} night${nights > 1 ? 's' : ''} = ৳${roomPrice.toLocaleString()}`;
+
                 // Build booking object
                 const bookingData = {
                     propertyId: PROPERTY,
@@ -7329,8 +7366,8 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     unitId: s.unit.id,
                     arrival: s.checkIn,
                     departure: s.checkOut,
-                    numAdult: s.room.max || 2,
-                    numChild: 0,
+                    numAdult: parseInt(form.numAdult) || 2,
+                    numChild: parseInt(form.numChild) || 0,
                     status: form.status,
                     subStatus: form.subStatus !== "none" ? form.subStatus : undefined,
                     firstName: names,
@@ -7340,6 +7377,7 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     custom5: form.dob || "",
                     price: roomPrice,
                     deposit: roomDeposit,
+                    rateDescription: rateDesc,
                     notes: form.notes || "",
                     referer: "miami_frontdesk",
                     groupId: roomSelections.length > 1 ? groupId : undefined,
@@ -7683,15 +7721,45 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                         {/* Simple Mode - Total pricing */}
                         {form.pricingMode === 'simple' && (
                             <>
+                                {/* Row 0: Adults, Children & Price Type */}
+                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px'}}>
+                                    <div>
+                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>👤 Adults</label>
+                                        <select value={form.numAdult} onChange={e => setForm({...form, numAdult: e.target.value})} style={{...inputStyle, fontSize: '14px', padding: '12px', cursor: 'pointer'}}>
+                                            {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>👶 Children</label>
+                                        <select value={form.numChild} onChange={e => setForm({...form, numChild: e.target.value})} style={{...inputStyle, fontSize: '14px', padding: '12px', cursor: 'pointer'}}>
+                                            {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>📅 Price Type</label>
+                                        <select value={form.priceType} onChange={e => setForm({...form, priceType: e.target.value})} style={{...inputStyle, fontSize: '14px', padding: '12px', cursor: 'pointer', background: form.priceType === 'perNight' ? 'rgba(45,106,106,0.3)' : 'rgba(255,255,255,0.08)'}}>
+                                            <option value="total">Total Stay</option>
+                                            <option value="perNight">Per Night</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Show nights/rooms info when per-night selected */}
+                                {form.priceType === 'perNight' && (
+                                    <div style={{marginBottom: '12px', padding: '8px 12px', background: 'rgba(45,106,106,0.2)', borderRadius: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.8)'}}>
+                                        📊 {pricing.totalNights} night{pricing.totalNights > 1 ? 's' : ''} × {pricing.numRooms} room{pricing.numRooms > 1 ? 's' : ''} = Prices will be multiplied by {pricing.totalNights * pricing.numRooms}
+                                    </div>
+                                )}
+
                                 {/* Row 1: Rack Rate & Sale Price */}
                                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
                                     <div>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>📊 Rack Rate (৳)</label>
-                                        <input type="number" value={form.rackRate} onChange={e => setForm({...form, rackRate: e.target.value, discountValue: ''})} placeholder="Original price" style={{...inputStyle, fontSize: '14px', padding: '12px'}}/>
+                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>📊 Rack Rate (৳){form.priceType === 'perNight' ? '/night' : ''}</label>
+                                        <input type="number" value={form.rackRate} onChange={e => setForm({...form, rackRate: e.target.value, discountValue: ''})} placeholder={form.priceType === 'perNight' ? 'Per night price' : 'Total price'} style={{...inputStyle, fontSize: '14px', padding: '12px'}}/>
                                     </div>
                                     <div>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>💵 Sale Price (৳)</label>
-                                        <input type="number" value={form.salePrice} onChange={e => setForm({...form, salePrice: e.target.value, discountValue: ''})} placeholder="Final price" style={{...inputStyle, fontSize: '14px', padding: '12px', background: parseFloat(form.rackRate) > 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)', borderColor: parseFloat(form.rackRate) > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.18)'}}/>
+                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>💵 Sale Price (৳){form.priceType === 'perNight' ? '/night' : ''}</label>
+                                        <input type="number" value={form.salePrice} onChange={e => setForm({...form, salePrice: e.target.value, discountValue: ''})} placeholder={form.priceType === 'perNight' ? 'Per night price' : 'Total price'} style={{...inputStyle, fontSize: '14px', padding: '12px', background: parseFloat(form.rackRate) > 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)', borderColor: parseFloat(form.rackRate) > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.18)'}}/>
                                     </div>
                                 </div>
                                 
@@ -7825,10 +7893,22 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                                 <div style={{fontSize: '12px', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '10px'}}>📋 Summary</div>
                                 {form.pricingMode === 'simple' ? (
                                     <>
+                                        {/* Guest count display */}
+                                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px'}}>
+                                            <span style={{color: 'rgba(255,255,255,0.5)'}}>Guests:</span>
+                                            <span style={{color: 'rgba(255,255,255,0.7)'}}>{form.numAdult} Adult{form.numAdult > 1 ? 's' : ''}{parseInt(form.numChild) > 0 ? `, ${form.numChild} Child${form.numChild > 1 ? 'ren' : ''}` : ''}</span>
+                                        </div>
+                                        {/* Per-night breakdown when applicable */}
+                                        {form.priceType === 'perNight' && parseFloat(form.salePrice) > 0 && (
+                                            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px'}}>
+                                                <span style={{color: 'rgba(255,255,255,0.5)'}}>Rate:</span>
+                                                <span style={{color: 'rgba(255,255,255,0.7)'}}>৳{parseFloat(form.salePrice).toLocaleString()}/night × {pricing.totalNights} night{pricing.totalNights > 1 ? 's' : ''} × {pricing.numRooms} room{pricing.numRooms > 1 ? 's' : ''}</span>
+                                            </div>
+                                        )}
                                         {parseFloat(form.rackRate) > 0 && (
                                             <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px'}}>
-                                                <span style={{color: 'rgba(255,255,255,0.5)'}}>Rack Rate:</span>
-                                                <span style={{color: 'rgba(255,255,255,0.7)', textDecoration: pricing.discountAmount > 0 ? 'line-through' : 'none'}}>৳{parseFloat(form.rackRate).toLocaleString()}</span>
+                                                <span style={{color: 'rgba(255,255,255,0.5)'}}>Rack Rate{form.priceType === 'perNight' ? ' (Total)' : ''}:</span>
+                                                <span style={{color: 'rgba(255,255,255,0.7)', textDecoration: pricing.discountAmount > 0 ? 'line-through' : 'none'}}>৳{pricing.rackRate.toLocaleString()}</span>
                                             </div>
                                         )}
                                         {pricing.discountAmount > 0 && (
@@ -7838,7 +7918,7 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                                             </div>
                                         )}
                                         <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
-                                            <span style={{color: 'rgba(255,255,255,0.8)', fontWeight: '600'}}>Sale Price:</span>
+                                            <span style={{color: 'rgba(255,255,255,0.8)', fontWeight: '600'}}>Sale Price{form.priceType === 'perNight' ? ' (Total)' : ''}:</span>
                                             <span style={{fontWeight: '700', color: '#22c55e'}}>৳{pricing.finalPrice.toLocaleString()}</span>
                                         </div>
                                         {parseFloat(form.advancePayment) > 0 && (
