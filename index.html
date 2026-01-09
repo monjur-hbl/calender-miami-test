@@ -872,23 +872,22 @@ function App() {
             let filtered = [];
             let source = 'api';
 
-            // Try optimized dashboard endpoint first (API v4.0)
+            // Use /api/calendar endpoint to fetch ALL bookings for the date range
+            // This fetches arrivals AND departures for the next 45 days (covers calendar views)
             try {
-                const res = await fetch(`${PROXY}/dashboard/data`);
+                const res = await fetch(`${PROXY}/api/calendar?start=${todayDate}&days=45`);
                 const data = await res.json();
 
                 if (data.success && data.data && data.data.length > 0) {
                     filtered = data.data.filter(b => b.status !== "cancelled");
-                    source = 'dashboard-api';
-                    if (data.stats) {
-                        console.log(`📊 API Stats: occupied=${data.stats.occupied}, checkIns=${data.stats.checkInsToday}, checkOuts=${data.stats.checkOutsToday}`);
-                    }
+                    source = 'calendar-api';
+                    console.log(`📊 Calendar API: ${data.count} bookings for ${data.dateRange?.start} to ${data.dateRange?.end}`);
                 } else {
-                    throw new Error('Dashboard endpoint returned no data');
+                    throw new Error('Calendar endpoint returned no data');
                 }
-            } catch (dashErr) {
+            } catch (calErr) {
+                console.log('📡 Calendar failed, trying /getBookings...', calErr.message);
                 // Fallback to basic getBookings endpoint
-                console.log('📡 Falling back to /getBookings...');
                 const res = await fetch(`${PROXY}/getBookings`);
                 const data = await res.json();
 
