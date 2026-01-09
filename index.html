@@ -53,43 +53,41 @@
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
         /* Sticky Date Header - sticks below tabs-wrapper (top-bar 58px + tabs-wrapper ~170px) */
-        .date-header-wrapper { position: sticky; top: 228px; z-index: 140; background: #1E293B; padding: 12px 16px; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
-        .date-header-wrapper::-webkit-scrollbar { display: none; }
-        .date-header-inner { display: flex; gap: 6px; padding-left: 140px; }
-        .date-cell { flex: 1; min-width: 80px; text-align: center; padding: 10px 6px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .date-header-wrapper { position: sticky; top: 228px; z-index: 140; background: #1E293B; padding: 12px 16px; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .date-header-inner { display: flex; gap: 4px; padding-left: 140px; }
+        .date-cell { flex: 1; min-width: 0; text-align: center; padding: 8px 4px; background: rgba(255,255,255,0.05); border-radius: 8px; }
         .date-cell.today { background: #2D6A6A; }
-        .date-day { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); }
-        .date-num { font-size: 20px; font-weight: 700; margin-top: 2px; }
+        .date-day { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.7); }
+        .date-num { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
         /* Occupancy Summary Row - Sticky below dates */
-        .occupancy-row-wrapper { position: sticky; top: 318px; z-index: 139; background: #1E293B; padding: 8px 16px 8px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
-        .occupancy-row-wrapper::-webkit-scrollbar { display: none; }
-        .occupancy-row-inner { display: flex; gap: 6px; padding-left: 140px; }
-        .occupancy-cell { flex: 1; min-width: 80px; text-align: center; padding: 6px 4px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        .occupancy-cell .occ-available { font-size: 14px; font-weight: 700; color: #10b981; }
-        .occupancy-cell .occ-occupied { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .occupancy-row-wrapper { position: sticky; top: 318px; z-index: 139; background: #1E293B; padding: 6px 16px; }
+        .occupancy-row-inner { display: flex; gap: 4px; padding-left: 140px; }
+        .occupancy-cell { flex: 1; min-width: 0; text-align: center; padding: 4px 2px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .occupancy-cell .occ-available { font-size: 12px; font-weight: 700; color: #10b981; }
+        .occupancy-cell .occ-occupied { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 1px; }
         .occupancy-cell.full { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
         .occupancy-cell.full .occ-available { color: #ef4444; }
         .occupancy-cell.low { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); }
         .occupancy-cell.low .occ-available { color: #f59e0b; }
 
         /* Calendar Container */
-        .cal-container { padding: 0 16px 100px; overflow-x: auto; }
-        
+        .cal-container { padding: 0 16px 100px; }
+
         /* Floor Header */
         .floor-header { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 10px; margin: 12px 0 10px 0; }
-        
+
         /* Room Row */
-        .room-row { display: flex; gap: 6px; margin-bottom: 6px; }
-        
+        .room-row { display: flex; gap: 4px; margin-bottom: 4px; }
+
         /* Room Label */
-        .room-label { min-width: 134px; max-width: 134px; background: #232a3b; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
-        .room-num { font-size: 22px; font-weight: 700; }
-        .room-type { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.2; }
-        .room-cap { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
-        
-        /* Status Card - Responsive to fill available space */
-        .status-card { flex: 1; min-width: 80px; min-height: 80px; border-radius: 10px; padding: 10px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .room-label { min-width: 134px; max-width: 134px; background: #232a3b; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+        .room-num { font-size: 20px; font-weight: 700; }
+        .room-type { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 2px; line-height: 1.2; }
+        .room-cap { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+        /* Status Card - Fully responsive, no min-width */
+        .status-card { flex: 1; min-width: 0; min-height: 70px; border-radius: 8px; padding: 6px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow: hidden; }
         .status-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
         
         /* Only 2 colors: Green (available) and Red (booked) */
@@ -336,14 +334,20 @@
             .stat-label { font-size: 7px; }
             .tabs-row { gap: 6px; }
             .nav-btn { padding: 12px 16px; font-size: 13px; }
-            .status-card { flex: 1; min-width: 70px; min-height: 65px; padding: 8px; }
-            .room-label { min-width: 100px; max-width: 100px; }
-            .date-cell { flex: 1; min-width: 70px; }
-            .occupancy-cell { min-width: 70px; }
-            .occupancy-cell .occ-available { font-size: 12px; }
-            .occupancy-cell .occ-occupied { font-size: 9px; }
-            .date-header-inner { padding-left: 106px; }
-            .occupancy-row-inner { padding-left: 106px; }
+            .status-card { flex: 1; min-width: 0; min-height: 55px; padding: 4px; }
+            .room-label { min-width: 80px; max-width: 80px; padding: 6px; }
+            .room-num { font-size: 16px; }
+            .room-type { font-size: 8px; }
+            .room-cap { display: none; }
+            .date-cell { flex: 1; min-width: 0; padding: 6px 2px; }
+            .date-day { font-size: 9px; }
+            .date-num { font-size: 14px; }
+            .occupancy-cell { flex: 1; min-width: 0; }
+            .occupancy-cell .occ-available { font-size: 10px; }
+            .occupancy-cell .occ-occupied { font-size: 8px; }
+            .date-header-inner { padding-left: 86px; }
+            .occupancy-row-inner { padding-left: 86px; }
+            .room-row { gap: 3px; }
             .search-btn { padding: 10px 16px; font-size: 13px; }
             .date-header-wrapper { top: 218px; }
             .occupancy-row-wrapper { top: 303px; }
@@ -387,7 +391,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v28.9-fix-calendar</div>
+<div class="version-tag">v29.0-responsive-grid</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
