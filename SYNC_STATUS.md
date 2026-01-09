@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-09 17:30 BST
+> **Last Updated**: 2026-01-09 17:35 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -10,7 +10,7 @@
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
 | Dashboard | v27.3-overbooking | GitHub Pages | ✅ Live |
-| Miami API | v7.1-token-fix | Cloud Run | ⚠️ NEEDS DEPLOY |
+| Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
 
@@ -18,21 +18,7 @@
 
 ## Pending Actions
 
-### ⚠️ Miami API Deployment Required
-
-**Reason**: Token selection fix for booking creation (was using READ token for POST requests)
-
-```bash
-cd miami-api-fix
-/opt/homebrew/share/google-cloud-sdk/bin/gcloud builds submit \
-  --tag gcr.io/beds24-483408/miami-api:v7.1-token-fix \
-  --project beds24-483408
-
-/opt/homebrew/share/google-cloud-sdk/bin/gcloud run deploy miami-api \
-  --image gcr.io/beds24-483408/miami-api:v7.1-token-fix \
-  --platform managed --region us-central1 \
-  --allow-unauthenticated --project beds24-483408
-```
+✅ **No pending actions** - All components deployed and live.
 
 ---
 
@@ -63,7 +49,7 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 - Bangladesh timezone (Asia/Dhaka, GMT+6)
 - GitHub Pages auto-deploy via Actions
 
-### Miami API v7.1-token-fix (2026-01-09) - PENDING DEPLOY
+### Miami API v7.1-token-fix (2026-01-09) - ✅ DEPLOYED
 - **NEW**: Correct token selection (READ for GET, WRITE for POST/PUT/DELETE)
 - **NEW**: Fixes booking creation "Unexpected token" error
 - `/room-config` GET and POST endpoints
@@ -149,7 +135,7 @@ git add . && git commit -m "message" && git push
 |------|-----------|--------|--------|
 | 17:30 | Dashboard | Double-click prevention on booking submit | ✅ Deployed |
 | 17:30 | Dashboard | Overbooking detection/display | ✅ Deployed |
-| 17:00 | Miami API | Token selection fix (READ vs WRITE) | ⚠️ Git pushed, needs Cloud Run deploy |
+| 17:35 | Miami API | Token selection fix (READ vs WRITE) | ✅ Deployed to Cloud Run |
 | 16:00 | Dashboard | Calendar showing all future bookings | ✅ Deployed |
 | 15:00 | Dashboard | Occupancy summary row | ✅ Deployed |
 | 14:00 | Dashboard | Payment invoice format fix | ✅ Deployed |
