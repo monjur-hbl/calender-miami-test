@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v27</title>
+    <title>Miami Beach Resort v29.5</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -22,47 +22,110 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1E293B; min-height: 100vh; color: #fff; position: relative; }
 
         /* Golden Light Border Animation - Mobile Only */
+        /* Thin traveling light that moves around border like a rocket with trail */
         @media (max-width: 768px) {
+            /* Static thin border */
             body::before {
                 content: '';
                 position: fixed;
                 inset: 0;
                 pointer-events: none;
                 z-index: 9998;
-                border: 2px solid transparent;
+                border: 2px solid rgba(212,168,83,0.15);
                 border-radius: 0;
-                background: linear-gradient(90deg, transparent, transparent) padding-box,
-                            linear-gradient(var(--border-angle, 0deg), transparent 40%, #D4A853 50%, #FFD700 55%, #D4A853 60%, transparent 70%) border-box;
-                animation: border-rotate 4s linear infinite;
             }
+            /* Traveling light particle */
             body::after {
                 content: '';
                 position: fixed;
-                width: 60px;
-                height: 60px;
-                background: radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(212,168,83,0.3) 30%, transparent 70%);
+                width: 12px;
+                height: 12px;
+                background: radial-gradient(circle, #FFD700 0%, #D4A853 50%, transparent 70%);
                 border-radius: 50%;
                 pointer-events: none;
-                z-index: 9997;
-                filter: blur(8px);
-                animation: glow-travel 4s linear infinite;
+                z-index: 9999;
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6);
+                animation: golden-light-travel 6s linear infinite;
             }
         }
-        @property --border-angle {
-            syntax: '<angle>';
-            initial-value: 0deg;
+        /* Trail elements using CSS custom properties */
+        @property --trail-opacity {
+            syntax: '<number>';
+            initial-value: 0.6;
             inherits: false;
         }
-        @keyframes border-rotate {
-            0% { --border-angle: 0deg; }
-            100% { --border-angle: 360deg; }
-        }
-        @keyframes glow-travel {
-            0% { top: 0; left: 0; opacity: 1; }
-            25% { top: 0; left: calc(100% - 60px); opacity: 0.8; }
-            50% { top: calc(100% - 60px); left: calc(100% - 60px); opacity: 1; }
-            75% { top: calc(100% - 60px); left: 0; opacity: 0.8; }
-            100% { top: 0; left: 0; opacity: 1; }
+        /* Keyframes: Left middle -> Left bottom -> Right bottom -> Right top -> Left top -> Left middle */
+        @keyframes golden-light-travel {
+            0% {
+                left: 0;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
+            }
+            12.5% {
+                left: 0;
+                top: calc(100% - 6px);
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
+            }
+            12.6% {
+                left: 0;
+                top: calc(100% - 6px);
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            -20px 0 10px -5px rgba(255,215,0,0.3), -40px 0 8px -8px rgba(212,168,83,0.15);
+            }
+            37.5% {
+                left: calc(100% - 6px);
+                top: calc(100% - 6px);
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            -20px 0 10px -5px rgba(255,215,0,0.3), -40px 0 8px -8px rgba(212,168,83,0.15);
+            }
+            37.6% {
+                left: calc(100% - 6px);
+                top: calc(100% - 6px);
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            0 20px 10px -5px rgba(255,215,0,0.3), 0 40px 8px -8px rgba(212,168,83,0.15);
+            }
+            62.5% {
+                left: calc(100% - 6px);
+                top: 6px;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            0 20px 10px -5px rgba(255,215,0,0.3), 0 40px 8px -8px rgba(212,168,83,0.15);
+            }
+            62.6% {
+                left: calc(100% - 6px);
+                top: 6px;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            20px 0 10px -5px rgba(255,215,0,0.3), 40px 0 8px -8px rgba(212,168,83,0.15);
+            }
+            87.5% {
+                left: 6px;
+                top: 6px;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            20px 0 10px -5px rgba(255,215,0,0.3), 40px 0 8px -8px rgba(212,168,83,0.15);
+            }
+            87.6% {
+                left: 6px;
+                top: 6px;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
+            }
+            100% {
+                left: 0;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 8px 2px #FFD700, 0 0 16px 4px rgba(212,168,83,0.6),
+                            0 -20px 10px -5px rgba(255,215,0,0.3), 0 -40px 8px -8px rgba(212,168,83,0.15);
+            }
         }
         
         /* Top Bar - Always sticky */
@@ -462,7 +525,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v29.4-mobile-fix</div>
+<div class="version-tag">v29.5-mobile-ui</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2569,27 +2632,65 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
                             <div>
                                 <h1 style={{fontSize: '16px', fontWeight: '700', marginBottom: '4px'}}>🏨 Miami Beach Resort</h1>
-                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                                    {/* LIVE indicator */}
+                                <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                    {/* LIVE indicator - styled button */}
                                     <div style={{
                                         display: 'flex', alignItems: 'center', gap: '4px',
-                                        padding: '3px 8px', borderRadius: '6px',
+                                        padding: '4px 8px', borderRadius: '6px',
                                         background: realtimeStatus === 'connected' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
                                         border: `1px solid ${realtimeStatus === 'connected' ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`
                                     }}>
                                         <span style={{width: '6px', height: '6px', borderRadius: '50%', background: realtimeStatus === 'connected' ? '#22c55e' : '#ef4444', animation: realtimeStatus === 'connected' ? 'pulse-dot 2s ease-in-out infinite' : 'none'}}></span>
                                         <span style={{fontSize: '9px', fontWeight: '600', color: realtimeStatus === 'connected' ? '#22c55e' : '#ef4444'}}>{realtimeStatus === 'connected' ? 'LIVE' : 'OFFLINE'}</span>
                                     </div>
-                                    {/* Refresh Grid text button */}
-                                    <button onClick={fetchData} disabled={loading} style={{background: 'none', border: 'none', color: '#2D6A6A', fontSize: '10px', fontWeight: '600', cursor: 'pointer', padding: '0', textDecoration: 'underline'}}>
-                                        {loading ? '⏳ Refreshing...' : '🔄 Refresh Grid'}
+                                    {/* Refresh button - styled like LIVE */}
+                                    <button onClick={() => fetchData(true)} disabled={loading} style={{
+                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                        padding: '4px 8px', borderRadius: '6px',
+                                        background: 'rgba(45,106,106,0.15)',
+                                        border: '1px solid rgba(45,106,106,0.4)',
+                                        cursor: 'pointer'
+                                    }}>
+                                        <span style={{fontSize: '11px'}}>{loading ? '⏳' : '🔄'}</span>
+                                        <span style={{fontSize: '9px', fontWeight: '600', color: '#2D6A6A'}}>Refresh</span>
+                                    </button>
+                                    {/* Search button - styled like LIVE */}
+                                    <button onClick={() => setShowSearchModal(true)} style={{
+                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                        padding: '4px 8px', borderRadius: '6px',
+                                        background: 'rgba(45,106,106,0.15)',
+                                        border: '1px solid rgba(45,106,106,0.4)',
+                                        cursor: 'pointer'
+                                    }}>
+                                        <span style={{fontSize: '11px'}}>🔍</span>
+                                        <span style={{fontSize: '9px', fontWeight: '600', color: '#2D6A6A'}}>Search</span>
                                     </button>
                                 </div>
                             </div>
-                            {/* Search icon on top right */}
-                            <button onClick={() => setShowSearchModal(true)} style={{background: 'rgba(45,106,106,0.2)', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '8px', padding: '8px 10px', color: '#fff', cursor: 'pointer'}}>
-                                🔍
-                            </button>
+                            {/* Logout/Login button on top right - styled like LIVE */}
+                            {currentUser ? (
+                                <button onClick={handleLogout} style={{
+                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                    padding: '4px 8px', borderRadius: '6px',
+                                    background: 'rgba(239,68,68,0.15)',
+                                    border: '1px solid rgba(239,68,68,0.4)',
+                                    cursor: 'pointer'
+                                }}>
+                                    <span style={{fontSize: '11px'}}>🚪</span>
+                                    <span style={{fontSize: '9px', fontWeight: '600', color: '#ef4444'}}>Logout</span>
+                                </button>
+                            ) : (
+                                <button onClick={() => setShowLoginModal(true)} style={{
+                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                    padding: '4px 8px', borderRadius: '6px',
+                                    background: 'rgba(45,106,106,0.15)',
+                                    border: '1px solid rgba(45,106,106,0.4)',
+                                    cursor: 'pointer'
+                                }}>
+                                    <span style={{fontSize: '11px'}}>🔐</span>
+                                    <span style={{fontSize: '9px', fontWeight: '600', color: '#2D6A6A'}}>Login</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 ) : (
@@ -5059,6 +5160,62 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
 
             {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests} onUpdate={() => {fetchData(true); setShowInfoModal(null);}} checkStatus={checkStatus} toggle={toggle} today={today} bookings={bookings} getRoomStatus={getRoomStatus} setIsEditing={setIsEditing} currentTab={tab} currentUser={currentUser}/>}
             {showBookModal && <BookingModal selected={selected} checkIn={effectiveTab === "searchbook" ? searchCheckIn : multiBookCheckIn} checkOut={effectiveTab === "searchbook" ? searchCheckOut : multiBookCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData(true);}} setIsEditing={setIsEditing}/>}
+
+            {/* MOBILE BOTTOM BOOKING BAR - Fixed at bottom when rooms selected */}
+            {isMobile && selected.length > 0 && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'linear-gradient(180deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.98) 100%)',
+                    borderTop: '2px solid #2D6A6A',
+                    padding: '12px 16px',
+                    zIndex: 1000,
+                    boxShadow: '0 -4px 20px rgba(0,0,0,0.5)'
+                }}>
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap'}}>
+                        {/* Selected rooms chips */}
+                        <div style={{display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flex: 1}}>
+                            {selected.slice(0, 3).map(s => {
+                                const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+                                return (
+                                    <div key={s.unitKey} style={{
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                        padding: '4px 8px', background: 'rgba(45,106,106,0.3)',
+                                        border: '1px solid rgba(45,106,106,0.5)', borderRadius: '6px',
+                                        position: 'relative'
+                                    }}>
+                                        <button onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}
+                                            style={{position: 'absolute', top: '-6px', right: '-6px', width: '16px', height: '16px',
+                                                borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff',
+                                                fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>×</button>
+                                        <span style={{fontWeight: '700', fontSize: '14px'}}>{s.unit.n}</span>
+                                        <span style={{fontSize: '9px', color: 'rgba(255,255,255,0.6)'}}>{fmtDate(s.checkIn)}</span>
+                                    </div>
+                                );
+                            })}
+                            {selected.length > 3 && (
+                                <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>+{selected.length - 3} more</span>
+                            )}
+                        </div>
+                        {/* Action buttons */}
+                        <div style={{display: 'flex', gap: '8px'}}>
+                            <button onClick={() => setSelected([])} style={{
+                                padding: '10px 14px', background: 'rgba(255,255,255,0.1)',
+                                border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px',
+                                color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+                            }}>Clear</button>
+                            <button onClick={() => setShowBookModal(true)} style={{
+                                padding: '10px 20px', background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                                border: 'none', borderRadius: '8px', color: '#fff',
+                                fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+                                boxShadow: '0 2px 10px rgba(220,38,38,0.4)'
+                            }}>Book {selected.length}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
