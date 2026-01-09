@@ -2767,7 +2767,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                 ) : (
                     <>
                         {isMobile ? (
-                            /* MOBILE TABS: Only Today, By Floor, Search & Book - centered buttons */
+                            /* MOBILE TABS: Only Today, Floor Calendar, Search & Book - centered buttons */
                             <div style={{display: 'flex', justifyContent: 'center', gap: '8px', padding: '4px 0'}}>
                                 <button
                                     onClick={() => setTab('today')}
@@ -2781,7 +2781,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                     className={`nav-btn ${effectiveTab === 'calendar' ? 'active' : ''}`}
                                     style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
                                 >
-                                    By Floor
+                                    Floor Calendar
                                 </button>
                                 <button
                                     onClick={() => setTab('searchbook')}
