@@ -1,0 +1,13 @@
+{
+  "name": "beds24-proxy",
+  "version": "2.0.0",
+  "description": "Beds24 API Proxy for Miami Beach Resort - passes all query parameters correctly",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}

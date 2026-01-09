@@ -1,0 +1,8 @@
+// After line 955, add debug for getBooking
+const getBookingWithDebug = (roomId, unitId, d) => {
+    const result = bookings.find(b => b.roomId === roomId && b.unitId === unitId && d >= b.arrival && d < b.departure && b.status !== 'cancelled' && b.status !== 'inquiry');
+    if (roomId === 583468 && unitId === 8) {
+        console.log('🔍 getBooking(507):', {roomId, unitId, date: d, found: !!result, bookingDates: result ? {arrival: result.arrival, departure: result.departure} : 'N/A'});
+    }
+    return result;
+};
