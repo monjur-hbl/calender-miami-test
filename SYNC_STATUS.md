@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-09 23:00 BST
+> **Last Updated**: 2026-01-09 23:30 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v29.3-mobile-layout | GitHub Pages | ✅ Live |
+| Dashboard | v29.4-mobile-fix | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -41,14 +41,20 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 
 ## Key Features by Version
 
-### Dashboard v29.3-mobile-layout (2026-01-09)
-- **NEW**: Mobile-specific layout redesign
-- **NEW**: Mobile top bar: LIVE indicator + "Refresh Grid" text below property name
-- **NEW**: Mobile search icon on top right corner
-- **NEW**: Mobile tabs: Only Today, By Floor, Search & Book (centered buttons)
-- **NEW**: "By Floor" tab automatically uses 7-day calendar view
-- **NEW**: Fixed bottom booking bar on mobile when rooms selected
-- **NEW**: Tabs hide on mobile when selecting rooms (shows "X rooms selected" indicator)
+### Dashboard v29.4-mobile-fix (2026-01-09)
+- **NEW**: Fixed mobile horizontal scrolling - screen now fits perfectly
+- **NEW**: Golden light border animation traveling around screen edge (mobile only)
+- **NEW**: Hidden occupancy row on mobile for cleaner view
+- **NEW**: Sticky calendar date header on mobile for easy date tracking while scrolling
+- **NEW**: Smaller room labels and cells for mobile screen fit
+- **NEW**: All modals fit within mobile viewport without overflow
+- Mobile-specific layout redesign
+- Mobile top bar: LIVE indicator + "Refresh Grid" text below property name
+- Mobile search icon on top right corner
+- Mobile tabs: Only Today, By Floor, Search & Book (centered buttons)
+- "By Floor" tab automatically uses 7-day calendar view
+- Fixed bottom booking bar on mobile when rooms selected
+- Tabs hide on mobile when selecting rooms (shows "X rooms selected" indicator)
 - Hide tabs when rooms selected - only booking bar visible (desktop)
 - Fully responsive calendar grid (3d, 7d, 15d, 30d all fit screen)
 - Compact selection bar in sticky header, above tabs
@@ -161,6 +167,7 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
+| 23:30 | Dashboard | Mobile fix: no horizontal scroll, golden border animation, sticky dates (v29.4) | ✅ Deployed |
 | 23:00 | Dashboard | Mobile layout redesign: 3 tabs, bottom booking bar, search icon (v29.3) | ✅ Deployed |
 | 22:30 | Dashboard | Hide tabs when selecting, responsive grid (v29.2) | ✅ Deployed |
 | 21:30 | Dashboard | Responsive calendar grid for all day ranges (v29.0) | ✅ Deployed |
