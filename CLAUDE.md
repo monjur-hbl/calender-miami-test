@@ -1,6 +1,6 @@
 # Miami Beach Resort Dashboard
 
-> **VERSION**: v29.3-mobile-layout (2026-01-09)
+> **VERSION**: v29.4-mobile-fix (2026-01-09)
 > **FIRST**: Check SYNC_STATUS.md in parent project for full sync status
 
 ---
@@ -60,7 +60,7 @@ const occupancyRate = Math.round((occupiedUnits / totalRooms) * 100);
 ## File Structure
 ```
 dashboard/
-├── index.html              # Main app (v29.3-mobile-layout)
+├── index.html              # Main app (v29.4-mobile-fix)
 ├── js/                     # Modular JS (reference only)
 │   ├── config.js
 │   ├── app.js
