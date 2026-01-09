@@ -250,7 +250,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v27.5-auto-invoice</div>
+<div class="version-tag">v27.6-explicit-charge</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -7288,13 +7288,28 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                 // Calculate deposit for this room
                 const roomDeposit = advanceAmt / roomSelections.length;
                 
-                // Create payment invoice items (charges are auto-generated via actions.autoInvoiceItemCharge)
                 // Beds24 API V2 invoice item format:
                 // - type: "charge" or "payment"
                 // - description: string
                 // - qty: integer (positive)
                 // - amount: number (the value)
+                // NOTE: autoInvoiceItemCharge only works when NO invoiceItems are sent.
+                // Since we need to send payments, we must also explicitly send the charge.
                 const invoiceItems = [];
+
+                // Add accommodation charge
+                // Format: "[ROOMNAME] [CHECKIN] - [CHECKOUT]" e.g. "Room 101 10 Jan - 12 Jan"
+                const arrDate = new Date(s.checkIn);
+                const depDate = new Date(s.checkOut);
+                const arrStr = arrDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                const depStr = depDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                const chargeDesc = `${s.room.name || s.unit.name || 'Accommodation'} ${arrStr} - ${depStr}`;
+                invoiceItems.push({
+                    type: "charge",
+                    description: chargeDesc,
+                    qty: 1,
+                    amount: roomPrice
+                });
 
                 // Add payment if advance was paid
                 if (roomDeposit > 0) {
@@ -7311,7 +7326,7 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                         amount: roomDeposit
                     });
                 }
-                
+
                 // Build booking object
                 const bookingData = {
                     propertyId: PROPERTY,
@@ -7333,16 +7348,9 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     notes: form.notes || "",
                     referer: "miami_frontdesk",
                     groupId: roomSelections.length > 1 ? groupId : undefined,
-                    // Use Beds24 actions for automatic invoice generation
-                    actions: {
-                        autoInvoiceItemCharge: true  // Auto-create charge from price field
-                    }
+                    // Always include invoice items (charge + payment)
+                    invoiceItems: invoiceItems
                 };
-
-                // Add payment invoice items if any (charges are auto-generated via actions)
-                if (invoiceItems.length > 0) {
-                    bookingData.invoiceItems = invoiceItems;
-                }
 
                 return bookingData;
             });
