@@ -6,16 +6,20 @@ All notable changes to this project are documented here.
 
 ## [2026-01-09] - Booking System Fixes
 
-### Dashboard (v27.4-invoice-fix) - calender-miami-test
+### Dashboard (v27.5-auto-invoice) - calender-miami-test
 
-#### Fixed - Invoice Items (17:50 BST)
+#### Fixed - Invoice Generation (18:05 BST) - RECOMMENDED APPROACH
+- **autoInvoiceItemCharge Action**: Uses Beds24's recommended approach for invoice generation
+- **How It Works**:
+  - Added `actions: { autoInvoiceItemCharge: true }` to booking data
+  - Beds24 automatically creates charge from `price` field using property defaults
+  - Payments still sent via `invoiceItems` array with `{type: "payment", description, qty, amount}`
+- **Why This Fix**: Manual invoice item creation wasn't populating correctly; Beds24 API spec recommends this action for automatic charge generation
+- **Result**: Both Charges and Payments sections now populate correctly in Beds24
+
+#### Previous Attempt - Invoice Items (17:50 BST)
 - **Invoice Item Field Name**: Changed `price` to `amount` for Beds24 API V2 compatibility
-- **Charges Section**: Accommodation charges now appear correctly in Beds24 Charges & Payments tab
-- **Payments Section**: Cash/payment received now appears correctly with proper amount
-- **Affected Areas**:
-  - New booking creation (accommodation charge + advance payment)
-  - Payment update - simple mode (payment received + price changes)
-  - Payment update - advanced mode (per-room payment distribution)
+- **Status**: Did not fully resolve the issue; replaced by autoInvoiceItemCharge approach
 
 #### Fixed - Double Booking Prevention (17:30 BST)
 - **Double Booking Prevention**: Added guard in submit function to prevent multiple submissions when clicking Create Booking button rapidly
@@ -105,27 +109,35 @@ Staff Action
     ↓ Manual correction in Beds24 or contact guests
 ```
 
-### Beds24 Invoice Items API Format
+### Beds24 Invoice Items - RECOMMENDED APPROACH
 
 ```javascript
-// CORRECT format (Beds24 API V2)
-invoiceItems: [{
-    type: "charge",           // "charge" or "payment"
-    description: "Room 101",  // Text description
-    qty: 1,                   // Quantity (positive)
-    amount: 3000              // ← IMPORTANT: Use 'amount', NOT 'price'
-}]
-
-// For payments received:
-invoiceItems: [{
-    type: "payment",
-    description: "Cash Received",
-    qty: 1,
-    amount: 500               // Payment amount
-}]
+// Use autoInvoiceItemCharge action (Beds24 recommended)
+const bookingData = {
+    propertyId: 279646,
+    roomId: 123,
+    unitId: 456,
+    arrival: "2026-01-10",
+    departure: "2026-01-12",
+    price: 3000,              // Total price - Beds24 creates charge from this
+    deposit: 500,             // Payment received
+    actions: {
+        autoInvoiceItemCharge: true  // ← KEY: Auto-creates charge from price
+    },
+    invoiceItems: [{          // Only add payments manually
+        type: "payment",
+        description: "Cash Received",
+        qty: 1,
+        amount: 500
+    }]
+};
 ```
 
-**Common Mistake**: Using `price` instead of `amount` - this causes invoice items to show 0.00 in Beds24.
+**Why This Works**:
+- `autoInvoiceItemCharge: true` tells Beds24 to create charge from `price` field
+- Uses property's default invoice description
+- Payments are still added via `invoiceItems` array
+- Much more reliable than manually creating charge items
 
 ---
 
