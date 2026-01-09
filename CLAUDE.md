@@ -1,6 +1,6 @@
 # Miami Beach Resort Dashboard
 
-> **VERSION**: v28.0-guest-pricing (2026-01-09)
+> **VERSION**: v28.1-edit-guests (2026-01-09)
 > **FIRST**: Check SYNC_STATUS.md in parent project for full sync status
 
 ---
@@ -60,7 +60,7 @@ const occupancyRate = Math.round((occupiedUnits / totalRooms) * 100);
 ## File Structure
 ```
 dashboard/
-├── index.html              # Main app (v28.0-guest-pricing)
+├── index.html              # Main app (v28.1-edit-guests)
 ├── js/                     # Modular JS (reference only)
 │   ├── config.js
 │   ├── app.js
