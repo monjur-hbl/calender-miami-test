@@ -250,7 +250,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v28.1-edit-guests</div>
+<div class="version-tag">v28.2-add-payment</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -4889,6 +4889,14 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
     // Group booking payment mode
     const [paymentMode, setPaymentMode] = useState("simple"); // simple | advanced
     const [roomPayments, setRoomPayments] = useState({});
+
+    // Add Payment mode state
+    const [showAddPayment, setShowAddPayment] = useState(false);
+    const [newPayment, setNewPayment] = useState({
+        amount: '',
+        method: 'Cash',
+        reference: ''
+    });
     
     // Get all bookings in the group
     const groupBookings = useMemo(() => {
@@ -5539,7 +5547,59 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
         }
         setSaving(false);
     };
-    
+
+    // Add new payment to existing booking
+    const saveNewPayment = async () => {
+        const amount = parseFloat(newPayment.amount);
+        if (!amount || amount <= 0) {
+            alert("Please enter a valid payment amount");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            // Build payment description: "Method [Reference]" or just "Method Received"
+            const paymentDesc = newPayment.reference
+                ? `${newPayment.method} ${newPayment.reference}`
+                : `${newPayment.method} Received`;
+
+            const currentDeposit = parseFloat(booking.deposit) || 0;
+            const updateData = {
+                id: booking.id,
+                deposit: currentDeposit + amount,
+                invoiceItems: [{
+                    type: "payment",
+                    description: paymentDesc,
+                    qty: 1,
+                    amount: amount
+                }]
+            };
+
+            console.log("Adding payment to booking:", updateData);
+            const res = await fetch(PROXY + "?endpoint=bookings", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify([updateData])
+            });
+            const result = await res.json();
+            console.log("Beds24 add payment response:", result);
+
+            const success = Array.isArray(result) ? result[0]?.success : result.success;
+            if (success) {
+                // Reset form and close
+                setShowAddPayment(false);
+                setNewPayment({ amount: '', method: 'Cash', reference: '' });
+                if (onUpdate) onUpdate();
+            } else {
+                alert("Failed to add payment: " + JSON.stringify(result));
+            }
+        } catch(e) {
+            console.error("Add payment error:", e);
+            alert("Error: " + e.message);
+        }
+        setSaving(false);
+    };
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{maxHeight: '90vh', overflowY: 'auto'}}>
@@ -5829,7 +5889,76 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                             
                             <button onClick={savePayment} disabled={saving} style={{padding: '12px', background: '#2D6A6A', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1}}>{saving ? '⏳ Saving...' : '💾 Save Payment'}</button>
                         </div>
+                    ) : showAddPayment ? (
+                        /* Add Payment Form */
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px'}}>
+                                <span style={{fontSize: '14px', fontWeight: '600', color: '#22c55e'}}>➕ Add Payment</span>
+                                <button onClick={() => { setShowAddPayment(false); setNewPayment({ amount: '', method: 'Cash', reference: '' }); }} style={{background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '6px', padding: '4px 10px', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: '600'}}>✕ Cancel</button>
+                            </div>
+
+                            {/* Amount */}
+                            <div>
+                                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Amount (৳)</label>
+                                <input
+                                    type="number"
+                                    value={newPayment.amount}
+                                    onChange={e => setNewPayment({...newPayment, amount: e.target.value})}
+                                    placeholder="Enter amount"
+                                    autoFocus
+                                    style={inputStyle}
+                                />
+                            </div>
+
+                            {/* Payment Method */}
+                            <div>
+                                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Payment Method</label>
+                                <select
+                                    value={newPayment.method}
+                                    onChange={e => setNewPayment({...newPayment, method: e.target.value})}
+                                    style={{...inputStyle, cursor: 'pointer'}}
+                                >
+                                    <option value="Cash">💵 Cash</option>
+                                    <option value="Bkash">📱 Bkash</option>
+                                    <option value="Nagad">📱 Nagad</option>
+                                    <option value="Card">💳 Card</option>
+                                    <option value="Bank Transfer">🏦 Bank Transfer</option>
+                                    <option value="Other">📝 Other</option>
+                                </select>
+                            </div>
+
+                            {/* Reference/Transaction ID */}
+                            <div>
+                                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '4px'}}>Reference / Transaction ID (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={newPayment.reference}
+                                    onChange={e => setNewPayment({...newPayment, reference: e.target.value})}
+                                    placeholder="e.g., TXN123456"
+                                    style={inputStyle}
+                                />
+                            </div>
+
+                            {/* Preview */}
+                            {newPayment.amount && (
+                                <div style={{padding: '10px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px'}}>
+                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>Will be recorded as:</div>
+                                    <div style={{fontSize: '13px', fontWeight: '600', color: '#22c55e'}}>
+                                        {newPayment.reference ? `${newPayment.method} ${newPayment.reference}` : `${newPayment.method} Received`} - ৳{parseFloat(newPayment.amount || 0).toLocaleString()}
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={saveNewPayment}
+                                disabled={saving || !newPayment.amount}
+                                style={{padding: '12px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', opacity: (saving || !newPayment.amount) ? 0.6 : 1}}
+                            >
+                                {saving ? '⏳ Adding...' : '✅ Add Payment'}
+                            </button>
+                        </div>
                     ) : (
+                        /* Normal Payment Display */
                         <>
                             <div className="info-grid" style={{marginTop: '8px'}}>
                                 <div><div className="info-label">Total</div><div className="info-value">৳{price.toLocaleString()}</div></div>
@@ -5839,6 +5968,14 @@ function InfoModal({booking, onClose, getMultiUnitInfo, getRequestCounts, reques
                                 <div className="info-label">Due</div>
                                 <div style={{fontSize: '28px', fontWeight: '700', color: due > 0 ? '#ef4444' : '#2D6A6A'}}>৳{due.toLocaleString()}</div>
                             </div>
+
+                            {/* Add Payment Button - Always visible when there's due or even for overpayment tracking */}
+                            <button
+                                onClick={() => setShowAddPayment(true)}
+                                style={{marginTop: '12px', width: '100%', padding: '12px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
+                            >
+                                ➕ Add Payment
+                            </button>
                         </>
                     )}
                 </div>
