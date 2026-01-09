@@ -391,7 +391,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v29.1-top-bar</div>
+<div class="version-tag">v29.2-hide-tabs</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2536,9 +2536,9 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
             
             {/* Tabs - Sticky */}
             <div className="tabs-wrapper">
-                {/* Compact Selection Bar - Inside tabs area, above tabs */}
-                {selected.length > 0 && (
-                    <div style={{marginBottom: '10px', display: 'flex', justifyContent: 'center'}}>
+                {/* When rooms selected: Show only booking bar, hide tabs */}
+                {selected.length > 0 ? (
+                    <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', padding: '4px 0'}}>
                         <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
                             {selected.map(s => {
                                 const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
@@ -2554,26 +2554,29 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                             <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
                         </div>
                     </div>
-                )}
-                {isMobile ? (
-                    <select value={effectiveTab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '0', width: '100%', maxWidth: '300px'}}>
-                        {tabs.filter(t => canAccessTab(t.id)).map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                    </select>
                 ) : (
-                    <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
-                )}
-                {effectiveTab === "calendar" && (
                     <>
-                        <div className="date-controls" style={{marginTop: '10px'}}>
-                            <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}><input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/></div>
-                            <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
-                            <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
-                            {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
-                        </div>
-                        <div className="view-selector" style={{marginTop: '10px', marginBottom: '0'}}>
-                            <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 By Floor</button>
-                            <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
-                        </div>
+                        {isMobile ? (
+                            <select value={effectiveTab} onChange={e => setTab(e.target.value)} className="mobile-select" style={{marginBottom: '0', width: '100%', maxWidth: '300px'}}>
+                                {tabs.filter(t => canAccessTab(t.id)).map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                            </select>
+                        ) : (
+                            <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
+                        )}
+                        {effectiveTab === "calendar" && (
+                            <>
+                                <div className="date-controls" style={{marginTop: '10px'}}>
+                                    <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}><input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/></div>
+                                    <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
+                                    <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
+                                    {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
+                                </div>
+                                <div className="view-selector" style={{marginTop: '10px', marginBottom: '0'}}>
+                                    <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 By Floor</button>
+                                    <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
+                                </div>
+                            </>
+                        )}
                     </>
                 )}
             </div>
