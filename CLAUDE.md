@@ -1,6 +1,6 @@
 # Miami Beach Resort Dashboard
 
-> **VERSION**: v28.4-compact-bar (2026-01-09)
+> **VERSION**: v29.2-hide-tabs (2026-01-09)
 > **FIRST**: Check SYNC_STATUS.md in parent project for full sync status
 
 ---
@@ -60,7 +60,7 @@ const occupancyRate = Math.round((occupiedUnits / totalRooms) * 100);
 ## File Structure
 ```
 dashboard/
-├── index.html              # Main app (v28.4-compact-bar)
+├── index.html              # Main app (v29.2-hide-tabs)
 ├── js/                     # Modular JS (reference only)
 │   ├── config.js
 │   ├── app.js
