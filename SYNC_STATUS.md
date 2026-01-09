@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-09 23:30 BST
+> **Last Updated**: 2026-01-10 00:15 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,10 +9,11 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v29.4-mobile-fix | GitHub Pages | ✅ Live |
+| Dashboard | v29.7-fireworks | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
+| WhatsApp Service | v1.2.0 | Cloud Run | ✅ Live |
 
 ---
 
@@ -32,19 +33,26 @@ https://monjur-hbl.github.io/calender-miami-test/
 curl https://miami-api-1006186358018.us-central1.run.app/
 curl https://hk-api-1006186358018.us-central1.run.app/
 curl https://beds24-proxy-1006186358018.us-central1.run.app/
+curl https://whatsapp-service-1006186358018.us-central1.run.app/
 
 # Room Config (Dynamic)
 curl https://miami-api-1006186358018.us-central1.run.app/room-config
+
+# WhatsApp Service
+curl https://whatsapp-service-1006186358018.us-central1.run.app/status
 ```
 
 ---
 
 ## Key Features by Version
 
-### Dashboard v29.4-mobile-fix (2026-01-09)
-- **NEW**: Fixed mobile horizontal scrolling - screen now fits perfectly
-- **NEW**: Golden light border animation traveling around screen edge (mobile only)
-- **NEW**: Hidden occupancy row on mobile for cleaner view
+### Dashboard v29.5-mobile-ui (2026-01-09)
+- **NEW**: Golden light rocket trail animation around screen border (mobile only)
+- **NEW**: Mobile top bar: LIVE, Refresh, Search buttons in consistent pill style
+- **NEW**: Logout/Login button on top right corner (styled like LIVE)
+- **NEW**: Fixed mobile booking button appearing after selecting units
+- Fixed mobile horizontal scrolling - screen now fits perfectly
+- Hidden occupancy row on mobile for cleaner view
 - **NEW**: Sticky calendar date header on mobile for easy date tracking while scrolling
 - **NEW**: Smaller room labels and cells for mobile screen fit
 - **NEW**: All modals fit within mobile viewport without overflow
@@ -105,6 +113,15 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 - Automatic token refresh
 - Rate limiting and caching
 
+### WhatsApp Service v1.2.0 (2026-01-10) - ✅ NEW
+- **Baileys library** for WhatsApp Web multi-device connection
+- QR code generation for WhatsApp login
+- Session persistence via Firestore backup
+- Send/receive WhatsApp messages
+- Endpoints: `/status`, `/restart`, `/logout`, `/send`, `/messages`
+- Cloud Run: min-instances=1 for WebSocket persistence
+- Auth storage: `/tmp` local + Firestore backup
+
 ---
 
 ## Firestore Collections
@@ -115,6 +132,8 @@ curl https://miami-api-1006186358018.us-central1.run.app/room-config
 | booking_notifications | * | Guest notifications |
 | users | * | Staff accounts |
 | hk_tasks | * | Housekeeping tasks |
+| whatsapp_auth | main_session_* | WhatsApp session credentials |
+| whatsapp_messages | * | Incoming WhatsApp messages |
 
 ---
 
@@ -150,6 +169,20 @@ git add . && git commit -m "message" && git push
   --allow-unauthenticated --project beds24-483408
 ```
 
+### WhatsApp Service
+```bash
+/opt/homebrew/share/google-cloud-sdk/bin/gcloud builds submit \
+  --tag gcr.io/beds24-483408/whatsapp-service:VERSION \
+  whatsapp-service --project beds24-483408
+
+/opt/homebrew/share/google-cloud-sdk/bin/gcloud run deploy whatsapp-service \
+  --image gcr.io/beds24-483408/whatsapp-service:VERSION \
+  --platform managed --region us-central1 \
+  --allow-unauthenticated --memory 512Mi --cpu 1 \
+  --min-instances 1 --max-instances 1 \
+  --project beds24-483408
+```
+
 ---
 
 ## Important Notes
@@ -167,6 +200,10 @@ git add . && git commit -m "message" && git push
 
 | Time | Component | Change | Status |
 |------|-----------|--------|--------|
+| 00:15 | WhatsApp Service | v1.2.0 - Baileys + Firestore auth, QR code working | ✅ Deployed |
+| 00:00 | Dashboard | Fireworks on unit selection, renamed "Floor Calendar" (v29.7) | ✅ Deployed |
+| 23:50 | Dashboard | Mobile booking bar at top (like desktop) (v29.6) | ✅ Deployed |
+| 23:45 | Dashboard | Mobile UI: rocket trail animation, pill buttons, logout, booking bar fix (v29.5) | ✅ Deployed |
 | 23:30 | Dashboard | Mobile fix: no horizontal scroll, golden border animation, sticky dates (v29.4) | ✅ Deployed |
 | 23:00 | Dashboard | Mobile layout redesign: 3 tabs, bottom booking bar, search icon (v29.3) | ✅ Deployed |
 | 22:30 | Dashboard | Hide tabs when selecting, responsive grid (v29.2) | ✅ Deployed |
