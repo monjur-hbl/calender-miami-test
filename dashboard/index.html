@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v31.2</title>
+    <title>Miami Beach Resort v31.3</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -500,7 +500,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v31.2-clean-header</div>
+<div class="version-tag">v31.3-adjusted</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2843,17 +2843,17 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
             {/* FIXED DATE HEADER - Rendered at App level
                 Mobile: top-bar(~55px) + tabs(~45px) = 100px
                 Mobile selection mode: top:0
-                Desktop: top-bar(58px) + tabs with controls(~110px) = 168px
+                Desktop: top-bar(58px) + tabs-row(50px) + controls(80px) = 188px
             */}
             {effectiveTab === "calendar" && (
                 <div
                     id="calendar-date-header"
                     style={{
                         position: 'fixed',
-                        top: mobileSelectionMode ? 0 : (isMobile ? 95 : 168),
+                        top: mobileSelectionMode ? 0 : (isMobile ? 95 : 188),
                         left: 0,
                         right: 0,
-                        zIndex: 999,
+                        zIndex: 145,
                         background: '#1E293B',
                         padding: isMobile ? '6px 8px' : '8px 16px',
                         paddingLeft: isMobile ? '8px' : '156px',
