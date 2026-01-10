@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v31.9</title>
+    <title>Miami Beach Resort v32.0</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -17,60 +17,62 @@
     <!-- Note: Modular files available in js/ and css/ folders for reference -->
     <!-- For production with ES modules, migrate to Vite build system -->
     <style>
+        /* ================================================================
+           MIAMI BEACH RESORT DASHBOARD - CSS ARCHITECTURE v32.0
+           ================================================================
+
+           TABLE OF CONTENTS:
+           1. RESET & BASE STYLES
+           2. LAYOUT ARCHITECTURE (Header/Sticky Behavior)
+           3. NAVIGATION (Tabs, Buttons)
+           4. CALENDAR COMPONENTS (Grid, Rooms, Status Cards)
+           5. OCCUPANCY ROW
+           6. SELECTION BAR (Room Selection UI)
+           7. MODALS
+           8. FORM ELEMENTS (Inputs, Buttons)
+           9. TAB-SPECIFIC STYLES (Today, Requests, Housekeeping, etc.)
+           10. ANIMATIONS
+           11. UTILITIES & MISC
+           12. RESPONSIVE - TABLET (max-width: 1200px)
+           13. RESPONSIVE - MOBILE (max-width: 768px)
+
+           ================================================================ */
+
+        /* ================================================================
+           1. RESET & BASE STYLES
+           ================================================================ */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { overflow-x: clip; width: 100%; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1E293B; min-height: 100vh; color: #fff; position: relative; width: 100%; max-width: 100vw; }
-
-        /* Fireworks Animation for Room Selection */
-        .firework-container {
-            position: fixed;
-            top: 0;
-            left: 0;
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1E293B;
+            min-height: 100vh;
+            color: #fff;
+            position: relative;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-            overflow: hidden;
+            max-width: 100vw;
         }
-        .firework {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            animation: firework-explode 1s ease-out forwards;
-        }
-        @keyframes firework-explode {
-            0% { transform: scale(0); opacity: 1; }
-            50% { opacity: 1; }
-            100% { transform: scale(1); opacity: 0; }
-        }
-        .spark {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            animation: spark-fly 0.8s ease-out forwards;
-        }
-        @keyframes spark-fly {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { opacity: 0; }
-        }
-        
-        /* ============================================
-           STICKY HEADER ARCHITECTURE (v31.8)
-           ============================================
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+        /* ================================================================
+           2. LAYOUT ARCHITECTURE (Header/Sticky Behavior)
+           ================================================================
+
            DESKTOP (Calendar tab):
-           - top-bar + tabs-wrapper: ALWAYS visible, scroll with page
+           - top-bar: scrolls with page
+           - tabs-wrapper: scrolls with page
            - Date controls + Floor/Category: scroll with page
            - desktop-sticky-date-header: STICKY at top:0 when scrolled
-             * Date header (Sun 11, Mon 12, etc.)
-             * Occupancy row (available/booked counts)
            - Calendar grid scrolls behind sticky header
            - When units selected: book button fixed at bottom
 
            MOBILE (NO selection):
-           - top-bar: sticky at top:0
-           - tabs-wrapper: sticky at top:50px
+           - top-bar: sticky at top:0, z-index:200
+           - tabs-wrapper: sticky at top:50px, z-index:150
            - date-header: fixed at top:95px
 
            MOBILE (WITH selection):
@@ -78,18 +80,23 @@
            - tabs-wrapper: HIDDEN
            - date-header: fixed at top:0
            - bottom-bar: fixed at bottom with Book button
-           ============================================ */
+           ================================================================ */
 
-        /* Top Bar - Sticky on mobile, scrolls on desktop */
-        .top-bar { background: #141824; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 12px 16px; }
+        /* Top Bar */
+        .top-bar {
+            background: #141824;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 12px 16px;
+        }
 
-        /* Controls Section - Scrolls away */
-        .controls-section { background: #141824; padding: 16px; padding-top: 8px; }
+        /* Tabs Wrapper */
+        .tabs-wrapper {
+            background: #141824;
+            padding: 12px 16px 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
 
-        /* Tabs Wrapper - Sticky on mobile, scrolls on desktop */
-        .tabs-wrapper { background: #141824; padding: 12px 16px 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-
-        /* Desktop Sticky Date Header - becomes sticky when scrolled to top (desktop only) */
+        /* Desktop Sticky Date Header - becomes sticky when scrolled to top */
         @media (min-width: 769px) {
             .desktop-sticky-date-header {
                 position: sticky;
@@ -99,65 +106,187 @@
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             }
         }
-        
-        /* Stats Row - 5 items */
-        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
-        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 8px; text-align: center; }
-        .stat-num { font-size: 26px; font-weight: 700; }
-        .stat-label { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        /* Search Button - 1.5x bigger */
-        .search-btn { display: flex; align-items: center; gap: 10px; padding: 14px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.2s; }
-        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #2D6A6A; }
-        
-        /* Tabs - Full width stretched */
-        .tabs-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; justify-content: center; }
-        .nav-btn { padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); white-space: nowrap; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
-        .nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .nav-btn.active { background: linear-gradient(145deg, #2D6A6A, #059669); color: white; box-shadow: 0 4px 16px rgba(45,106,106,0.4); border-color: transparent; }
-        
-        /* Date controls - Centered */
-        .date-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
-        .day-btn { padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
-        .day-btn:hover { background: rgba(255,255,255,0.1); }
-        .day-btn.active { background: #2D6A6A; color: white; }
-        .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
-        
-        /* Mobile: When units selected - hide top-bar and tabs */
+
+        /* Mobile Selection Mode - hide top elements */
         .mobile-selection-mode .top-bar { display: none !important; }
         .mobile-selection-mode .tabs-wrapper { display: none !important; }
-
-        /* Occupancy Summary Row - NOT sticky, scrolls with content */
-        .occupancy-row-wrapper { background: #1E293B; padding: 6px 16px; }
-        .occupancy-row-inner { display: flex; gap: 4px; padding-left: 140px; }
-        .occupancy-cell { flex: 1; min-width: 0; text-align: center; padding: 4px 2px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
-        .occupancy-cell .occ-available { font-size: 12px; font-weight: 700; color: #10b981; }
-        .occupancy-cell .occ-occupied { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 1px; }
-        .occupancy-cell.full { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
-        .occupancy-cell.full .occ-available { color: #ef4444; }
-        .occupancy-cell.low { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); }
-        .occupancy-cell.low .occ-available { color: #f59e0b; }
 
         /* Calendar Container */
         .cal-container { padding: 0 16px 100px; }
 
+        /* Version Tag */
+        .version-tag {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+            z-index: 9999;
+        }
+
+        /* ================================================================
+           3. NAVIGATION (Tabs, Buttons)
+           ================================================================ */
+
+        /* Tabs Row */
+        .tabs-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+            justify-content: center;
+        }
+
+        /* Nav Button */
+        .nav-btn {
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.7);
+            white-space: nowrap;
+            text-align: center;
+        }
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .nav-btn.active {
+            background: linear-gradient(145deg, #2D6A6A, #059669);
+            color: white;
+            box-shadow: 0 4px 16px rgba(45,106,106,0.4);
+            border-color: transparent;
+        }
+
+        /* Date Controls */
+        .date-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .day-btn {
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.6);
+        }
+        .day-btn:hover { background: rgba(255,255,255,0.1); }
+        .day-btn.active { background: #2D6A6A; color: white; }
+        .date-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 9px 12px;
+            color: #fff;
+            font-size: 13px;
+        }
+
+        /* View Selector (Floor/Category) */
+        .view-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            justify-content: center;
+        }
+        .view-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 2px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            background: transparent;
+            color: rgba(255,255,255,0.6);
+            transition: all 0.2s;
+        }
+        .view-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+        .view-btn.active { background: #2D6A6A; border-color: #2D6A6A; color: white; }
+
+        /* Search Button */
+        .search-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .search-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #2D6A6A; }
+
+        /* ================================================================
+           4. CALENDAR COMPONENTS (Grid, Rooms, Status Cards)
+           ================================================================ */
+
         /* Floor Header */
-        .floor-header { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 10px; margin: 12px 0 10px 0; }
+        .floor-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px 18px;
+            border-radius: 10px;
+            margin: 12px 0 10px 0;
+        }
 
         /* Room Row */
         .room-row { display: flex; gap: 4px; margin-bottom: 4px; }
 
         /* Room Label */
-        .room-label { min-width: 134px; max-width: 134px; background: #232a3b; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+        .room-label {
+            min-width: 134px;
+            max-width: 134px;
+            background: #232a3b;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
         .room-num { font-size: 20px; font-weight: 700; }
         .room-type { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 2px; line-height: 1.2; }
         .room-cap { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 2px; }
 
-        /* Status Card - Fully responsive, no min-width */
-        .status-card { flex: 1; min-width: 0; min-height: 70px; border-radius: 8px; padding: 6px; position: relative; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow: hidden; }
+        /* Status Card */
+        .status-card {
+            flex: 1;
+            min-width: 0;
+            min-height: 70px;
+            border-radius: 8px;
+            padding: 6px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+        }
         .status-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-        
-        /* Only 2 colors: Green (available) and Red (booked) */
+
+        /* Status Card Colors */
         .card-available { background: linear-gradient(145deg, #2D6A6A 0%, #245858 100%); }
         .card-booked { background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); }
         .card-request { background: linear-gradient(145deg, #f59e0b 0%, #d97706 100%); }
@@ -169,69 +298,56 @@
         .card-ready-checkin { background: linear-gradient(145deg, #10b981 0%, #059669 100%); box-shadow: 0 0 0 2px rgba(16,185,129,0.4); animation: pulse-ready 2s ease-in-out infinite; }
         .card-checkout-pending { background: linear-gradient(145deg, #D4A853 0%, #B8942F 100%); box-shadow: 0 0 0 2px rgba(212,168,83,0.4); }
         .card-overbooking { background: linear-gradient(145deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 0 0 3px rgba(220,38,38,0.6); animation: pulse-overbooking 0.8s ease-in-out infinite; }
-        @keyframes pulse-overbooking { 0%, 100% { box-shadow: 0 0 0 3px rgba(220,38,38,0.6); } 50% { box-shadow: 0 0 0 5px rgba(220,38,38,0.4), 0 0 15px rgba(220,38,38,0.3); } }
-        @keyframes pulse-selection { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
-        @keyframes pulse-ready { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-        @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
         .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #2D6A6A !important; }
-        
+
+        /* Status Text */
         .status-text { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .guest-name { font-size: 11px; font-weight: 500; margin-top: 4px; opacity: 0.9; }
-        
-        .info-btn { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: none; color: white; z-index: 5; }
+
+        /* Info Button on Card */
+        .info-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            z-index: 5;
+        }
         .info-btn:hover { background: rgba(255,255,255,0.4); }
-        
-        /* Today Tab - View Selector */
-        .view-selector { display: flex; gap: 8px; margin-bottom: 16px; justify-content: center; }
-        .view-btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; background: transparent; color: rgba(255,255,255,0.6); transition: all 0.2s; }
-        .view-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
-        .view-btn.active { background: #2D6A6A; border-color: #2D6A6A; color: white; }
-        
-        /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; overflow: hidden; }
-        .modal { background: linear-gradient(180deg, #1a2636 0%, #162030 100%); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; overflow-x: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 28px; cursor: pointer; }
 
-        /* Landscape Modal - Desktop Two-Column Layout */
-        .modal-landscape { max-width: 900px; max-height: 85vh; padding: 24px; }
-        .modal-landscape .modal-content-wrapper { display: flex; flex-direction: column; height: 100%; }
-        .modal-landscape .modal-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .modal-landscape .modal-col { display: flex; flex-direction: column; }
-        .modal-landscape .modal-col-scroll { max-height: calc(85vh - 180px); overflow-y: auto; padding-right: 8px; }
-        .modal-landscape .modal-col-scroll::-webkit-scrollbar { width: 6px; }
-        .modal-landscape .modal-col-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
-        .modal-landscape .modal-col-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-
-        /* Sticky Book Button - Desktop (top) */
-        .sticky-book-btn-desktop { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, #1a2636 100%, transparent 100%); padding: 12px 0 16px 0; margin: -12px 0 16px 0; }
-
-        /* Sticky Book Button - Mobile (bottom) */
-        .sticky-book-btn-mobile { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; background: linear-gradient(180deg, transparent 0%, #1a2636 20%, #162030 100%); z-index: 1001; display: none; }
-
-        /* Responsive: Portrait for mobile */
-        @media (max-width: 768px) {
-            .modal-overlay { padding: 0; }
-            .modal { max-width: 100vw; border-radius: 0; padding: 16px; max-height: 100vh; }
-            .modal-landscape { max-width: 100vw; max-height: 100vh; border-radius: 0; padding: 16px; padding-bottom: 90px; overflow-x: hidden; }
-            .modal-landscape .modal-two-col { grid-template-columns: 1fr; gap: 16px; }
-            .modal-landscape .modal-col-scroll { max-height: none; overflow-y: visible; padding-right: 0; }
-            .sticky-book-btn-desktop { display: none; }
-            .sticky-book-btn-mobile { display: block; }
-
-            /* MOBILE: top-bar and tabs are sticky */
-            .top-bar { position: sticky; top: 0; z-index: 200; }
-            .tabs-wrapper { position: sticky; top: 50px; z-index: 150; padding: 8px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-
-            /* Occupancy row padding fix for mobile */
-            .occupancy-row-inner { padding-left: 0; }
+        /* ================================================================
+           5. OCCUPANCY ROW
+           ================================================================ */
+        .occupancy-row-wrapper { background: #1E293B; padding: 6px 16px; }
+        .occupancy-row-inner { display: flex; gap: 4px; padding-left: 140px; }
+        .occupancy-cell {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+            padding: 4px 2px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
+        .occupancy-cell .occ-available { font-size: 12px; font-weight: 700; color: #10b981; }
+        .occupancy-cell .occ-occupied { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+        .occupancy-cell.full { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
+        .occupancy-cell.full .occ-available { color: #ef4444; }
+        .occupancy-cell.low { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); }
+        .occupancy-cell.low .occ-available { color: #f59e0b; }
 
-        @media (min-width: 769px) {
-            .sticky-book-btn-mobile { display: none; }
-        }
-
-        /* Compact Selection Bar - Search & Book Tab */
+        /* ================================================================
+           6. SELECTION BAR (Room Selection UI)
+           ================================================================ */
         .compact-selection-bar {
             display: flex;
             align-items: center;
@@ -253,16 +369,8 @@
             min-width: 50px;
             position: relative;
         }
-        .compact-room-chip .room-num {
-            font-size: 14px;
-            font-weight: 700;
-            color: #fff;
-        }
-        .compact-room-chip .room-dates {
-            font-size: 9px;
-            color: rgba(255,255,255,0.6);
-            white-space: nowrap;
-        }
+        .compact-room-chip .room-num { font-size: 14px; font-weight: 700; color: #fff; }
+        .compact-room-chip .room-dates { font-size: 9px; color: rgba(255,255,255,0.6); white-space: nowrap; }
         .compact-room-chip .chip-remove {
             position: absolute;
             top: -4px;
@@ -292,9 +400,7 @@
             white-space: nowrap;
             box-shadow: 0 2px 8px rgba(220,38,38,0.3);
         }
-        .compact-book-btn:hover {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
+        .compact-book-btn:hover { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
         .compact-clear-btn {
             padding: 6px 10px;
             background: rgba(255,255,255,0.1);
@@ -305,33 +411,7 @@
             cursor: pointer;
         }
 
-        /* Desktop: Top bar */
-        .selection-bar-desktop {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: linear-gradient(180deg, #1a2636 85%, transparent 100%);
-            padding: 8px 0 12px 0;
-            margin-bottom: 12px;
-        }
-
-        /* Mobile: Fixed bottom bar */
-        .selection-bar-mobile {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            background: linear-gradient(180deg, transparent 0%, #1a2636 15%, #162030 100%);
-            padding: 10px 12px;
-            display: none;
-        }
-        .selection-bar-mobile .compact-selection-bar {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-        }
-
-        /* Sticky Floating Selection Bar - appears when units selected & scrolling */
+        /* Floating Selection Bar */
         .floating-selection-bar {
             position: fixed;
             top: 0;
@@ -345,52 +425,128 @@
             transform: translateY(-100%);
             transition: transform 0.3s ease;
         }
-        .floating-selection-bar.visible {
-            transform: translateY(0);
-        }
-        .floating-selection-bar .compact-selection-bar {
-            justify-content: center;
-            max-width: 100%;
-        }
+        .floating-selection-bar.visible { transform: translateY(0); }
+        .floating-selection-bar .compact-selection-bar { justify-content: center; max-width: 100%; }
 
-        @media (max-width: 768px) {
-            .selection-bar-desktop { display: none; }
-            .selection-bar-mobile { display: block; }
-            .floating-selection-bar {
-                top: auto;
-                bottom: 0;
-                transform: translateY(100%);
-                border-bottom: none;
-                border-top: 2px solid #2D6A6A;
-            }
-            .floating-selection-bar.visible {
-                transform: translateY(0);
-            }
-            .floating-selection-bar .compact-selection-bar {
-                flex-wrap: nowrap;
-                overflow-x: auto;
-            }
+        /* ================================================================
+           7. MODALS
+           ================================================================ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+            overflow: hidden;
         }
+        .modal {
+            background: linear-gradient(180deg, #1a2636 0%, #162030 100%);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 28px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 28px; cursor: pointer; }
+
+        /* Landscape Modal */
+        .modal-landscape { max-width: 900px; max-height: 85vh; padding: 24px; }
+        .modal-landscape .modal-content-wrapper { display: flex; flex-direction: column; height: 100%; }
+        .modal-landscape .modal-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .modal-landscape .modal-col { display: flex; flex-direction: column; }
+        .modal-landscape .modal-col-scroll { max-height: calc(85vh - 180px); overflow-y: auto; padding-right: 8px; }
+        .modal-landscape .modal-col-scroll::-webkit-scrollbar { width: 6px; }
+        .modal-landscape .modal-col-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+        .modal-landscape .modal-col-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        /* Sticky Book Buttons in Modal */
+        .sticky-book-btn-desktop { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, #1a2636 100%, transparent 100%); padding: 12px 0 16px 0; margin: -12px 0 16px 0; }
+        .sticky-book-btn-mobile { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; background: linear-gradient(180deg, transparent 0%, #1a2636 20%, #162030 100%); z-index: 1001; display: none; }
+
+        /* ================================================================
+           8. FORM ELEMENTS (Inputs, Buttons)
+           ================================================================ */
+        .search-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+        }
+        .search-input:focus { outline: none; border-color: #2D6A6A; }
+
+        .search-result {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .search-result:hover { background: rgba(255,255,255,0.08); border-color: #2D6A6A; }
+
+        .date-search-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; justify-content: center; margin-bottom: 20px; }
+        .date-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.2s;
+        }
+        .date-field label { font-size: 12px; color: rgba(255,255,255,0.5); pointer-events: none; }
+        .date-field:hover { background: rgba(255,255,255,0.08); border-color: rgba(45,106,106,0.4); }
+        .group-selector { padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; }
+        .mobile-select { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; }
 
         .info-section { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
         .info-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 4px; }
         .info-value { font-size: 15px; font-weight: 600; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
-        /* Search */
-        .search-input { width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 15px; }
-        .search-input:focus { outline: none; border-color: #2D6A6A; }
-        .search-result { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-        .search-result:hover { background: rgba(255,255,255,0.08); border-color: #2D6A6A; }
-        
-        /* Search & Book */
-        .date-search-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; justify-content: center; margin-bottom: 20px; }
-        .date-field { display: flex; flex-direction: column; gap: 6px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; }
-        .date-field label { font-size: 12px; color: rgba(255,255,255,0.5); pointer-events: none; }
-        .date-field:hover { background: rgba(255,255,255,0.08); border-color: rgba(45,106,106,0.4); }
-        .group-selector { padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; }
-        
-        /* Requests */
+
+        /* ================================================================
+           9. TAB-SPECIFIC STYLES
+           ================================================================ */
+
+        /* Stats Row (Today Tab) */
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
+        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 8px; text-align: center; }
+        .stat-num { font-size: 26px; font-weight: 700; }
+        .stat-label { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Today View Hover */
+        .today-group {
+            transition: all 0.3s ease;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 2px solid transparent;
+        }
+        .today-group:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 24px rgba(59, 130, 246, 0.25);
+        }
+        .today-group:hover .floor-header {
+            background: rgba(59, 130, 246, 0.3) !important;
+            transform: scale(1.02);
+        }
+
+        /* Requests Tab */
         .request-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
         .request-select { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 10px; }
         .request-note { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; margin-top: 8px; resize: none; }
@@ -402,100 +558,43 @@
         .request-count { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
         .request-count.pending { background: rgba(245,158,11,0.2); color: #f59e0b; }
         .request-count.done { background: rgba(45,106,106,0.2); color: #2D6A6A; }
-        
-        /* Housekeeping */
+
+        /* Housekeeping Tab */
         .hk-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; }
         .hk-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; margin-bottom: 8px; }
         .hk-makeup { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
         .hk-dirty { background: linear-gradient(135deg, #f97316, #ea580c); }
         .hk-turnover { background: linear-gradient(135deg, #9333ea 0%, #9333ea 50%, #2563eb 50%, #2563eb 100%); }
-        
-        /* Movement */
+
+        /* Movement Tab */
         .mv-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .mv-btn { width: 40px; height: 40px; border-radius: 8px; border: none; cursor: pointer; font-size: 16px; }
         .mv-btn-pending { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
         .mv-btn-pending:hover { background: #2D6A6A; color: white; }
         .mv-btn-done { background: #2D6A6A; color: white; }
-        
-        .mobile-select { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; }
+
+        /* ================================================================
+           10. ANIMATIONS
+           ================================================================ */
+
+        /* Loader */
         .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #2D6A6A; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        .version-tag { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 4px; font-size: 10px; color: rgba(255,255,255,0.5); z-index: 9999; }
-        
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-        
-        @media (max-width: 1200px) {
-            .status-card { min-width: 90px; min-height: 70px; }
-            .date-cell { min-width: 90px; }
-            .occupancy-cell { min-width: 90px; }
-        }
-        @media (max-width: 900px) {
-            .stats-row { gap: 6px; }
-            .stat-card { padding: 10px 4px; }
-            .stat-num { font-size: 20px; }
-            .tabs-row { gap: 8px; }
-        }
-        @media (max-width: 768px) {
-            /* Prevent horizontal scroll on mobile - use clip instead of hidden to preserve sticky */
-            #root { overflow-x: clip; max-width: 100vw; }
-            .cal-container { overflow-x: clip; padding: 0 8px 100px; }
 
-            .stat-num { font-size: 16px; }
-            .stat-label { font-size: 7px; }
-            .tabs-row { gap: 6px; }
-            .nav-btn { padding: 12px 16px; font-size: 13px; }
-            .status-card { flex: 1; min-width: 0; min-height: 55px; padding: 4px; }
-            .room-label { min-width: 60px; max-width: 60px; padding: 4px; }
-            .room-num { font-size: 14px; }
-            .room-type { font-size: 7px; }
-            .room-cap { display: none; }
-            .date-cell { flex: 1; min-width: 0; padding: 4px 2px; }
-            .date-day { font-size: 8px; }
-            .date-num { font-size: 12px; }
+        /* Card Animations */
+        @keyframes pulse-overbooking { 0%, 100% { box-shadow: 0 0 0 3px rgba(220,38,38,0.6); } 50% { box-shadow: 0 0 0 5px rgba(220,38,38,0.4), 0 0 15px rgba(220,38,38,0.3); } }
+        @keyframes pulse-selection { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        @keyframes pulse-ready { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
 
-            /* HIDE occupancy row on mobile */
-            .occupancy-row-wrapper { display: none !important; }
+        /* Fireworks Animation */
+        .firework-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
+        .firework { position: absolute; width: 6px; height: 6px; border-radius: 50%; animation: firework-explode 1s ease-out forwards; }
+        @keyframes firework-explode { 0% { transform: scale(0); opacity: 1; } 50% { opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+        .spark { position: absolute; width: 4px; height: 4px; border-radius: 50%; animation: spark-fly 0.8s ease-out forwards; }
+        @keyframes spark-fly { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { opacity: 0; } }
 
-            .occupancy-row-inner { padding-left: 66px; }
-            .room-row { gap: 2px; }
-            .search-btn { padding: 10px 16px; font-size: 13px; }
-
-            /* Room rows container */
-            .floor-group { overflow-x: clip; }
-
-            /* Top bar mobile */
-            .top-bar { padding: 10px 12px; }
-
-            /* Tabs wrapper mobile */
-            .tabs-wrapper { top: 50px; padding: 8px 12px 10px 12px; }
-
-            /* Status text smaller on mobile */
-            .status-text { font-size: 10px; }
-            .guest-name { font-size: 9px; margin-top: 2px; }
-        }
-
-        /* Today view hover effects */
-        .today-group { 
-            transition: all 0.3s ease; 
-            border-radius: 16px; 
-            padding: 16px; 
-            margin-bottom: 20px;
-            border: 2px solid transparent;
-        }
-        .today-group:hover { 
-            background: rgba(59, 130, 246, 0.1); 
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 4px 24px rgba(59, 130, 246, 0.25);
-        }
-        .today-group:hover .floor-header { 
-            background: rgba(59, 130, 246, 0.3) !important; 
-            transform: scale(1.02);
-        }
-
-        /* Star dust trail animation */
+        /* Stardust Trail */
         .stardust {
             position: fixed;
             pointer-events: none;
@@ -507,15 +606,108 @@
             z-index: 9999;
             box-shadow: 0 0 6px #2D6A6A, 0 0 10px #2D6A6A;
         }
-        @keyframes stardust-fade {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; }
+        @keyframes stardust-fade { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
+
+        /* ================================================================
+           11. UTILITIES & MISC
+           ================================================================ */
+        .controls-section { background: #141824; padding: 16px; padding-top: 8px; }
+        .selection-bar-desktop { position: sticky; top: 0; z-index: 50; background: linear-gradient(180deg, #1a2636 85%, transparent 100%); padding: 8px 0 12px 0; margin-bottom: 12px; }
+        .selection-bar-mobile { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(180deg, transparent 0%, #1a2636 15%, #162030 100%); padding: 10px 12px; display: none; }
+        .selection-bar-mobile .compact-selection-bar { flex-wrap: nowrap; overflow-x: auto; }
+
+        /* ================================================================
+           12. RESPONSIVE - TABLET (max-width: 1200px)
+           ================================================================ */
+        @media (max-width: 1200px) {
+            .status-card { min-width: 90px; min-height: 70px; }
+            .date-cell { min-width: 90px; }
+            .occupancy-cell { min-width: 90px; }
+        }
+
+        @media (max-width: 900px) {
+            .stats-row { gap: 6px; }
+            .stat-card { padding: 10px 4px; }
+            .stat-num { font-size: 20px; }
+            .tabs-row { gap: 8px; }
+        }
+
+        /* ================================================================
+           13. RESPONSIVE - MOBILE (max-width: 768px)
+           ================================================================ */
+        @media (max-width: 768px) {
+            /* Prevent horizontal scroll - use clip to preserve sticky */
+            #root { overflow-x: clip; max-width: 100vw; }
+            .cal-container { overflow-x: clip; padding: 0 8px 100px; }
+            .floor-group { overflow-x: clip; }
+
+            /* MOBILE STICKY: top-bar and tabs */
+            .top-bar { position: sticky; top: 0; z-index: 200; padding: 10px 12px; }
+            .tabs-wrapper { position: sticky; top: 50px; z-index: 150; padding: 8px 12px 10px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+            /* Stats */
+            .stat-num { font-size: 16px; }
+            .stat-label { font-size: 7px; }
+
+            /* Tabs */
+            .tabs-row { gap: 6px; }
+            .nav-btn { padding: 12px 16px; font-size: 13px; }
+
+            /* Calendar */
+            .status-card { flex: 1; min-width: 0; min-height: 55px; padding: 4px; }
+            .status-text { font-size: 10px; }
+            .guest-name { font-size: 9px; margin-top: 2px; }
+
+            /* Room Labels */
+            .room-label { min-width: 60px; max-width: 60px; padding: 4px; }
+            .room-num { font-size: 14px; }
+            .room-type { font-size: 7px; }
+            .room-cap { display: none; }
+            .room-row { gap: 2px; }
+
+            /* Date Cells */
+            .date-cell { flex: 1; min-width: 0; padding: 4px 2px; }
+            .date-day { font-size: 8px; }
+            .date-num { font-size: 12px; }
+
+            /* HIDE occupancy row on mobile (has fixed date header instead) */
+            .occupancy-row-wrapper { display: none !important; }
+            .occupancy-row-inner { padding-left: 66px; }
+
+            /* Search */
+            .search-btn { padding: 10px 16px; font-size: 13px; }
+
+            /* Modal */
+            .modal-overlay { padding: 0; }
+            .modal { max-width: 100vw; border-radius: 0; padding: 16px; max-height: 100vh; }
+            .modal-landscape { max-width: 100vw; max-height: 100vh; border-radius: 0; padding: 16px; padding-bottom: 90px; overflow-x: hidden; }
+            .modal-landscape .modal-two-col { grid-template-columns: 1fr; gap: 16px; }
+            .modal-landscape .modal-col-scroll { max-height: none; overflow-y: visible; padding-right: 0; }
+            .sticky-book-btn-desktop { display: none; }
+            .sticky-book-btn-mobile { display: block; }
+
+            /* Selection Bars */
+            .selection-bar-desktop { display: none; }
+            .selection-bar-mobile { display: block; }
+            .floating-selection-bar {
+                top: auto;
+                bottom: 0;
+                transform: translateY(100%);
+                border-bottom: none;
+                border-top: 2px solid #2D6A6A;
+            }
+            .floating-selection-bar.visible { transform: translateY(0); }
+            .floating-selection-bar .compact-selection-bar { flex-wrap: nowrap; overflow-x: auto; }
+        }
+
+        @media (min-width: 769px) {
+            .sticky-book-btn-mobile { display: none; }
         }
     </style>
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v31.9-overflow-fix</div>
+<div class="version-tag">v32.0-css-organized</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
