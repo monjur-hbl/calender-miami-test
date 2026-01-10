@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v31.7</title>
+    <title>Miami Beach Resort v31.8</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -57,15 +57,15 @@
         }
         
         /* ============================================
-           STICKY HEADER ARCHITECTURE (v31.7)
+           STICKY HEADER ARCHITECTURE (v31.8)
            ============================================
            DESKTOP (Calendar tab):
-           - desktop-fixed-header: FIXED at top:0 containing ALL:
-             * Row 1: Tabs (Today, Calendar, Search & Book, etc.)
-             * Row 2: Date controls + Floor/Category buttons
-             * Row 3: Date header (Sun 11, Mon 12, etc.)
-             * Row 4: Occupancy row (available/booked counts)
-           - top-bar and tabs-wrapper are HIDDEN (replaced by fixed header)
+           - top-bar + tabs-wrapper: ALWAYS visible, scroll with page
+           - Date controls + Floor/Category: scroll with page
+           - desktop-sticky-date-header: STICKY at top:0 when scrolled
+             * Date header (Sun 11, Mon 12, etc.)
+             * Occupancy row (available/booked counts)
+           - Calendar grid scrolls behind sticky header
            - When units selected: book button fixed at bottom
 
            MOBILE (NO selection):
@@ -89,15 +89,13 @@
         /* Tabs Wrapper - Sticky on mobile, scrolls on desktop */
         .tabs-wrapper { background: #141824; padding: 12px 16px 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 
-        /* Desktop Full Fixed Header - tabs + date header + occupancy (desktop only) */
+        /* Desktop Sticky Date Header - becomes sticky when scrolled to top (desktop only) */
         @media (min-width: 769px) {
-            .desktop-fixed-header {
-                position: fixed;
+            .desktop-sticky-date-header {
+                position: sticky;
                 top: 0;
-                left: 0;
-                right: 0;
-                z-index: 200;
-                background: #141824;
+                z-index: 150;
+                background: #1E293B;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             }
         }
@@ -517,7 +515,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v31.7-unified-header</div>
+<div class="version-tag">v31.8-sticky-scroll</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2676,8 +2674,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                 </div>
             )}
             
-            {/* Top Bar - Hidden on desktop calendar (has its own fixed header) */}
-            {!(effectiveTab === "calendar" && !isMobile) && (
+            {/* Top Bar - Always visible */}
             <div className="top-bar">
                 {isMobile ? (
                     /* MOBILE TOP BAR */
@@ -2790,11 +2787,9 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     </div>
                 )}
             </div>
-            )}
 
-            {/* Tabs - Hidden on desktop calendar (has its own fixed header) */}
-            {!(effectiveTab === "calendar" && !isMobile) && (
-                <div className="tabs-wrapper">
+            {/* Tabs - Always visible */}
+            <div className="tabs-wrapper">
                     {/* Selection bar ABOVE tabs when rooms selected */}
                     {selected.length > 0 && (
                         <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', padding: '8px 0', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
@@ -2846,8 +2841,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     ) : (
                         <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
                     )}
-                </div>
-            )}
+            </div>
 
             {/* MOBILE ONLY: Fixed Date Header */}
             {effectiveTab === "calendar" && isMobile && (
@@ -2900,30 +2894,26 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     )}
 
                     {effectiveTab === "calendar" && !isMobile && (
-                        /* DESKTOP: Unified fixed header with tabs + date controls + date header + occupancy */
+                        /* DESKTOP: Date controls scroll, date header + occupancy sticky at top */
                         <>
-                            {/* FIXED HEADER: Everything stays at top */}
-                            <div className="desktop-fixed-header">
-                                {/* Row 1: Tabs */}
-                                <div style={{padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
-                                    <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
-                                </div>
-                                {/* Row 2: Date controls + Floor/Category */}
-                                <div style={{padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
-                                    <div className="date-controls" style={{marginBottom: '8px'}}>
-                                        <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}>
-                                            <input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/>
-                                        </div>
-                                        <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
-                                        <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
-                                        {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
+                            {/* Date controls + Floor/Category - SCROLLS with page */}
+                            <div style={{padding: '12px 16px', background: '#141824'}}>
+                                <div className="date-controls" style={{marginBottom: '10px'}}>
+                                    <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}>
+                                        <input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/>
                                     </div>
-                                    <div className="view-selector">
-                                        <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 Floor Calendar</button>
-                                        <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
-                                    </div>
+                                    <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
+                                    <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
+                                    {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
                                 </div>
-                                {/* Row 3: Date header */}
+                                <div className="view-selector">
+                                    <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 Floor Calendar</button>
+                                    <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
+                                </div>
+                            </div>
+                            {/* STICKY HEADER: Date header + Occupancy - sticks at top:0 when scrolled */}
+                            <div className="desktop-sticky-date-header">
+                                {/* Date header */}
                                 <div style={{background: '#1E293B', padding: '8px 16px', paddingLeft: '156px'}}>
                                     <div style={{display: 'flex', gap: '4px'}}>
                                         {days.map(d => {
@@ -2942,7 +2932,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                         })}
                                     </div>
                                 </div>
-                                {/* Row 4: Occupancy row */}
+                                {/* Occupancy row */}
                                 <div style={{background: '#1E293B', padding: '6px 16px', paddingLeft: '156px', borderBottom: '2px solid #2D6A6A'}}>
                                     <div style={{display: 'flex', gap: '4px'}}>
                                         {days.map(d => {
@@ -2966,8 +2956,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                     </div>
                                 </div>
                             </div>
-                            {/* Spacer for fixed header height (~200px) */}
-                            <div style={{height: '200px'}}></div>
+                            {/* Calendar grid - scrolls behind sticky header */}
                             <CalendarView groupBy={calendarViewBy} hideOccupancy={true}/>
                         </>
                     )}
