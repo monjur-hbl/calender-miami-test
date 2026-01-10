@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v31.6</title>
+    <title>Miami Beach Resort v31.7</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -57,13 +57,15 @@
         }
         
         /* ============================================
-           STICKY HEADER ARCHITECTURE (v31.6)
+           STICKY HEADER ARCHITECTURE (v31.7)
            ============================================
            DESKTOP (Calendar tab):
-           - calendar-sticky-header: FIXED at top:0 containing:
-             * Date header (Sun 11, Mon 12, etc.)
-             * Occupancy row (available/booked counts)
-           - Below fixed header: date controls and Floor/Category buttons scroll
+           - desktop-fixed-header: FIXED at top:0 containing ALL:
+             * Row 1: Tabs (Today, Calendar, Search & Book, etc.)
+             * Row 2: Date controls + Floor/Category buttons
+             * Row 3: Date header (Sun 11, Mon 12, etc.)
+             * Row 4: Occupancy row (available/booked counts)
+           - top-bar and tabs-wrapper are HIDDEN (replaced by fixed header)
            - When units selected: book button fixed at bottom
 
            MOBILE (NO selection):
@@ -87,15 +89,15 @@
         /* Tabs Wrapper - Sticky on mobile, scrolls on desktop */
         .tabs-wrapper { background: #141824; padding: 12px 16px 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 
-        /* Desktop Calendar Sticky Header - FIXED at top when on calendar tab (desktop only) */
+        /* Desktop Full Fixed Header - tabs + date header + occupancy (desktop only) */
         @media (min-width: 769px) {
-            .calendar-sticky-header {
+            .desktop-fixed-header {
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
-                z-index: 150;
-                background: #1E293B;
+                z-index: 200;
+                background: #141824;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             }
         }
@@ -515,7 +517,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v31.6-fixed-header</div>
+<div class="version-tag">v31.7-unified-header</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2674,7 +2676,8 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                 </div>
             )}
             
-            {/* Top Bar - Always Sticky */}
+            {/* Top Bar - Hidden on desktop calendar (has its own fixed header) */}
+            {!(effectiveTab === "calendar" && !isMobile) && (
             <div className="top-bar">
                 {isMobile ? (
                     /* MOBILE TOP BAR */
@@ -2787,61 +2790,64 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     </div>
                 )}
             </div>
-            
-            {/* Tabs - Sticky */}
-            <div className="tabs-wrapper">
-                {/* Selection bar ABOVE tabs when rooms selected */}
-                {selected.length > 0 && (
-                    <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', padding: '8px 0', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                        <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
-                            {selected.slice(0, isMobile ? 3 : selected.length).map(s => {
-                                const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
-                                return (
-                                    <div key={s.unitKey} className="compact-room-chip">
-                                        <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
-                                        <span className="room-num">{s.unit.n}</span>
-                                        <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
-                                    </div>
-                                );
-                            })}
-                            {isMobile && selected.length > 3 && (
-                                <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', alignSelf: 'center'}}>+{selected.length - 3}</span>
-                            )}
-                            <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
-                            <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
+            )}
+
+            {/* Tabs - Hidden on desktop calendar (has its own fixed header) */}
+            {!(effectiveTab === "calendar" && !isMobile) && (
+                <div className="tabs-wrapper">
+                    {/* Selection bar ABOVE tabs when rooms selected */}
+                    {selected.length > 0 && (
+                        <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', padding: '8px 0', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                            <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
+                                {selected.slice(0, isMobile ? 3 : selected.length).map(s => {
+                                    const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+                                    return (
+                                        <div key={s.unitKey} className="compact-room-chip">
+                                            <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
+                                            <span className="room-num">{s.unit.n}</span>
+                                            <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
+                                        </div>
+                                    );
+                                })}
+                                {isMobile && selected.length > 3 && (
+                                    <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', alignSelf: 'center'}}>+{selected.length - 3}</span>
+                                )}
+                                <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
+                                <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
+                            </div>
                         </div>
-                    </div>
-                )}
-                {/* Tabs always visible */}
-                {isMobile ? (
-                    /* MOBILE TABS: Only Today, Floor Calendar, Search & Book - centered buttons */
-                    <div style={{display: 'flex', justifyContent: 'center', gap: '8px', padding: '4px 0'}}>
-                        <button
-                            onClick={() => setTab('today')}
-                            className={`nav-btn ${effectiveTab === 'today' ? 'active' : ''}`}
-                            style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
-                        >
-                            Today
-                        </button>
-                        <button
-                            onClick={() => { setTab('calendar'); setCalDays(7); setCalendarViewBy('floor'); }}
-                            className={`nav-btn ${effectiveTab === 'calendar' ? 'active' : ''}`}
-                            style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
-                        >
-                            Floor Calendar
-                        </button>
-                        <button
-                            onClick={() => setTab('searchbook')}
-                            className={`nav-btn ${effectiveTab === 'searchbook' ? 'active' : ''}`}
-                            style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
-                        >
-                            Search & Book
-                        </button>
-                    </div>
-                ) : (
-                    <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
-                )}
-            </div>
+                    )}
+                    {/* Tabs always visible */}
+                    {isMobile ? (
+                        /* MOBILE TABS: Only Today, Floor Calendar, Search & Book - centered buttons */
+                        <div style={{display: 'flex', justifyContent: 'center', gap: '8px', padding: '4px 0'}}>
+                            <button
+                                onClick={() => setTab('today')}
+                                className={`nav-btn ${effectiveTab === 'today' ? 'active' : ''}`}
+                                style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
+                            >
+                                Today
+                            </button>
+                            <button
+                                onClick={() => { setTab('calendar'); setCalDays(7); setCalendarViewBy('floor'); }}
+                                className={`nav-btn ${effectiveTab === 'calendar' ? 'active' : ''}`}
+                                style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
+                            >
+                                Floor Calendar
+                            </button>
+                            <button
+                                onClick={() => setTab('searchbook')}
+                                className={`nav-btn ${effectiveTab === 'searchbook' ? 'active' : ''}`}
+                                style={{padding: '8px 14px', fontSize: '12px', fontWeight: '600'}}
+                            >
+                                Search & Book
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
+                    )}
+                </div>
+            )}
 
             {/* MOBILE ONLY: Fixed Date Header */}
             {effectiveTab === "calendar" && isMobile && (
@@ -2894,11 +2900,30 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     )}
 
                     {effectiveTab === "calendar" && !isMobile && (
-                        /* DESKTOP: Fixed header at top with date+occupancy, controls scroll below */
+                        /* DESKTOP: Unified fixed header with tabs + date controls + date header + occupancy */
                         <>
-                            {/* FIXED HEADER: Date header + Occupancy (always at top:0) */}
-                            <div className="calendar-sticky-header">
-                                {/* Date header */}
+                            {/* FIXED HEADER: Everything stays at top */}
+                            <div className="desktop-fixed-header">
+                                {/* Row 1: Tabs */}
+                                <div style={{padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
+                                    <div className="tabs-row" style={{marginBottom: '0'}}>{tabs.filter(t => canAccessTab(t.id)).map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`nav-btn ${effectiveTab === t.id ? 'active' : ''}`}>{t.label}</button>)}</div>
+                                </div>
+                                {/* Row 2: Date controls + Floor/Category */}
+                                <div style={{padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
+                                    <div className="date-controls" style={{marginBottom: '8px'}}>
+                                        <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}>
+                                            <input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/>
+                                        </div>
+                                        <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
+                                        <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
+                                        {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
+                                    </div>
+                                    <div className="view-selector">
+                                        <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 Floor Calendar</button>
+                                        <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
+                                    </div>
+                                </div>
+                                {/* Row 3: Date header */}
                                 <div style={{background: '#1E293B', padding: '8px 16px', paddingLeft: '156px'}}>
                                     <div style={{display: 'flex', gap: '4px'}}>
                                         {days.map(d => {
@@ -2917,7 +2942,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                         })}
                                     </div>
                                 </div>
-                                {/* Occupancy row */}
+                                {/* Row 4: Occupancy row */}
                                 <div style={{background: '#1E293B', padding: '6px 16px', paddingLeft: '156px', borderBottom: '2px solid #2D6A6A'}}>
                                     <div style={{display: 'flex', gap: '4px'}}>
                                         {days.map(d => {
@@ -2941,24 +2966,8 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                     </div>
                                 </div>
                             </div>
-                            {/* Spacer for fixed header height (~95px) */}
-                            <div style={{height: '95px'}}></div>
-                            {/* Date picker and day buttons - scrolls normally */}
-                            <div style={{padding: '12px 16px', background: '#141824'}}>
-                                <div className="date-controls" style={{marginBottom: '10px'}}>
-                                    <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}>
-                                        <input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/>
-                                    </div>
-                                    <button onClick={() => setStartDate(getBDDate())} className={`day-btn ${startDate === getBDDate() ? 'active' : ''}`}>Today</button>
-                                    <span style={{color: 'rgba(255,255,255,0.2)'}}>|</span>
-                                    {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
-                                </div>
-                                {/* Floor/Category selector */}
-                                <div className="view-selector">
-                                    <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 Floor Calendar</button>
-                                    <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
-                                </div>
-                            </div>
+                            {/* Spacer for fixed header height (~200px) */}
+                            <div style={{height: '200px'}}></div>
                             <CalendarView groupBy={calendarViewBy} hideOccupancy={true}/>
                         </>
                     )}
