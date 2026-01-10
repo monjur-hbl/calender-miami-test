@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-11 01:00 BST
+> **Last Updated**: 2026-01-11 01:30 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v30.1-fixed | GitHub Pages | ✅ Live |
+| Dashboard | v30.2-blue-selection | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -45,6 +45,12 @@ curl https://whatsapp-service-1006186358018.us-central1.run.app/status
 ---
 
 ## Key Features by Version
+
+### Dashboard v30.2-blue-selection (2026-01-11)
+- **FIX**: Selected rooms now BLUE instead of red (better visibility vs booked rooms)
+- **FIX**: Tabs stay visible when rooms are selected (no more jumping)
+- **FIX**: Selection bar appears ABOVE tabs instead of replacing them
+- **FIX**: Date header stays sticky with dynamic top position adjustment
 
 ### Dashboard v30.1-fixed (2026-01-11)
 - **FIX**: Fixed floating selection bar crash (was incorrectly placed in WhatsAppTab)
