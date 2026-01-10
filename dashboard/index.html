@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v31.4</title>
+    <title>Miami Beach Resort v31.5</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -57,7 +57,7 @@
         }
         
         /* ============================================
-           STICKY HEADER ARCHITECTURE (v31.4)
+           STICKY HEADER ARCHITECTURE (v31.5)
            ============================================
            DESKTOP:
            - top-bar: NOT sticky (scrolls away)
@@ -514,7 +514,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v31.4-redesign</div>
+<div class="version-tag">v31.5-sticky-fix</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -1805,7 +1805,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         setTimeout(() => dust.remove(), 1000);
     };
 
-    const CalendarView = ({groupBy}) => {
+    const CalendarView = ({groupBy, hideOccupancy = false}) => {
         const groups = groupBy === "floor"
             ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: roomsByFloor[f] || [], count: (roomsByFloor[f] || []).length}))
             : ROOMS.map(r => ({key: r.id, title: r.name, rooms: r.units.map(u => ({room: r, unit: u})), count: r.units.length}));
@@ -1826,21 +1826,23 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
 
         return (
             <>
-                {/* Occupancy Summary Row */}
-                <div className="occupancy-row-wrapper">
-                    <div className="occupancy-row-inner">
-                        {days.map(d => {
-                            const { occupied, available } = getOccupancyForDate(d);
-                            const cellClass = available === 0 ? 'full' : available <= 5 ? 'low' : '';
-                            return (
-                                <div key={d} className={`occupancy-cell ${cellClass}`}>
-                                    <div className="occ-available">{available} avail</div>
-                                    <div className="occ-occupied">{occupied} booked</div>
-                                </div>
-                            );
-                        })}
+                {/* Occupancy Summary Row - hidden on desktop when using sticky header */}
+                {!hideOccupancy && (
+                    <div className="occupancy-row-wrapper">
+                        <div className="occupancy-row-inner">
+                            {days.map(d => {
+                                const { occupied, available } = getOccupancyForDate(d);
+                                const cellClass = available === 0 ? 'full' : available <= 5 ? 'low' : '';
+                                return (
+                                    <div key={d} className={`occupancy-cell ${cellClass}`}>
+                                        <div className="occ-available">{available} avail</div>
+                                        <div className="occ-occupied">{occupied} booked</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                )}
                 <div className="cal-container" onMouseMove={createStardust}>
                     {groups.map(group => {
                         if (!group.rooms.length) return null;
@@ -2891,10 +2893,10 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     )}
 
                     {effectiveTab === "calendar" && !isMobile && (
-                        /* DESKTOP: Sticky header with sub-controls, occupancy, and dates */
+                        /* DESKTOP: Controls scroll away, only date+occupancy stick */
                         <>
-                            <div className="calendar-sticky-header" style={{padding: '12px 16px'}}>
-                                {/* Date picker and day buttons */}
+                            {/* Date picker and day buttons - SCROLLS AWAY */}
+                            <div style={{padding: '12px 16px', background: '#141824'}}>
                                 <div className="date-controls" style={{marginBottom: '10px'}}>
                                     <div onClick={() => calendarDateRef.current?.showPicker()} style={{cursor: 'pointer'}}>
                                         <input ref={calendarDateRef} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input" style={{cursor: 'pointer'}}/>
@@ -2904,12 +2906,15 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                     {[3, 7, 15, 30].map(d => <button key={d} onClick={() => setCalDays(d)} className={`day-btn ${calDays === d ? 'active' : ''}`}>{d}d</button>)}
                                 </div>
                                 {/* Floor/Category selector */}
-                                <div className="view-selector" style={{marginBottom: '10px'}}>
+                                <div className="view-selector">
                                     <button className={`view-btn ${calendarViewBy === 'floor' ? 'active' : ''}`} onClick={() => setCalendarViewBy('floor')}>🏢 Floor Calendar</button>
                                     <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
                                 </div>
+                            </div>
+                            {/* STICKY HEADER: Date header + Occupancy (sticks at top:0) */}
+                            <div className="calendar-sticky-header">
                                 {/* Date header */}
-                                <div style={{background: '#1E293B', padding: '8px 0', paddingLeft: '140px', borderTop: '2px solid #2D6A6A'}}>
+                                <div style={{background: '#1E293B', padding: '8px 16px', paddingLeft: '156px'}}>
                                     <div style={{display: 'flex', gap: '4px'}}>
                                         {days.map(d => {
                                             const isToday = d === today;
@@ -2927,8 +2932,31 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                         })}
                                     </div>
                                 </div>
+                                {/* Occupancy row */}
+                                <div style={{background: '#1E293B', padding: '6px 16px', paddingLeft: '156px', borderBottom: '2px solid #2D6A6A'}}>
+                                    <div style={{display: 'flex', gap: '4px'}}>
+                                        {days.map(d => {
+                                            const occupiedSet = new Set();
+                                            bookings.forEach(b => {
+                                                if (b.status === 'cancelled' || b.status === 'inquiry') return;
+                                                if (b.arrival <= d && b.departure > d) {
+                                                    occupiedSet.add(`${b.roomId}-${b.unitId}`);
+                                                }
+                                            });
+                                            const occupied = occupiedSet.size;
+                                            const available = totalRooms - occupied;
+                                            const cellClass = available === 0 ? 'full' : available <= 5 ? 'low' : '';
+                                            return (
+                                                <div key={d} className={`occupancy-cell ${cellClass}`} style={{flex: 1, minWidth: 0}}>
+                                                    <div className="occ-available">{available} avail</div>
+                                                    <div className="occ-occupied">{occupied} booked</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
-                            <CalendarView groupBy={calendarViewBy}/>
+                            <CalendarView groupBy={calendarViewBy} hideOccupancy={true}/>
                         </>
                     )}
 
