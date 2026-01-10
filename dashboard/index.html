@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v30.5</title>
+    <title>Miami Beach Resort v30.6</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -88,8 +88,8 @@
         .day-btn.active { background: #2D6A6A; color: white; }
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
-        /* Fixed Date Header - sticks below tabs-wrapper (top set dynamically via inline style) */
-        .date-header-wrapper { position: fixed; left: 0; right: 0; z-index: 140; background: #1E293B; padding: 12px 16px; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        /* Fixed Date Header - sticks at top for mobile */
+        .date-header-wrapper { position: fixed; top: 0; left: 0; right: 0; z-index: 140; background: #1E293B; padding: 12px 16px; border-bottom: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .date-header-inner { display: flex; gap: 4px; padding-left: 140px; }
         .date-cell { flex: 1; min-width: 0; text-align: center; padding: 8px 4px; background: rgba(255,255,255,0.05); border-radius: 8px; }
         .date-cell.today { background: #2D6A6A; }
@@ -483,7 +483,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v30.5-sticky-header</div>
+<div class="version-tag">v30.6-mobile-fixes</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -1793,16 +1793,12 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
             return { occupied, available };
         };
 
-        // Mobile: Fixed date header position - just below the tabs
-        // top-bar(50) + mobile-tabs(~58)
-        const mobileDateHeaderTop = 108;
-
         return (
             <>
-                {/* MOBILE ONLY: Fixed Date Header */}
+                {/* MOBILE ONLY: Fixed Date Header - always at top:0 */}
                 {isMobile && (
                     <>
-                        <div className="date-header-wrapper" style={{top: mobileDateHeaderTop + 'px'}}>
+                        <div className="date-header-wrapper">
                             <div className="date-header-inner">
                                 {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
                             </div>
@@ -5188,8 +5184,8 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
             {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests} onUpdate={() => {fetchData(true); setShowInfoModal(null);}} checkStatus={checkStatus} toggle={toggle} today={today} bookings={bookings} getRoomStatus={getRoomStatus} setIsEditing={setIsEditing} currentTab={tab} currentUser={currentUser}/>}
             {showBookModal && <BookingModal selected={selected} checkIn={effectiveTab === "searchbook" ? searchCheckIn : multiBookCheckIn} checkOut={effectiveTab === "searchbook" ? searchCheckOut : multiBookCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData(true);}} setIsEditing={setIsEditing}/>}
 
-            {/* MOBILE: Fixed bottom book button when units selected */}
-            {selected.length > 0 && isMobile && (
+            {/* MOBILE: Fixed bottom book button when units selected - hide when modal is open */}
+            {selected.length > 0 && isMobile && !showBookModal && (
                 <div style={{position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 16px', background: 'linear-gradient(180deg, transparent 0%, #1a2636 20%, #162030 100%)', zIndex: 1001, display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center'}}>
                     <div style={{display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center'}}>
                         {selected.slice(0, 3).map(s => (
@@ -8169,7 +8165,7 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
 
                 {/* Desktop Sticky Book Button - Top */}
                 <div className="sticky-book-btn-desktop">
-                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '14px 20px', background: status === "loading" ? 'rgba(45,106,106,0.5)' : 'linear-gradient(135deg, #2D6A6A 0%, #245858 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 4px 15px rgba(45,106,106,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '14px 20px', background: status === "loading" ? 'rgba(220,38,38,0.5)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 4px 15px rgba(239,68,68,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
                         {status === "loading" ? "⏳ Creating..." : (<>✓ Create Booking <span style={{background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '14px'}}>Room {roomNumbers}</span> <span style={{background: 'rgba(212,168,83,0.3)', padding: '4px 8px', borderRadius: '6px', fontSize: '13px', color: '#D4A853'}}>{nights}N</span></>)}
                     </button>
                 </div>
@@ -8545,7 +8541,7 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
 
                 {/* Mobile Sticky Book Button - Bottom */}
                 <div className="sticky-book-btn-mobile">
-                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '16px 20px', background: status === "loading" ? 'rgba(45,106,106,0.5)' : 'linear-gradient(135deg, #2D6A6A 0%, #245858 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 -4px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '16px 20px', background: status === "loading" ? 'rgba(220,38,38,0.5)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 -4px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
                         {status === "loading" ? "⏳ Creating..." : (<>✓ Create Booking <span style={{background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '6px', fontSize: '14px'}}>Room {roomNumbers}</span> <span style={{background: 'rgba(212,168,83,0.3)', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', color: '#D4A853'}}>{nights}N</span></>)}
                     </button>
                 </div>
