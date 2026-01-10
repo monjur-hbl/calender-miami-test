@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v30.0</title>
+    <title>Miami Beach Resort v30.1</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -88,16 +88,16 @@
         .day-btn.active { background: #2D6A6A; color: white; }
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
-        /* Sticky Date Header - sticks below tabs-wrapper (top-bar 58px + tabs-wrapper ~170px) */
-        .date-header-wrapper { position: sticky; top: 228px; z-index: 140; background: #1E293B; padding: 12px 16px; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        /* Sticky Date Header - sticks below tabs-wrapper */
+        .date-header-wrapper { position: sticky; top: 170px; z-index: 140; background: #1E293B; padding: 12px 16px; border-top: 3px solid #2D6A6A; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .date-header-inner { display: flex; gap: 4px; padding-left: 140px; }
         .date-cell { flex: 1; min-width: 0; text-align: center; padding: 8px 4px; background: rgba(255,255,255,0.05); border-radius: 8px; }
         .date-cell.today { background: #2D6A6A; }
         .date-day { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.7); }
         .date-num { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
-        /* Occupancy Summary Row - Sticky below dates */
-        .occupancy-row-wrapper { position: sticky; top: 318px; z-index: 139; background: #1E293B; padding: 6px 16px; }
+        /* Occupancy Summary Row - NOT sticky, scrolls with content */
+        .occupancy-row-wrapper { background: #1E293B; padding: 6px 16px; }
         .occupancy-row-inner { display: flex; gap: 4px; padding-left: 140px; }
         .occupancy-cell { flex: 1; min-width: 0; text-align: center; padding: 4px 2px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
         .occupancy-cell .occ-available { font-size: 12px; font-weight: 700; color: #10b981; }
@@ -293,12 +293,45 @@
             overflow-x: auto;
         }
 
+        /* Sticky Floating Selection Bar - appears when units selected & scrolling */
+        .floating-selection-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 250;
+            background: linear-gradient(180deg, #141824 0%, #1a2636 100%);
+            padding: 12px 16px;
+            border-bottom: 2px solid #2D6A6A;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+        .floating-selection-bar.visible {
+            transform: translateY(0);
+        }
+        .floating-selection-bar .compact-selection-bar {
+            justify-content: center;
+            max-width: 100%;
+        }
+
         @media (max-width: 768px) {
             .selection-bar-desktop { display: none; }
             .selection-bar-mobile { display: block; }
-        }
-        @media (min-width: 769px) {
-            .selection-bar-mobile { display: none; }
+            .floating-selection-bar {
+                top: auto;
+                bottom: 0;
+                transform: translateY(100%);
+                border-bottom: none;
+                border-top: 2px solid #2D6A6A;
+            }
+            .floating-selection-bar.visible {
+                transform: translateY(0);
+            }
+            .floating-selection-bar .compact-selection-bar {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
         }
 
         .info-section { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
@@ -453,7 +486,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v30.0-whatsapp-ui</div>
+<div class="version-tag">v30.1-sticky-selection</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -744,6 +777,7 @@ function App() {
     const [requests, setRequests] = useState(loadRequests());
     const [searchQuery, setSearchQuery] = useState("");
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [showFloatingBar, setShowFloatingBar] = useState(false); // Show floating selection bar on scroll
     const [isEditing, setIsEditing] = useState(false); // Pause auto-refresh when editing
     const isEditingRef = React.useRef(false); // Ref to check in interval without re-triggering
     const [searchCheckIn, setSearchCheckIn] = useState(getBDDate());
@@ -1080,6 +1114,17 @@ function App() {
         const h = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', h);
         return () => window.removeEventListener('resize', h);
+    }, []);
+
+    // Track scroll position to show/hide floating selection bar
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollY = window.scrollY;
+            // Show floating bar when scrolled past 300px and units are selected
+            setShowFloatingBar(scrollY > 300);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     useEffect(() => { const t = setInterval(() => setTime(getBDTime()), 60000); return () => clearInterval(t); }, []);
@@ -9058,6 +9103,29 @@ function WhatsAppTab() {
                 </div>
             </div>
         </div>
+            
+            {/* Floating Selection Bar - appears when scrolling with units selected */}
+            {selected.length > 0 && showFloatingBar && (
+                <div className={`floating-selection-bar visible`}>
+                    <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
+                        {selected.slice(0, isMobile ? 3 : selected.length).map(s => {
+                            const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+                            return (
+                                <div key={s.unitKey} className="compact-room-chip">
+                                    <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
+                                    <span className="room-num">{s.unit.n}</span>
+                                    <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
+                                </div>
+                            );
+                        })}
+                        {isMobile && selected.length > 3 && (
+                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', alignSelf: 'center'}}>+{selected.length - 3}</span>
+                        )}
+                        <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
+                        <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
+                    </div>
+                </div>
+            )}
     );
 }
 
