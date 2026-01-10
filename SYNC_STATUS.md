@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-10 00:15 BST
+> **Last Updated**: 2026-01-11 01:00 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v30.0-whatsapp-ui | GitHub Pages | ✅ Live |
+| Dashboard | v30.1-fixed | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -45,6 +45,19 @@ curl https://whatsapp-service-1006186358018.us-central1.run.app/status
 ---
 
 ## Key Features by Version
+
+### Dashboard v30.1-fixed (2026-01-11)
+- **FIX**: Fixed floating selection bar crash (was incorrectly placed in WhatsAppTab)
+- Sticky floating selection bar on desktop (top) and mobile (bottom) when scrolling with units selected
+- Occupancy row no longer sticky - scrolls with content
+- WhatsApp chat UI improvements from v30.0
+
+### Dashboard v30.0-whatsapp-ui (2026-01-10)
+- WhatsApp integration tab with real-time messaging
+- Full chat interface with message history
+- Media sending support (images, videos, documents)
+- Read receipts and delivery status
+- Group messaging support
 
 ### Dashboard v29.5-mobile-ui (2026-01-09)
 - **NEW**: Golden light rocket trail animation around screen border (mobile only)

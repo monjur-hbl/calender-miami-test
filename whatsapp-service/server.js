@@ -1,10 +1,11 @@
 /**
- * WhatsApp Service v1.4.0 - Full Features
+ * WhatsApp Service v1.5.0 - MessageBird Flow Builder Integration
  * - Send/receive text and media messages
  * - Group messaging
  * - Read receipts
  * - Location sharing
  * - Status/stories viewing
+ * - MessageBird Flow Builder webhook integration
  */
 
 const express = require('express');
@@ -31,6 +32,11 @@ app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 8080;
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'beds24-483408';
+
+// MessageBird Flow Builder Configuration
+// Set this to your MessageBird Flow Builder webhook URL
+let MESSAGEBIRD_WEBHOOK_URL = process.env.MESSAGEBIRD_WEBHOOK_URL || '';
+let MESSAGEBIRD_ENABLED = false;
 
 // Initialize Firestore
 const firestore = new Firestore({ projectId: PROJECT_ID });
@@ -205,9 +211,80 @@ function extractMessageContent(msg) {
 }
 
 /**
+ * Forward message to MessageBird Flow Builder webhook
+ */
+async function forwardToMessageBird(msgData) {
+    if (!MESSAGEBIRD_ENABLED || !MESSAGEBIRD_WEBHOOK_URL) {
+        return;
+    }
+
+    try {
+        // Format payload for MessageBird Flow Builder
+        // This follows a standard webhook format that Flow Builder can parse
+        const payload = {
+            // Message details
+            id: msgData.id,
+            type: 'whatsapp',
+            direction: msgData.fromMe ? 'outbound' : 'inbound',
+
+            // Sender info
+            from: {
+                phone: msgData.from,
+                name: msgData.senderName || msgData.from,
+                whatsappId: msgData.chatJid
+            },
+
+            // Recipient (your WhatsApp number)
+            to: {
+                phone: connectedAs?.phone || '',
+                name: connectedAs?.name || ''
+            },
+
+            // Message content
+            content: {
+                type: msgData.type || 'text',
+                text: msgData.text,
+                hasMedia: msgData.hasMedia || false,
+                mediaData: msgData.mediaData,
+                location: msgData.location
+            },
+
+            // Metadata
+            timestamp: msgData.timestamp,
+            isGroup: msgData.isGroup || false,
+            groupName: msgData.isGroup ? msgData.chatName : null,
+
+            // For Flow Builder routing
+            channel: 'whatsapp',
+            conversationId: msgData.chatJid
+        };
+
+        console.log(`🐦 Forwarding to MessageBird: ${msgData.from} - ${msgData.text?.substring(0, 30)}`);
+
+        const response = await fetch(MESSAGEBIRD_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Source': 'whatsapp-service',
+                'X-Message-Id': msgData.id
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            console.error(`MessageBird webhook error: ${response.status} ${response.statusText}`);
+        } else {
+            console.log(`✅ Message forwarded to MessageBird`);
+        }
+    } catch (err) {
+        console.error('MessageBird forward error:', err.message);
+    }
+}
+
+/**
  * Store message in memory
  */
-function storeMessage(msgData) {
+function storeMessage(msgData, forwardToMB = true) {
     inMemoryMessages.unshift(msgData);
     if (inMemoryMessages.length > 500) {
         inMemoryMessages = inMemoryMessages.slice(0, 500);
@@ -233,6 +310,11 @@ function storeMessage(msgData) {
     }
 
     console.log(`✅ Message stored (total: ${inMemoryMessages.length})`);
+
+    // Forward incoming messages to MessageBird (not our own sent messages)
+    if (forwardToMB && !msgData.fromMe && MESSAGEBIRD_ENABLED) {
+        forwardToMessageBird(msgData);
+    }
 }
 
 /**
@@ -498,9 +580,13 @@ async function initWhatsApp() {
 app.get('/', (req, res) => {
     res.json({
         service: 'whatsapp-service',
-        version: '1.4.0',
+        version: '1.5.0',
         status: connectionStatus,
-        features: ['text', 'media', 'groups', 'location', 'read-receipts', 'status']
+        features: ['text', 'media', 'groups', 'location', 'read-receipts', 'status', 'messagebird-integration'],
+        messagebird: {
+            enabled: MESSAGEBIRD_ENABLED,
+            webhookConfigured: !!MESSAGEBIRD_WEBHOOK_URL
+        }
     });
 });
 
@@ -818,10 +904,230 @@ app.get('/profile-pic/:jid', async (req, res) => {
     }
 });
 
+// ============== MESSAGEBIRD FLOW BUILDER INTEGRATION ==============
+
+// Get MessageBird integration status
+app.get('/messagebird/status', (req, res) => {
+    res.json({
+        success: true,
+        enabled: MESSAGEBIRD_ENABLED,
+        webhookUrl: MESSAGEBIRD_WEBHOOK_URL ? MESSAGEBIRD_WEBHOOK_URL.substring(0, 50) + '...' : null,
+        whatsappConnected: connectionStatus === 'connected'
+    });
+});
+
+// Configure MessageBird webhook URL
+app.post('/messagebird/configure', (req, res) => {
+    const { webhookUrl, enabled } = req.body;
+
+    if (webhookUrl !== undefined) {
+        MESSAGEBIRD_WEBHOOK_URL = webhookUrl;
+        console.log(`🐦 MessageBird webhook URL configured: ${webhookUrl.substring(0, 50)}...`);
+    }
+
+    if (enabled !== undefined) {
+        MESSAGEBIRD_ENABLED = enabled;
+        console.log(`🐦 MessageBird integration ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    }
+
+    // Save to Firestore for persistence
+    firestore.collection('whatsapp_config').doc('messagebird').set({
+        webhookUrl: MESSAGEBIRD_WEBHOOK_URL,
+        enabled: MESSAGEBIRD_ENABLED,
+        updatedAt: new Date().toISOString()
+    }).catch(err => console.error('Failed to save MessageBird config:', err.message));
+
+    res.json({
+        success: true,
+        enabled: MESSAGEBIRD_ENABLED,
+        webhookConfigured: !!MESSAGEBIRD_WEBHOOK_URL
+    });
+});
+
+// Webhook endpoint for MessageBird Flow Builder to send replies
+// MessageBird Flow Builder will call this endpoint to send messages via your WhatsApp
+app.post('/messagebird/reply', async (req, res) => {
+    console.log('🐦 MessageBird reply webhook received:', JSON.stringify(req.body).substring(0, 200));
+
+    // Support multiple payload formats from MessageBird Flow Builder
+    const {
+        // Standard format
+        to, phone, recipient,
+        message, text, body, content,
+        // Media
+        mediaUrl, media,
+        mediaType, type,
+        caption,
+        // Conversation context
+        conversationId, chatJid
+    } = req.body;
+
+    // Determine recipient phone number
+    const targetPhone = to || phone || recipient ||
+        (typeof req.body.to === 'object' ? req.body.to.phone : null) ||
+        (conversationId ? conversationId.split('@')[0] : null);
+
+    // Determine message text
+    const messageText = message || text || body || content ||
+        (typeof req.body.content === 'object' ? req.body.content.text : null);
+
+    if (!targetPhone) {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing recipient. Provide: to, phone, recipient, or conversationId'
+        });
+    }
+
+    if (!messageText && !mediaUrl && !media) {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing message content. Provide: message, text, body, or mediaUrl'
+        });
+    }
+
+    if (connectionStatus !== 'connected' || !sock) {
+        return res.status(503).json({
+            success: false,
+            error: 'WhatsApp not connected'
+        });
+    }
+
+    try {
+        const cleanPhone = targetPhone.toString().replace(/[^0-9]/g, '');
+        const jid = cleanPhone.includes('@') ? cleanPhone : cleanPhone + '@s.whatsapp.net';
+
+        let result;
+
+        // Send media if provided
+        if (mediaUrl || media) {
+            const mType = mediaType || type || 'image';
+            let messageContent;
+
+            switch (mType) {
+                case 'image':
+                    messageContent = { image: { url: mediaUrl || media }, caption: caption || messageText || '' };
+                    break;
+                case 'video':
+                    messageContent = { video: { url: mediaUrl || media }, caption: caption || messageText || '' };
+                    break;
+                case 'audio':
+                    messageContent = { audio: { url: mediaUrl || media } };
+                    break;
+                case 'document':
+                    messageContent = { document: { url: mediaUrl || media }, fileName: caption || 'document' };
+                    break;
+                default:
+                    messageContent = { image: { url: mediaUrl || media }, caption: caption || messageText || '' };
+            }
+
+            result = await sock.sendMessage(jid, messageContent);
+            console.log(`🐦📤 Media sent via MessageBird to ${cleanPhone}: ${mType}`);
+        } else {
+            // Send text message
+            result = await sock.sendMessage(jid, { text: messageText });
+            console.log(`🐦📤 Reply sent via MessageBird to ${cleanPhone}: ${messageText.substring(0, 50)}`);
+        }
+
+        // Store the sent message
+        const msgData = {
+            id: result.key.id,
+            chatJid: jid,
+            from: connectedAs?.phone,
+            fromMe: true,
+            isGroup: jid.endsWith('@g.us'),
+            text: messageText || caption || `[${mediaType || 'Media'}]`,
+            type: (mediaUrl || media) ? (mediaType || type || 'image') : 'text',
+            timestamp: new Date().toISOString(),
+            read: true,
+            source: 'messagebird' // Mark as sent via MessageBird
+        };
+        storeMessage(msgData, false); // Don't forward back to MessageBird
+
+        res.json({
+            success: true,
+            messageId: result.key.id,
+            to: cleanPhone
+        });
+
+    } catch (err) {
+        console.error('MessageBird reply error:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Test endpoint - manually trigger a webhook to MessageBird
+app.post('/messagebird/test', async (req, res) => {
+    if (!MESSAGEBIRD_ENABLED || !MESSAGEBIRD_WEBHOOK_URL) {
+        return res.status(400).json({
+            success: false,
+            error: 'MessageBird integration not configured. POST to /messagebird/configure first.'
+        });
+    }
+
+    const testPayload = {
+        id: 'test_' + Date.now(),
+        type: 'whatsapp',
+        direction: 'inbound',
+        from: {
+            phone: '8801234567890',
+            name: 'Test User',
+            whatsappId: '8801234567890@s.whatsapp.net'
+        },
+        to: {
+            phone: connectedAs?.phone || 'unknown',
+            name: connectedAs?.name || 'WhatsApp Service'
+        },
+        content: {
+            type: 'text',
+            text: 'This is a test message from WhatsApp Service'
+        },
+        timestamp: new Date().toISOString(),
+        isGroup: false,
+        channel: 'whatsapp',
+        conversationId: '8801234567890@s.whatsapp.net',
+        _test: true
+    };
+
+    try {
+        const response = await fetch(MESSAGEBIRD_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Source': 'whatsapp-service',
+                'X-Test': 'true'
+            },
+            body: JSON.stringify(testPayload)
+        });
+
+        res.json({
+            success: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            payload: testPayload
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Start server
-app.listen(PORT, () => {
-    console.log(`WhatsApp service v1.4.0 running on port ${PORT}`);
+app.listen(PORT, async () => {
+    console.log(`WhatsApp service v1.5.0 running on port ${PORT}`);
     console.log(`Project: ${PROJECT_ID}`);
-    console.log('Features: text, media, groups, location, read-receipts, status');
+    console.log('Features: text, media, groups, location, read-receipts, status, messagebird');
+
+    // Load MessageBird config from Firestore
+    try {
+        const configDoc = await firestore.collection('whatsapp_config').doc('messagebird').get();
+        if (configDoc.exists) {
+            const config = configDoc.data();
+            MESSAGEBIRD_WEBHOOK_URL = config.webhookUrl || '';
+            MESSAGEBIRD_ENABLED = config.enabled || false;
+            console.log(`🐦 MessageBird: ${MESSAGEBIRD_ENABLED ? 'ENABLED' : 'DISABLED'}, webhook: ${MESSAGEBIRD_WEBHOOK_URL ? 'configured' : 'not set'}`);
+        }
+    } catch (err) {
+        console.log('Could not load MessageBird config:', err.message);
+    }
+
     setTimeout(initWhatsApp, 2000);
 });
