@@ -486,7 +486,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v30.1-sticky-selection</div>
+<div class="version-tag">v30.1-fixed</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -5167,6 +5167,29 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
 
             {showInfoModal && <InfoModal booking={showInfoModal} onClose={() => setShowInfoModal(null)} getMultiUnitInfo={getMultiUnitInfo} getRequestCounts={getRequestCounts} requests={requests} onUpdate={() => {fetchData(true); setShowInfoModal(null);}} checkStatus={checkStatus} toggle={toggle} today={today} bookings={bookings} getRoomStatus={getRoomStatus} setIsEditing={setIsEditing} currentTab={tab} currentUser={currentUser}/>}
             {showBookModal && <BookingModal selected={selected} checkIn={effectiveTab === "searchbook" ? searchCheckIn : multiBookCheckIn} checkOut={effectiveTab === "searchbook" ? searchCheckOut : multiBookCheckOut} onClose={() => {setShowBookModal(false); setSelected([]); fetchData(true);}} setIsEditing={setIsEditing}/>}
+
+            {/* Floating Selection Bar - appears when scrolling with units selected */}
+            {selected.length > 0 && showFloatingBar && (
+                <div className={`floating-selection-bar visible`}>
+                    <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
+                        {selected.slice(0, isMobile ? 3 : selected.length).map(s => {
+                            const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+                            return (
+                                <div key={s.unitKey} className="compact-room-chip">
+                                    <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
+                                    <span className="room-num">{s.unit.n}</span>
+                                    <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
+                                </div>
+                            );
+                        })}
+                        {isMobile && selected.length > 3 && (
+                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', alignSelf: 'center'}}>+{selected.length - 3}</span>
+                        )}
+                        <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
+                        <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -9103,29 +9126,6 @@ function WhatsAppTab() {
                 </div>
             </div>
         </div>
-            
-            {/* Floating Selection Bar - appears when scrolling with units selected */}
-            {selected.length > 0 && showFloatingBar && (
-                <div className={`floating-selection-bar visible`}>
-                    <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
-                        {selected.slice(0, isMobile ? 3 : selected.length).map(s => {
-                            const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
-                            return (
-                                <div key={s.unitKey} className="compact-room-chip">
-                                    <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
-                                    <span className="room-num">{s.unit.n}</span>
-                                    <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
-                                </div>
-                            );
-                        })}
-                        {isMobile && selected.length > 3 && (
-                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', alignSelf: 'center'}}>+{selected.length - 3}</span>
-                        )}
-                        <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
-                        <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
-                    </div>
-                </div>
-            )}
     );
 }
 
