@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v31.1</title>
+    <title>Miami Beach Resort v31.2</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -109,21 +109,9 @@
         .day-btn.active { background: #2D6A6A; color: white; }
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
-        /* Fixed Date Header - ALWAYS visible
-           Mobile: top:100px (below 50px top-bar + 50px tabs)
-           Desktop: top:165px (below 58px top-bar + ~107px tabs-wrapper with controls)
-        */
-        .date-header-wrapper { position: fixed; top: 100px; left: 0; right: 0; z-index: 140; background: linear-gradient(180deg, #1E293B 0%, #1a2636 100%); padding: 8px 12px; border-bottom: 3px solid #2D6A6A; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .date-header-inner { display: flex; gap: 4px; }
-        .date-cell { flex: 1; min-width: 0; text-align: center; padding: 6px 2px; background: rgba(255,255,255,0.05); border-radius: 6px; }
-        .date-cell.today { background: #2D6A6A; }
-        .date-day { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.7); }
-        .date-num { font-size: 16px; font-weight: 700; margin-top: 1px; }
-
-        /* Mobile: When units selected - hide top-bar and tabs, move date header to top */
+        /* Mobile: When units selected - hide top-bar and tabs */
         .mobile-selection-mode .top-bar { display: none !important; }
         .mobile-selection-mode .tabs-wrapper { display: none !important; }
-        .mobile-selection-mode .date-header-wrapper { top: 0 !important; }
 
         /* Occupancy Summary Row - NOT sticky, scrolls with content */
         .occupancy-row-wrapper { background: #1E293B; padding: 6px 16px; }
@@ -456,15 +444,9 @@
             /* HIDE occupancy row on mobile */
             .occupancy-row-wrapper { display: none !important; }
 
-            .date-header-inner { padding-left: 66px; }
             .occupancy-row-inner { padding-left: 66px; }
             .room-row { gap: 2px; }
             .search-btn { padding: 10px 16px; font-size: 13px; }
-
-            /* Mobile fixed date header - below tabs-wrapper */
-            .date-header-wrapper {
-                padding: 8px;
-            }
 
             /* Room rows container */
             .floor-group { overflow-x: hidden; }
@@ -518,7 +500,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v31.1-app-level-header</div>
+<div class="version-tag">v31.2-clean-header</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2858,24 +2840,28 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                 )}
             </div>
 
-            {/* FIXED DATE HEADER - Rendered at App level, outside any scrolling container */}
+            {/* FIXED DATE HEADER - Rendered at App level
+                Mobile: top-bar(~55px) + tabs(~45px) = 100px
+                Mobile selection mode: top:0
+                Desktop: top-bar(58px) + tabs with controls(~110px) = 168px
+            */}
             {effectiveTab === "calendar" && (
                 <div
-                    className="date-header-wrapper"
+                    id="calendar-date-header"
                     style={{
                         position: 'fixed',
-                        top: isMobile ? (mobileSelectionMode ? '0px' : '100px') : '165px',
+                        top: mobileSelectionMode ? 0 : (isMobile ? 95 : 168),
                         left: 0,
                         right: 0,
-                        zIndex: 140,
-                        background: 'linear-gradient(180deg, #1E293B 0%, #1a2636 100%)',
-                        padding: isMobile ? '8px 12px' : '10px 16px',
-                        paddingLeft: isMobile ? '12px' : '156px',
+                        zIndex: 999,
+                        background: '#1E293B',
+                        padding: isMobile ? '6px 8px' : '8px 16px',
+                        paddingLeft: isMobile ? '8px' : '156px',
                         borderBottom: '3px solid #2D6A6A',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.6)'
                     }}
                 >
-                    <div style={{display: 'flex', gap: '4px'}}>
+                    <div style={{display: 'flex', gap: isMobile ? '3px' : '4px'}}>
                         {days.map(d => {
                             const isToday = d === today;
                             const dayName = new Date(d).toLocaleDateString('en-US', {weekday: 'short'});
@@ -2885,12 +2871,12 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                     flex: 1,
                                     minWidth: 0,
                                     textAlign: 'center',
-                                    padding: isMobile ? '6px 2px' : '8px 4px',
+                                    padding: isMobile ? '4px 2px' : '6px 4px',
                                     background: isToday ? '#2D6A6A' : 'rgba(255,255,255,0.05)',
-                                    borderRadius: isMobile ? '6px' : '8px'
+                                    borderRadius: '6px'
                                 }}>
-                                    <div style={{fontSize: isMobile ? '10px' : '11px', fontWeight: '500', color: 'rgba(255,255,255,0.7)'}}>{dayName}</div>
-                                    <div style={{fontSize: isMobile ? '16px' : '18px', fontWeight: '700', marginTop: isMobile ? '1px' : '2px'}}>{dayNumber}</div>
+                                    <div style={{fontSize: isMobile ? '9px' : '11px', fontWeight: '500', color: 'rgba(255,255,255,0.7)'}}>{dayName}</div>
+                                    <div style={{fontSize: isMobile ? '14px' : '18px', fontWeight: '700', marginTop: '1px'}}>{dayNumber}</div>
                                 </div>
                             );
                         })}
@@ -2908,7 +2894,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     {effectiveTab === "calendar" && (
                         <>
                             {/* Spacer for fixed date header */}
-                            <div style={{height: isMobile ? '55px' : '65px'}}></div>
+                            <div style={{height: isMobile ? '45px' : '55px'}}></div>
                             <CalendarView groupBy={calendarViewBy}/>
                         </>
                     )}
