@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-11 02:30 BST
+> **Last Updated**: 2026-01-11 03:00 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v30.4-fixed-dates | GitHub Pages | ✅ Live |
+| Dashboard | v30.5-sticky-header | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -45,6 +45,12 @@ curl https://whatsapp-service-1006186358018.us-central1.run.app/status
 ---
 
 ## Key Features by Version
+
+### Dashboard v30.5-sticky-header (2026-01-11)
+- **DESKTOP**: Date header now inside tabs-wrapper (sticky together with everything)
+- Selection bar + tabs + calendar controls + date header all sticky at top
+- **MOBILE**: Date header fixed at top, book button fixed at bottom
+- Clean layout with proper sticky behavior
 
 ### Dashboard v30.4-fixed-dates (2026-01-11)
 - **FIX**: Changed date header from sticky to fixed positioning
