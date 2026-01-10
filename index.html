@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v32.0</title>
+    <title>Miami Beach Resort v32.1</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -62,23 +62,20 @@
            2. LAYOUT ARCHITECTURE (Header/Sticky Behavior)
            ================================================================
 
-           DESKTOP (Calendar tab):
+           BOTH MOBILE & DESKTOP (Calendar tab):
            - top-bar: scrolls with page
            - tabs-wrapper: scrolls with page
-           - Date controls + Floor/Category: scroll with page
-           - desktop-sticky-date-header: STICKY at top:0 when scrolled
+           - Date controls: scroll with page
+           - sticky-date-header: STICKY at top:0 when scrolled
+             * Date header (Sun 11, Mon 12, etc.)
+             * Occupancy row (available/booked counts)
            - Calendar grid scrolls behind sticky header
            - When units selected: book button fixed at bottom
-
-           MOBILE (NO selection):
-           - top-bar: sticky at top:0, z-index:200
-           - tabs-wrapper: sticky at top:50px, z-index:150
-           - date-header: fixed at top:95px
 
            MOBILE (WITH selection):
            - top-bar: HIDDEN
            - tabs-wrapper: HIDDEN
-           - date-header: fixed at top:0
+           - sticky-date-header: stays sticky at top:0
            - bottom-bar: fixed at bottom with Book button
            ================================================================ */
 
@@ -96,15 +93,13 @@
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
-        /* Desktop Sticky Date Header - becomes sticky when scrolled to top */
-        @media (min-width: 769px) {
-            .desktop-sticky-date-header {
-                position: sticky;
-                top: 0;
-                z-index: 150;
-                background: #1E293B;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            }
+        /* Sticky Date Header - becomes sticky when scrolled to top (BOTH mobile and desktop) */
+        .sticky-date-header {
+            position: sticky;
+            top: 0;
+            z-index: 150;
+            background: #1E293B;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         /* Mobile Selection Mode - hide top elements */
@@ -641,9 +636,9 @@
             .cal-container { overflow-x: clip; padding: 0 8px 100px; }
             .floor-group { overflow-x: clip; }
 
-            /* MOBILE STICKY: top-bar and tabs */
-            .top-bar { position: sticky; top: 0; z-index: 200; padding: 10px 12px; }
-            .tabs-wrapper { position: sticky; top: 50px; z-index: 150; padding: 8px 12px 10px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+            /* MOBILE: top-bar and tabs scroll with page (like desktop) */
+            .top-bar { padding: 10px 12px; }
+            .tabs-wrapper { padding: 8px 12px 10px 12px; }
 
             /* Stats */
             .stat-num { font-size: 16px; }
@@ -670,8 +665,7 @@
             .date-day { font-size: 8px; }
             .date-num { font-size: 12px; }
 
-            /* HIDE occupancy row on mobile (has fixed date header instead) */
-            .occupancy-row-wrapper { display: none !important; }
+            /* Occupancy row on mobile - adjust padding for smaller room labels */
             .occupancy-row-inner { padding-left: 66px; }
 
             /* Search */
@@ -707,7 +701,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v32.0-css-organized</div>
+<div class="version-tag">v32.1-unified-sticky</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -3035,41 +3029,6 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     )}
             </div>
 
-            {/* MOBILE ONLY: Fixed Date Header */}
-            {effectiveTab === "calendar" && isMobile && (
-                <div
-                    id="mobile-date-header"
-                    style={{
-                        position: 'fixed',
-                        top: mobileSelectionMode ? 0 : 95,
-                        left: 0,
-                        right: 0,
-                        zIndex: 145,
-                        background: '#1E293B',
-                        padding: '6px 8px',
-                        borderBottom: '3px solid #2D6A6A',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.6)'
-                    }}
-                >
-                    <div style={{display: 'flex', gap: '3px'}}>
-                        {days.map(d => {
-                            const isToday = d === today;
-                            const dayName = new Date(d).toLocaleDateString('en-US', {weekday: 'short'});
-                            const dayNumber = new Date(d).getDate();
-                            return (
-                                <div key={d} style={{
-                                    flex: 1, minWidth: 0, textAlign: 'center', padding: '4px 2px',
-                                    background: isToday ? '#2D6A6A' : 'rgba(255,255,255,0.05)', borderRadius: '6px'
-                                }}>
-                                    <div style={{fontSize: '9px', fontWeight: '500', color: 'rgba(255,255,255,0.7)'}}>{dayName}</div>
-                                    <div style={{fontSize: '14px', fontWeight: '700', marginTop: '1px'}}>{dayNumber}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
             {error && <div style={{margin: '16px', padding: '12px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444', fontSize: '13px'}}>{error}</div>}
             {loading && <div style={{display: 'flex', justifyContent: 'center', padding: '50px'}}><div className="loader"></div></div>}
 
@@ -3078,10 +3037,54 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                     {effectiveTab === "today" && <TodayView/>}
 
                     {effectiveTab === "calendar" && isMobile && (
+                        /* MOBILE: Same sticky behavior as desktop */
                         <>
-                            {/* Mobile spacer for fixed date header */}
-                            <div style={{height: '45px'}}></div>
-                            <CalendarView groupBy={calendarViewBy}/>
+                            {/* STICKY HEADER: Date header + Occupancy - sticks at top:0 when scrolled */}
+                            <div className="sticky-date-header">
+                                {/* Date header */}
+                                <div style={{background: '#1E293B', padding: '6px 8px'}}>
+                                    <div style={{display: 'flex', gap: '3px'}}>
+                                        {days.map(d => {
+                                            const isToday = d === today;
+                                            const dayName = new Date(d).toLocaleDateString('en-US', {weekday: 'short'});
+                                            const dayNumber = new Date(d).getDate();
+                                            return (
+                                                <div key={d} style={{
+                                                    flex: 1, minWidth: 0, textAlign: 'center', padding: '4px 2px',
+                                                    background: isToday ? '#2D6A6A' : 'rgba(255,255,255,0.05)', borderRadius: '6px'
+                                                }}>
+                                                    <div style={{fontSize: '9px', fontWeight: '500', color: 'rgba(255,255,255,0.7)'}}>{dayName}</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '700', marginTop: '1px'}}>{dayNumber}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                {/* Occupancy row */}
+                                <div style={{background: '#1E293B', padding: '4px 8px', paddingLeft: '66px', borderBottom: '2px solid #2D6A6A'}}>
+                                    <div style={{display: 'flex', gap: '3px'}}>
+                                        {days.map(d => {
+                                            const occupiedSet = new Set();
+                                            bookings.forEach(b => {
+                                                if (b.status === 'cancelled' || b.status === 'inquiry') return;
+                                                if (b.arrival <= d && b.departure > d) {
+                                                    occupiedSet.add(`${b.roomId}-${b.unitId}`);
+                                                }
+                                            });
+                                            const occupied = occupiedSet.size;
+                                            const available = totalRooms - occupied;
+                                            const cellClass = available === 0 ? 'full' : available <= 5 ? 'low' : '';
+                                            return (
+                                                <div key={d} className={`occupancy-cell ${cellClass}`} style={{flex: 1, minWidth: 0}}>
+                                                    <div className="occ-available" style={{fontSize: '10px'}}>{available}</div>
+                                                    <div className="occ-occupied" style={{fontSize: '8px'}}>{occupied}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                            <CalendarView groupBy={calendarViewBy} hideOccupancy={true}/>
                         </>
                     )}
 
@@ -3104,7 +3107,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                 </div>
                             </div>
                             {/* STICKY HEADER: Date header + Occupancy - sticks at top:0 when scrolled */}
-                            <div className="desktop-sticky-date-header">
+                            <div className="sticky-date-header">
                                 {/* Date header */}
                                 <div style={{background: '#1E293B', padding: '8px 16px', paddingLeft: '156px'}}>
                                     <div style={{display: 'flex', gap: '4px'}}>
