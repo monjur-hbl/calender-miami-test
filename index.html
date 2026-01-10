@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v30.9</title>
+    <title>Miami Beach Resort v31.0</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -109,7 +109,10 @@
         .day-btn.active { background: #2D6A6A; color: white; }
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
-        /* MOBILE: Fixed Date Header - ALWAYS visible at top:100px (below top-bar + tabs) */
+        /* Fixed Date Header - ALWAYS visible
+           Mobile: top:100px (below 50px top-bar + 50px tabs)
+           Desktop: top:165px (below 58px top-bar + ~107px tabs-wrapper with controls)
+        */
         .date-header-wrapper { position: fixed; top: 100px; left: 0; right: 0; z-index: 140; background: linear-gradient(180deg, #1E293B 0%, #1a2636 100%); padding: 8px 12px; border-bottom: 3px solid #2D6A6A; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .date-header-inner { display: flex; gap: 4px; }
         .date-cell { flex: 1; min-width: 0; text-align: center; padding: 6px 2px; background: rgba(255,255,255,0.05); border-radius: 6px; }
@@ -515,7 +518,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v30.9-fixed-header</div>
+<div class="version-tag">v31.0-unified-header</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -1827,18 +1830,14 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
 
         return (
             <>
-                {/* MOBILE: Fixed Date Header - always visible */}
-                {isMobile && (
-                    <>
-                        <div className="date-header-wrapper">
-                            <div className="date-header-inner">
-                                {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
-                            </div>
-                        </div>
-                        {/* Spacer for fixed date header (height ~50px) */}
-                        <div style={{height: '50px'}}></div>
-                    </>
-                )}
+                {/* Fixed Date Header - always visible (mobile & desktop) */}
+                <div className="date-header-wrapper" style={!isMobile ? {top: '165px', paddingLeft: '156px'} : {}}>
+                    <div className="date-header-inner" style={!isMobile ? {paddingLeft: '0'} : {}}>
+                        {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
+                    </div>
+                </div>
+                {/* Spacer for fixed date header */}
+                <div style={{height: isMobile ? '50px' : '60px'}}></div>
                 {/* Occupancy Summary Row */}
                 <div className="occupancy-row-wrapper">
                     <div className="occupancy-row-inner">
@@ -2864,24 +2863,6 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                             <button className={`view-btn ${calendarViewBy === 'category' ? 'active' : ''}`} onClick={() => setCalendarViewBy('category')}>📁 By Category</button>
                         </div>
                     </>
-                )}
-                {/* DESKTOP: Date header inside tabs-wrapper - sticky with everything else */}
-                {effectiveTab === "calendar" && !isMobile && (
-                    <div style={{marginTop: '12px', background: '#1E293B', padding: '10px 0', borderTop: '2px solid #2D6A6A', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px'}}>
-                        <div style={{display: 'flex', gap: '4px', paddingLeft: '140px'}}>
-                            {days.map(d => {
-                                const isToday = d === today;
-                                const dayName = new Date(d).toLocaleDateString('en-US', {weekday: 'short'});
-                                const dayNum = new Date(d).getDate();
-                                return (
-                                    <div key={d} style={{flex: 1, minWidth: 0, textAlign: 'center', padding: '8px 4px', background: isToday ? '#2D6A6A' : 'rgba(255,255,255,0.05)', borderRadius: '8px'}}>
-                                        <div style={{fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.7)'}}>{dayName}</div>
-                                        <div style={{fontSize: '18px', fontWeight: '700', marginTop: '2px'}}>{dayNum}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
                 )}
             </div>
 
