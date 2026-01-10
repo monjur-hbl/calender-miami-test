@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v32.1</title>
+    <title>Miami Beach Resort v32.2</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -701,7 +701,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v32.1-unified-sticky</div>
+<div class="version-tag">v32.2-bottom-book-only</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2976,29 +2976,6 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
 
             {/* Tabs - Always visible */}
             <div className="tabs-wrapper">
-                    {/* Selection bar ABOVE tabs when rooms selected */}
-                    {selected.length > 0 && (
-                        <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', padding: '8px 0', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                            <div className="compact-selection-bar" style={{justifyContent: 'center'}}>
-                                {selected.slice(0, isMobile ? 3 : selected.length).map(s => {
-                                    const formatDate = (d) => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
-                                    return (
-                                        <div key={s.unitKey} className="compact-room-chip">
-                                            <button className="chip-remove" onClick={(e) => {e.stopPropagation(); setSelected(selected.filter(x => x.unitKey !== s.unitKey));}}>×</button>
-                                            <span className="room-num">{s.unit.n}</span>
-                                            <span className="room-dates">{formatDate(s.checkIn)}-{formatDate(s.checkOut)}</span>
-                                        </div>
-                                    );
-                                })}
-                                {isMobile && selected.length > 3 && (
-                                    <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', alignSelf: 'center'}}>+{selected.length - 3}</span>
-                                )}
-                                <button className="compact-clear-btn" onClick={() => setSelected([])}>Clear</button>
-                                <button className="compact-book-btn" onClick={() => setShowBookModal(true)}>Book {selected.length}</button>
-                            </div>
-                        </div>
-                    )}
-                    {/* Tabs always visible */}
                     {isMobile ? (
                         /* MOBILE TABS: Only Today, Floor Calendar, Search & Book - centered buttons */
                         <div style={{display: 'flex', justifyContent: 'center', gap: '8px', padding: '4px 0'}}>
