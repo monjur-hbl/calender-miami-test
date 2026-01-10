@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-11 02:00 BST
+> **Last Updated**: 2026-01-11 02:30 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v30.3-sticky-dates | GitHub Pages | ✅ Live |
+| Dashboard | v30.4-fixed-dates | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -45,6 +45,12 @@ curl https://whatsapp-service-1006186358018.us-central1.run.app/status
 ---
 
 ## Key Features by Version
+
+### Dashboard v30.4-fixed-dates (2026-01-11)
+- **FIX**: Changed date header from sticky to fixed positioning
+- Fixed positioning more reliable than sticky (no overflow:hidden conflicts)
+- Added spacer div to prevent content overlap
+- Dynamic top calculation based on selection bar state
 
 ### Dashboard v30.3-sticky-dates (2026-01-11)
 - **FIX**: Corrected sticky date header positioning for all scenarios
