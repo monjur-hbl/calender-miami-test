@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v30.7</title>
+    <title>Miami Beach Resort v30.8</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -57,26 +57,33 @@
         }
         
         /* ============================================
-           STICKY HEADER ARCHITECTURE (v30.7)
+           STICKY HEADER ARCHITECTURE (v30.8)
            ============================================
            DESKTOP:
-           - top-bar: sticky at top:0, z-index:200
-           - tabs-wrapper: sticky at top:58px, z-index:150
-           - date-header: INSIDE tabs-wrapper (not fixed)
+           - top-bar: sticky at top:0
+           - tabs-wrapper: sticky at top:58px
+           - date-header: INSIDE tabs-wrapper (sticky together)
 
-           MOBILE:
-           - top-bar: sticky at top:0, z-index:200, height ~50px
-           - tabs-wrapper: sticky at top:50px, z-index:150
-           - date-header: fixed at top:0, z-index:250 (ABOVE everything!)
+           MOBILE (NO selection):
+           - top-bar: sticky at top:0
+           - tabs-wrapper: sticky at top:50px
+           - date-header: sticky at top:100px (below tabs)
+           - ALL sticky together as one unit
+
+           MOBILE (WITH selection):
+           - top-bar: HIDDEN
+           - tabs-wrapper: HIDDEN
+           - date-header: sticky at top:0 (becomes the only header)
+           - bottom-bar: fixed at bottom with Book button
            ============================================ */
 
-        /* Top Bar - Always sticky at very top */
+        /* Top Bar - Sticky at very top */
         .top-bar { background: #141824; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 200; padding: 12px 16px; }
 
         /* Controls Section - Scrolls away */
         .controls-section { background: #141824; padding: 16px; padding-top: 8px; }
 
-        /* Tabs Wrapper - Sticky below top bar (desktop: 58px, mobile: 50px) */
+        /* Tabs Wrapper - Sticky below top bar */
         .tabs-wrapper { position: sticky; top: 58px; z-index: 150; background: #141824; padding: 12px 16px 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         
         /* Stats Row - 5 items */
@@ -102,13 +109,18 @@
         .day-btn.active { background: #2D6A6A; color: white; }
         .date-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 13px; }
         
-        /* MOBILE ONLY: Fixed Date Header - HIGHEST z-index to stay on top of everything! */
-        .date-header-wrapper { position: fixed; top: 0; left: 0; right: 0; z-index: 250; background: linear-gradient(180deg, #1E293B 0%, #1a2636 100%); padding: 8px 12px; border-bottom: 3px solid #2D6A6A; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .date-header-inner { display: flex; gap: 4px; padding-left: 140px; }
-        .date-cell { flex: 1; min-width: 0; text-align: center; padding: 8px 4px; background: rgba(255,255,255,0.05); border-radius: 8px; }
+        /* MOBILE: Sticky Date Header - position controlled by JS based on selection state */
+        .date-header-wrapper { position: sticky; left: 0; right: 0; z-index: 140; background: linear-gradient(180deg, #1E293B 0%, #1a2636 100%); padding: 8px 12px; border-bottom: 3px solid #2D6A6A; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .date-header-inner { display: flex; gap: 4px; }
+        .date-cell { flex: 1; min-width: 0; text-align: center; padding: 6px 2px; background: rgba(255,255,255,0.05); border-radius: 6px; }
         .date-cell.today { background: #2D6A6A; }
-        .date-day { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.7); }
-        .date-num { font-size: 18px; font-weight: 700; margin-top: 2px; }
+        .date-day { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.7); }
+        .date-num { font-size: 16px; font-weight: 700; margin-top: 1px; }
+
+        /* Mobile: Hide top-bar and tabs when units selected */
+        .mobile-selection-mode .top-bar { display: none !important; }
+        .mobile-selection-mode .tabs-wrapper { display: none !important; }
+        .mobile-selection-mode .date-header-wrapper { top: 0 !important; }
 
         /* Occupancy Summary Row - NOT sticky, scrolls with content */
         .occupancy-row-wrapper { background: #1E293B; padding: 6px 16px; }
@@ -202,12 +214,17 @@
             .sticky-book-btn-desktop { display: none; }
             .sticky-book-btn-mobile { display: block; }
 
-            /* MOBILE STICKY ADJUSTMENTS */
-            /* Top bar is ~50px on mobile, tabs-wrapper should be below it */
-            .tabs-wrapper { top: 50px; }
-            /* Date header wrapper gets smaller padding on mobile */
-            .date-header-wrapper { padding: 6px 8px; }
+            /* MOBILE STICKY HEADER STACK (no selection):
+               - top-bar: top:0, height ~50px
+               - tabs-wrapper: top:50px, height ~50px
+               - date-header: top:100px
+            */
+            .tabs-wrapper { top: 50px; padding: 8px 12px; }
+            .date-header-wrapper { top: 100px; padding: 6px 8px; }
             .date-header-inner { padding-left: 0; }
+
+            /* Occupancy row padding fix for mobile */
+            .occupancy-row-inner { padding-left: 0; }
         }
 
         @media (min-width: 769px) {
@@ -504,7 +521,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v30.7-sticky-final</div>
+<div class="version-tag">v30.8-sticky-stack</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -1816,17 +1833,13 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
 
         return (
             <>
-                {/* MOBILE ONLY: Fixed Date Header - always at top:0 */}
+                {/* MOBILE: Sticky Date Header - rendered here but CSS controls sticky position */}
                 {isMobile && (
-                    <>
-                        <div className="date-header-wrapper">
-                            <div className="date-header-inner">
-                                {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
-                            </div>
+                    <div className="date-header-wrapper">
+                        <div className="date-header-inner">
+                            {days.map(d => <div key={d} className={`date-cell ${d === today ? 'today' : ''}`}><div className="date-day">{shortDay(d)}</div><div className="date-num">{dayNum(d)}</div></div>)}
                         </div>
-                        {/* Spacer for mobile fixed date header */}
-                        <div style={{height: '50px'}}></div>
-                    </>
+                    </div>
                 )}
                 {/* Occupancy Summary Row */}
                 <div className="occupancy-row-wrapper">
@@ -2521,8 +2534,11 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         );
     };
 
+    // Mobile selection mode: when units selected on mobile, hide top-bar and tabs
+    const mobileSelectionMode = isMobile && selected.length > 0 && effectiveTab === 'calendar';
+
     return (
-        <div style={{minHeight: '100vh', paddingBottom: '100px'}}>
+        <div className={mobileSelectionMode ? 'mobile-selection-mode' : ''} style={{minHeight: '100vh', paddingBottom: '100px'}}>
             {/* Login Modal */}
             {showLoginModal && (
                 <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.8)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center'}}>
