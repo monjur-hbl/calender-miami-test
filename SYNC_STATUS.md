@@ -1,6 +1,6 @@
 # Miami Beach Resort - Sync Status
 
-> **Last Updated**: 2026-01-11 01:30 BST
+> **Last Updated**: 2026-01-11 02:00 BST
 > **Purpose**: Master reference for all component versions and deployment status
 
 ---
@@ -9,7 +9,7 @@
 
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| Dashboard | v30.2-blue-selection | GitHub Pages | ✅ Live |
+| Dashboard | v30.3-sticky-dates | GitHub Pages | ✅ Live |
 | Miami API | v7.1-token-fix | Cloud Run | ✅ Live |
 | HK API | v2.0-dynamic-rooms | Cloud Run | ✅ Live |
 | Beds24 Proxy | v3.0-dual-token | Cloud Run | ✅ Live |
@@ -45,6 +45,12 @@ curl https://whatsapp-service-1006186358018.us-central1.run.app/status
 ---
 
 ## Key Features by Version
+
+### Dashboard v30.3-sticky-dates (2026-01-11)
+- **FIX**: Corrected sticky date header positioning for all scenarios
+- Works with and without room selection on both desktop and mobile
+- Desktop: 170px (no selection), 225px (with selection)
+- Mobile: 110px (no selection), 160px (with selection)
 
 ### Dashboard v30.2-blue-selection (2026-01-11)
 - **FIX**: Selected rooms now BLUE instead of red (better visibility vs booked rooms)
