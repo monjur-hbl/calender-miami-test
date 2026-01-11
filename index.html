@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v33.2</title>
+    <title>Miami Beach Resort v34.0</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -727,7 +727,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v33.2-pro-header</div>
+<div class="version-tag">v34.0-tabbed-booking</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -2000,9 +2000,8 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         // Get status text
         const getFinalStatusText = () => {
             if (isSelected) {
-                if (isCheckInDate) return "CHECK-IN";
-                if (isCheckOutDate) return "CHECK-OUT";
-                if (isInRange) return "NIGHT STAY";
+                if (isCheckInDate) return "HOLD";
+                if (isInRange) return "HOLD";
             }
             if (isOverbooked) return `OVERBOOK (${allBookingsForCell.length})`;
             if (isBooked) return "BOOKED";
@@ -8048,140 +8047,125 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
     const hasIndividualDates = selected.length > 0 && selected[0].checkIn;
     const defaultCheckIn = hasIndividualDates ? selected[0].checkIn : (checkIn || getBDDate());
     const defaultCheckOut = hasIndividualDates ? selected[0].checkOut : (checkOut || getBDDate(1));
-    
+
     // Pause auto-refresh while modal is open
     useEffect(() => {
         if (setIsEditing) setIsEditing(true);
         return () => { if (setIsEditing) setIsEditing(false); };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
-    
-    // Local state for room selections with editable dates
+
+    // Payment methods
+    const PAYMENT_METHODS = [
+        {id: "cash", label: "Cash", color: "#22c55e", beds24Label: "Cash"},
+        {id: "bkash", label: "bKash", color: "#E2136E", beds24Label: "bKash"},
+        {id: "mfs", label: "MFS", color: "#f59e0b", beds24Label: "MFS"},
+        {id: "bank", label: "Bank Transfer", color: "#3b82f6", beds24Label: "Bank Transfer"},
+        {id: "gateway", label: "Payment Gateway", color: "#8b5cf6", beds24Label: "Gateway"},
+        {id: "card", label: "Card", color: "#6366f1", beds24Label: "Card"},
+        {id: "agency", label: "Agency", color: "#14b8a6", beds24Label: "Agency"},
+        {id: "other", label: "Other", color: "#64748b", beds24Label: "Other"}
+    ];
+
+    // Tab state
+    const [activeTab, setActiveTab] = useState('room-0');
+    const [savedTabs, setSavedTabs] = useState({});
+
+    // Room selections with per-unit data
     const [roomSelections, setRoomSelections] = useState(
-        selected.map(s => ({
+        selected.map((s, idx) => ({
             ...s,
+            id: s.segmentId || `room-${idx}`,
             checkIn: s.checkIn || defaultCheckIn,
-            checkOut: s.checkOut || defaultCheckOut
+            checkOut: s.checkOut || defaultCheckOut,
+            numAdult: 2,
+            numChild: 0,
+            numInfant: 0,
+            // Per-unit guest linking
+            guests: [{name: "", nid: ""}],
+            // Per-unit pricing
+            priceType: "perNight", // "perNight" or "totalStay"
+            rackRate: "",
+            salePrice: "",
+            discountType: "percent",
+            discountValue: "",
+            advance: "",
+            paymentMethod: "cash",
+            transactionId: ""
         }))
     );
-    
-    // Calculate total nights for pricing
-    const getTotalNights = () => {
-        return roomSelections.reduce((sum, s) => sum + Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24))), 0);
-    };
-    
-    const [form, setForm] = useState({
-        guests: [{name: ""}],
+
+    // Shared data
+    const [sharedData, setSharedData] = useState({
+        // Contact info (shared across all units)
         phones: [""],
         email: "",
-        nid: "",
-        dob: "",
-        checkIn: defaultCheckIn,
-        checkOut: defaultCheckOut,
+        // Booking settings
         status: "confirmed",
         subStatus: "none",
-        // Guest count
-        numAdult: "2",
-        numChild: "0",
-        // Pricing fields
-        pricingMode: "simple", // simple or advanced
-        priceType: "total", // "total" or "perNight"
-        rackRate: "",
-        salePrice: "",
-        discountType: "percent", // percent or amount
-        discountValue: "",
-        advancePayment: "",
-        paymentMethod: "cash",
-        transactionId: "",
         notes: ""
     });
+
     const [status, setStatus] = useState("");
     const [createdBooking, setCreatedBooking] = useState(null);
-    
-    // Calculate total nights across all room selections
-    const totalNights = useMemo(() => {
-        if (roomSelections.length === 0) return 1;
-        // For multi-room, use the first room's nights (they usually have same dates)
-        const s = roomSelections[0];
-        return Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
-    }, [roomSelections]);
 
-    // Calculate pricing based on inputs
-    const calculatePricing = () => {
-        const rackRateInput = parseFloat(form.rackRate) || 0;
-        const salePriceInput = parseFloat(form.salePrice) || 0;
-        const discountValue = parseFloat(form.discountValue) || 0;
-        const advance = parseFloat(form.advancePayment) || 0;
-        const isPerNight = form.priceType === 'perNight';
-        const numRooms = Math.max(1, roomSelections.length);
+    // Helper: Get nights for a room
+    const getNights = (room) => Math.max(1, Math.ceil((new Date(room.checkOut) - new Date(room.checkIn)) / (1000 * 60 * 60 * 24)));
 
-        // Convert to total if per-night selected
-        const rackRate = isPerNight ? rackRateInput * totalNights * numRooms : rackRateInput;
-        const salePrice = isPerNight ? salePriceInput * totalNights * numRooms : salePriceInput;
+    // Helper: Calculate room total price
+    const getRoomTotal = (room) => {
+        const nights = getNights(room);
+        const rackRate = parseFloat(room.rackRate) || 0;
+        const salePrice = parseFloat(room.salePrice) || 0;
+        const discountValue = parseFloat(room.discountValue) || 0;
 
-        let finalPrice = salePrice;
-        let discountAmount = 0;
-        let discountPercent = 0;
+        let basePrice = room.priceType === 'perNight' ? (salePrice || rackRate) * nights : (salePrice || rackRate);
 
-        if (rackRate > 0) {
-            if (form.discountType === 'percent' && discountValue > 0) {
-                // Calculate sale price from discount %
-                discountAmount = (rackRate * discountValue) / 100;
-                finalPrice = rackRate - discountAmount;
-                discountPercent = discountValue;
-            } else if (form.discountType === 'amount' && discountValue > 0) {
-                // Calculate sale price from discount amount
-                discountAmount = discountValue;
-                finalPrice = rackRate - discountAmount;
-                discountPercent = rackRate > 0 ? ((discountAmount / rackRate) * 100).toFixed(1) : 0;
-            } else if (salePrice > 0 && salePrice < rackRate) {
-                // Calculate discount from sale price
-                discountAmount = rackRate - salePrice;
-                discountPercent = ((discountAmount / rackRate) * 100).toFixed(1);
-                finalPrice = salePrice;
-            } else if (salePrice === 0) {
-                finalPrice = rackRate;
+        if (rackRate > 0 && discountValue > 0) {
+            const rackTotal = room.priceType === 'perNight' ? rackRate * nights : rackRate;
+            if (room.discountType === 'percent') {
+                basePrice = rackTotal - (rackTotal * discountValue / 100);
+            } else {
+                basePrice = rackTotal - discountValue;
             }
         }
 
-        const due = Math.max(0, finalPrice - advance);
-
-        // Per-night values for display
-        const perNightPrice = numRooms > 0 && totalNights > 0 ? finalPrice / (totalNights * numRooms) : finalPrice;
-
-        return {
-            rackRate,
-            salePrice: finalPrice,
-            discountAmount,
-            discountPercent,
-            advance,
-            due,
-            finalPrice,
-            perNightPrice,
-            totalNights,
-            numRooms,
-            isPerNight
-        };
+        return Math.max(0, basePrice);
     };
-    
-    const pricing = calculatePricing();
-    
-    const PAYMENT_METHODS = [
-        {id: "cash", label: "💵 Cash", color: "#22c55e", requiresTxId: false, beds24Label: "Cash Received"},
-        {id: "bkash", label: "📱 bKash/MFS", color: "#E2136E", requiresTxId: true, beds24Label: "Bkash Received"},
-        {id: "bank", label: "🏦 Bank Transfer", color: "#3b82f6", requiresTxId: true, beds24Label: "Bank Transfer"},
-        {id: "card", label: "💳 Card", color: "#8b5cf6", requiresTxId: true, beds24Label: "Card Payment"}
-    ];
-    
-    const add = (f) => form[f].length < 3 && setForm({...form, [f]: [...form[f], f === 'guests' ? {name: ""} : ""]});
-    const upd = (f, i, v) => { const a = [...form[f]]; f === 'guests' ? a[i].name = v : a[i] = v; setForm({...form, [f]: a}); };
-    const rem = (f, i) => form[f].length > 1 && setForm({...form, [f]: form[f].filter((_, idx) => idx !== i)});
-    
-    // Update room date
-    const updateRoomDate = (index, field, value) => {
+
+    // Helper: Get discount amount
+    const getRoomDiscount = (room) => {
+        const nights = getNights(room);
+        const rackRate = parseFloat(room.rackRate) || 0;
+        const discountValue = parseFloat(room.discountValue) || 0;
+        if (!rackRate || !discountValue) return 0;
+        const rackTotal = room.priceType === 'perNight' ? rackRate * nights : rackRate;
+        if (room.discountType === 'percent') {
+            return rackTotal * discountValue / 100;
+        }
+        return discountValue;
+    };
+
+    // Calculate totals
+    const totals = useMemo(() => {
+        const grandTotal = roomSelections.reduce((sum, r) => sum + getRoomTotal(r), 0);
+        const totalAdvance = roomSelections.reduce((sum, r) => sum + (parseFloat(r.advance) || 0), 0);
+        const totalDiscount = roomSelections.reduce((sum, r) => sum + getRoomDiscount(r), 0);
+        const totalNights = roomSelections.reduce((sum, r) => sum + getNights(r), 0);
+        return {
+            grandTotal,
+            totalAdvance,
+            totalDiscount,
+            totalDue: grandTotal - totalAdvance,
+            totalNights,
+            numUnits: roomSelections.length
+        };
+    }, [roomSelections]);
+
+    // Update room field
+    const updateRoom = (index, field, value) => {
         setRoomSelections(prev => prev.map((s, i) => {
             if (i !== index) return s;
             const updated = {...s, [field]: value};
-            // Ensure checkout is after checkin
             if (field === 'checkIn' && new Date(value) >= new Date(s.checkOut)) {
                 const nextDay = new Date(value);
                 nextDay.setDate(nextDay.getDate() + 1);
@@ -8190,55 +8174,89 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
             return updated;
         }));
     };
+
+    // Update room guest
+    const updateRoomGuest = (roomIdx, guestIdx, field, value) => {
+        setRoomSelections(prev => prev.map((s, i) => {
+            if (i !== roomIdx) return s;
+            const guests = [...s.guests];
+            guests[guestIdx] = {...guests[guestIdx], [field]: value};
+            return {...s, guests};
+        }));
+    };
+
+    // Add guest to room
+    const addRoomGuest = (roomIdx) => {
+        setRoomSelections(prev => prev.map((s, i) => {
+            if (i !== roomIdx) return s;
+            if (s.guests.length >= 6) return s;
+            return {...s, guests: [...s.guests, {name: "", nid: ""}]};
+        }));
+    };
+
+    // Remove guest from room
+    const removeRoomGuest = (roomIdx, guestIdx) => {
+        setRoomSelections(prev => prev.map((s, i) => {
+            if (i !== roomIdx) return s;
+            if (s.guests.length <= 1) return s;
+            return {...s, guests: s.guests.filter((_, gi) => gi !== guestIdx)};
+        }));
+    };
+
+    // Copy guest from one room to all
+    const copyGuestToAll = (sourceRoomIdx) => {
+        const sourceGuests = roomSelections[sourceRoomIdx].guests;
+        setRoomSelections(prev => prev.map(s => ({...s, guests: [...sourceGuests.map(g => ({...g}))]})));
+    };
+
+    // Add phone
+    const addPhone = () => {
+        if (sharedData.phones.length >= 3) return;
+        setSharedData(prev => ({...prev, phones: [...prev.phones, ""]}));
+    };
+
+    // Update phone
+    const updatePhone = (idx, value) => {
+        setSharedData(prev => ({
+            ...prev,
+            phones: prev.phones.map((p, i) => i === idx ? value : p)
+        }));
+    };
+
+    // Remove phone
+    const removePhone = (idx) => {
+        if (sharedData.phones.length <= 1) return;
+        setSharedData(prev => ({
+            ...prev,
+            phones: prev.phones.filter((_, i) => i !== idx)
+        }));
+    };
+
+    // Mark tab as saved
+    const markSaved = (tabId) => {
+        setSavedTabs(prev => ({...prev, [tabId]: true}));
+    };
     
-    const submit = async (e) => {
-        e.preventDefault();
-        // Prevent double submission - return if already loading
-        if (status === "loading") {
-            console.log("⚠️ Submission already in progress, ignoring duplicate click");
-            return;
-        }
+    // Submit booking to Beds24
+    const submit = async () => {
+        if (status === "loading") return;
         setStatus("loading");
+
         try {
-            const names = form.guests.map(g => g.name).filter(Boolean).join(", ");
-            const phones = form.phones.filter(Boolean).join(", ");
             const groupId = "GRP" + Date.now();
-            const advanceAmt = parseFloat(form.advancePayment) || 0;
-            
-            // Calculate prices based on mode
-            let totalPrice = 0;
-            if (form.pricingMode === 'advanced') {
-                totalPrice = roomSelections.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
-            } else {
-                totalPrice = pricing.finalPrice || 0;
-            }
-            
-            const data = roomSelections.map((s, idx) => {
-                // In advanced mode, use individual room price; in simple mode, divide total
-                const roomPrice = form.pricingMode === 'advanced' 
-                    ? (parseFloat(s.price) || 0) 
-                    : (totalPrice / roomSelections.length);
-                
-                // Calculate nights for this room
-                const checkInDate = new Date(s.checkIn);
-                const checkOutDate = new Date(s.checkOut);
-                const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
-                const pricePerNight = nights > 0 ? roomPrice / nights : roomPrice;
-                
-                // Calculate deposit for this room
-                const roomDeposit = advanceAmt / roomSelections.length;
-                
-                // Beds24 API V2 invoice item format:
-                // - type: "charge" or "payment"
-                // - description: string
-                // - qty: integer (positive)
-                // - amount: number (the value)
-                // NOTE: autoInvoiceItemCharge only works when NO invoiceItems are sent.
-                // Since we need to send payments, we must also explicitly send the charge.
+            const phones = sharedData.phones.filter(Boolean).join(", ");
+
+            const data = roomSelections.map((room, idx) => {
+                const roomPrice = getRoomTotal(room);
+                const nights = getNights(room);
+                const roomAdvance = parseFloat(room.advance) || 0;
+                const guestNames = room.guests.map(g => g.name).filter(Boolean).join(", ");
+                const guestNids = room.guests.map(g => g.nid).filter(Boolean).join(", ");
+
+                // Invoice items
                 const invoiceItems = [];
 
-                // Add accommodation charge using Beds24 template variables
-                // [ROOMNAME1] = Room name, [FIRSTNIGHT] = Check-in date, [LEAVINGDAY] = Check-out date
+                // Accommodation charge
                 invoiceItems.push({
                     type: "charge",
                     description: "[ROOMNAME1] [FIRSTNIGHT] - [LEAVINGDAY]",
@@ -8246,670 +8264,503 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     amount: roomPrice
                 });
 
-                // Add payment if advance was paid
-                if (roomDeposit > 0) {
-                    const method = PAYMENT_METHODS.find(m => m.id === form.paymentMethod);
-                    // Format: "Bkash Received DA39PF3E39" or "Cash Received"
-                    let paymentDesc = method?.beds24Label || "Payment Received";
-                    if (method?.requiresTxId && form.transactionId) {
-                        paymentDesc += " " + form.transactionId.toUpperCase();
+                // Payment if advance paid
+                if (roomAdvance > 0) {
+                    const method = PAYMENT_METHODS.find(m => m.id === room.paymentMethod);
+                    let paymentDesc = `${method?.beds24Label || 'Payment'} Received`;
+                    if (room.transactionId) {
+                        paymentDesc += ` ${room.transactionId.toUpperCase()}`;
                     }
                     invoiceItems.push({
                         type: "payment",
                         description: paymentDesc,
                         qty: 1,
-                        amount: roomDeposit
+                        amount: roomAdvance
                     });
                 }
 
-                // Build rateDescription for pricing breakdown
+                // Rate description
                 const perNightRate = nights > 0 ? roomPrice / nights : roomPrice;
-                const rateDesc = `৳${perNightRate.toLocaleString()} per night × ${nights} night${nights > 1 ? 's' : ''} = ৳${roomPrice.toLocaleString()}`;
+                const rateDesc = `৳${perNightRate.toLocaleString()}/night × ${nights}N = ৳${roomPrice.toLocaleString()}`;
 
-                // Build booking object
-                const bookingData = {
+                return {
                     propertyId: PROPERTY,
-                    roomId: s.room.id,
-                    unitId: s.unit.id,
-                    arrival: s.checkIn,
-                    departure: s.checkOut,
-                    numAdult: parseInt(form.numAdult) || 2,
-                    numChild: parseInt(form.numChild) || 0,
-                    status: form.status,
-                    subStatus: form.subStatus !== "none" ? form.subStatus : undefined,
-                    firstName: names,
-                    email: form.email || "guest@miami.com",
+                    roomId: room.room.id,
+                    unitId: room.unit.id,
+                    arrival: room.checkIn,
+                    departure: room.checkOut,
+                    numAdult: room.numAdult || 2,
+                    numChild: room.numChild || 0,
+                    status: sharedData.status,
+                    subStatus: sharedData.subStatus !== "none" ? sharedData.subStatus : undefined,
+                    firstName: guestNames || "Guest",
+                    email: sharedData.email || "guest@miami.com",
                     mobile: phones,
-                    custom4: form.nid || "",
-                    custom5: form.dob || "",
+                    custom4: guestNids,
                     price: roomPrice,
-                    deposit: roomDeposit,
+                    deposit: roomAdvance,
                     rateDescription: rateDesc,
-                    notes: form.notes || "",
+                    notes: sharedData.notes || "",
                     referer: "miami_frontdesk",
                     groupId: roomSelections.length > 1 ? groupId : undefined,
-                    // Always include invoice items (charge + payment)
-                    invoiceItems: invoiceItems
+                    invoiceItems
                 };
-
-                return bookingData;
             });
-            
-            console.log("Booking data to send:", JSON.stringify(data, null, 2));
 
-            const res = await fetch(PROXY + "?endpoint=bookings", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+            console.log("Booking data:", JSON.stringify(data, null, 2));
+
+            const res = await fetch(PROXY + "?endpoint=bookings", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            });
             const result = await res.json();
             console.log("Beds24 response:", result);
-            
+
             const isArray = Array.isArray(result);
             const allSuccess = isArray ? result.every(r => r.success) : result.success;
-            const errors = isArray ? result.filter(r => !r.success).map(r => r.error || "Unknown error") : [];
-            const bookingIds = isArray ? result.filter(r => r.success && r.new?.id).map(r => r.new.id) : (result.new?.id ? [result.new.id] : []);
-            
-            if (allSuccess) { 
-                // Save payment to local history if advance was paid
-                if (advanceAmt > 0 && bookingIds.length > 0) {
-                    const paymentHistory = JSON.parse(localStorage.getItem("miami_payment_history_v1") || "{}");
-                    bookingIds.forEach(bid => {
-                        paymentHistory[bid] = [{
-                            amount: advanceAmt / bookingIds.length,
-                            method: form.paymentMethod,
-                            date: new Date().toISOString(),
-                            note: "Advance payment at booking"
-                        }];
-                    });
-                    localStorage.setItem("miami_payment_history_v1", JSON.stringify(paymentHistory));
-                }
-                
+            const bookingIds = isArray
+                ? result.filter(r => r.success && r.new?.id).map(r => r.new.id)
+                : (result.new?.id ? [result.new.id] : []);
+
+            if (allSuccess) {
                 setCreatedBooking({
                     ids: bookingIds,
-                    guest: names,
-                    phone: phones,
-                    email: form.email,
-                    rooms: selected.map(s => s.unit.n),
-                    checkIn: hasIndividualDates ? selected[0].checkIn : form.checkIn,
-                    checkOut: hasIndividualDates ? selected[0].checkOut : form.checkOut,
-                    nights: getTotalNights(),
-                    status: form.status,
-                    totalPrice: totalPrice,
-                    advancePaid: advanceAmt,
-                    due: totalPrice - advanceAmt,
-                    paymentMethod: PAYMENT_METHODS.find(m => m.id === form.paymentMethod)
+                    rooms: roomSelections.map(r => r.unit.n),
+                    totalPrice: totals.grandTotal,
+                    advancePaid: totals.totalAdvance,
+                    due: totals.totalDue,
+                    nights: totals.totalNights
                 });
                 setStatus("success");
             } else {
-                const errorMsg = errors.length ? errors.join(", ") : (result.error || JSON.stringify(result));
-                setStatus("error: " + errorMsg);
+                const errors = isArray ? result.filter(r => !r.success).map(r => r.error) : [result.error];
+                setStatus("error: " + errors.join(", "));
             }
         } catch(e) { 
             console.error("Booking error:", e);
             setStatus("error: " + e.message); 
         }
     };
-    
-    // Beautiful Success/Confirmation Screen
+
+    // Styles
+    const inputStyle = {width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff', fontSize: '14px'};
+    const tabStyle = (isActive) => ({
+        padding: '8px 14px', background: isActive ? '#2D6A6A' : 'rgba(255,255,255,0.05)',
+        border: '1px solid ' + (isActive ? '#2D6A6A' : 'rgba(255,255,255,0.1)'),
+        borderRadius: '8px', color: '#fff', fontSize: '12px', fontWeight: isActive ? '600' : '400',
+        cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
+    });
+    const saveBtn = {padding: '10px 20px', background: '#22c55e', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '13px'};
+
+    // Success screen
     if (status === "success" && createdBooking) {
         return (
-            <div className="modal-overlay">
-                <div className="modal" style={{maxWidth: '480px', padding: '0'}}>
-                    {/* Header with gradient */}
-                    <div style={{background: 'linear-gradient(135deg, #2D6A6A 0%, #1E4D4D 100%)', padding: '30px 24px', textAlign: 'center'}}>
-                        <div style={{width: '80px', height: '80px', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                            <span style={{fontSize: '40px'}}>✅</span>
-                        </div>
-                        <h2 style={{fontSize: '24px', fontWeight: '700', margin: '0 0 8px'}}>Booking Confirmed!</h2>
-                        <p style={{fontSize: '14px', opacity: 0.8, margin: 0}}>Reservation has been created successfully</p>
+            <div className="modal-overlay" onClick={onClose}>
+                <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '450px', padding: 0}}>
+                    <div style={{background: 'linear-gradient(135deg, #2D6A6A, #1E4D4D)', padding: '30px', textAlign: 'center'}}>
+                        <div style={{fontSize: '50px', marginBottom: '12px'}}>✅</div>
+                        <h2 style={{fontSize: '22px', fontWeight: '700', margin: 0}}>Booking Confirmed!</h2>
+                        <p style={{fontSize: '13px', opacity: 0.8, marginTop: '8px'}}>ID: {createdBooking.ids.join(", ")}</p>
                     </div>
-                    
-                    {/* Booking Details */}
                     <div style={{padding: '24px'}}>
-                        {/* Booking IDs */}
-                        <div style={{background: 'rgba(45,106,106,0.1)', border: '1px dashed rgba(45,106,106,0.4)', borderRadius: '8px', padding: '12px', marginBottom: '20px', textAlign: 'center'}}>
-                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px'}}>BOOKING ID{createdBooking.ids.length > 1 ? 'S' : ''}</div>
-                            <div style={{fontSize: '18px', fontWeight: '700', color: '#2D6A6A', letterSpacing: '1px'}}>{createdBooking.ids.join(", ")}</div>
-                        </div>
-                        
-                        {/* Guest Info Card */}
-                        <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '16px', marginBottom: '16px'}}>
-                            <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px'}}>
-                                <div style={{width: '48px', height: '48px', background: 'linear-gradient(135deg, #D4A853 0%, #B8942F 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px'}}>👤</div>
-                                <div>
-                                    <div style={{fontSize: '18px', fontWeight: '700'}}>{createdBooking.guest}</div>
-                                    <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.5)'}}>📞 {createdBooking.phone}</div>
-                                </div>
-                            </div>
-                            {createdBooking.email && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px'}}>✉️ {createdBooking.email}</div>}
-                        </div>
-                        
-                        {/* Room & Dates */}
                         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
-                            <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px'}}>
-                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px'}}>🏨 ROOM{createdBooking.rooms.length > 1 ? 'S' : ''}</div>
-                                <div style={{fontSize: '15px', fontWeight: '600'}}>{createdBooking.rooms.join(", ")}</div>
+                            <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px'}}>
+                                <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>ROOMS</div>
+                                <div style={{fontSize: '16px', fontWeight: '600'}}>{createdBooking.rooms.join(", ")}</div>
                             </div>
-                            <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px'}}>
-                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px'}}>🌙 NIGHTS</div>
-                                <div style={{fontSize: '15px', fontWeight: '600'}}>{createdBooking.nights} Night{createdBooking.nights > 1 ? 's' : ''}</div>
-                            </div>
-                        </div>
-                        
-                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px'}}>
-                            <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px'}}>
-                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px'}}>📅 CHECK-IN</div>
-                                <div style={{fontSize: '14px', fontWeight: '600'}}>{new Date(createdBooking.checkIn).toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'})}</div>
-                            </div>
-                            <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px'}}>
-                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px'}}>📅 CHECK-OUT</div>
-                                <div style={{fontSize: '14px', fontWeight: '600'}}>{new Date(createdBooking.checkOut).toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'})}</div>
+                            <div style={{background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px'}}>
+                                <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>NIGHTS</div>
+                                <div style={{fontSize: '16px', fontWeight: '600'}}>{createdBooking.nights}N</div>
                             </div>
                         </div>
-                        
-                        {/* Payment Summary */}
                         {createdBooking.totalPrice > 0 && (
-                            <div style={{background: 'linear-gradient(135deg, rgba(45,106,106,0.15) 0%, rgba(45,106,106,0.05) 100%)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(45,106,106,0.2)'}}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px'}}>
-                                    <span style={{color: 'rgba(255,255,255,0.6)'}}>Total Amount</span>
+                            <div style={{background: 'rgba(45,106,106,0.1)', borderRadius: '10px', padding: '14px', border: '1px solid rgba(45,106,106,0.3)'}}>
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                                    <span style={{color: 'rgba(255,255,255,0.6)'}}>Total</span>
                                     <span style={{fontWeight: '600'}}>৳{createdBooking.totalPrice.toLocaleString()}</span>
                                 </div>
-                                {createdBooking.advancePaid > 0 && (
-                                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center'}}>
-                                        <span style={{color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                                            Advance Paid 
-                                            <span style={{background: createdBooking.paymentMethod?.color || '#22c55e', padding: '2px 8px', borderRadius: '4px', fontSize: '10px'}}>{createdBooking.paymentMethod?.label?.split(' ')[1] || 'Cash'}</span>
-                                        </span>
-                                        <span style={{fontWeight: '600', color: '#22c55e'}}>-৳{createdBooking.advancePaid.toLocaleString()}</span>
-                                    </div>
-                                )}
-                                <div style={{borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between'}}>
-                                    <span style={{fontWeight: '700', fontSize: '16px'}}>Balance Due</span>
-                                    <span style={{fontWeight: '700', fontSize: '20px', color: createdBooking.due > 0 ? '#ef4444' : '#22c55e'}}>৳{createdBooking.due.toLocaleString()}</span>
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                                    <span style={{color: 'rgba(255,255,255,0.6)'}}>Advance</span>
+                                    <span style={{color: '#22c55e'}}>-৳{createdBooking.advancePaid.toLocaleString()}</span>
+                                </div>
+                                <div style={{borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between'}}>
+                                    <span style={{fontWeight: '700'}}>Due</span>
+                                    <span style={{fontWeight: '700', fontSize: '18px', color: createdBooking.due > 0 ? '#ef4444' : '#22c55e'}}>৳{createdBooking.due.toLocaleString()}</span>
                                 </div>
                             </div>
                         )}
-                        
-                        {/* Status Badge */}
-                        <div style={{textAlign: 'center', marginTop: '16px'}}>
-                            <span style={{
-                                display: 'inline-block',
-                                padding: '8px 20px', 
-                                borderRadius: '20px', 
-                                fontSize: '13px', 
-                                fontWeight: '600',
-                                background: createdBooking.status === 'confirmed' ? 'rgba(34,197,94,0.2)' : 
-                                           createdBooking.status === 'request' ? 'rgba(245,158,11,0.2)' : 'rgba(59,130,246,0.2)',
-                                color: createdBooking.status === 'confirmed' ? '#22c55e' : 
-                                       createdBooking.status === 'request' ? '#f59e0b' : '#3b82f6'
-                            }}>
-                                {createdBooking.status === 'confirmed' ? '✅ Confirmed' : 
-                                 createdBooking.status === 'request' ? '⏳ Request Pending' : '🆕 New Booking'}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    {/* Actions */}
-                    <div style={{padding: '0 24px 24px'}}>
-                        {/* WhatsApp Share Button */}
-                        {createdBooking.phone && (
-                            <button 
-                                onClick={() => {
-                                    // Format phone number
-                                    let phone = createdBooking.phone.replace(/[^0-9+]/g, '');
-                                    if (phone.startsWith('0')) phone = '88' + phone;
-                                    else if (!phone.startsWith('+') && !phone.startsWith('88')) phone = '88' + phone;
-                                    phone = phone.replace('+', '');
-                                    
-                                    // Format dates nicely
-                                    const formatDateNice = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
-                                    
-                                    // Build WhatsApp message
-                                    let msg = `🏨 *MIAMI BEACH RESORT*\n`;
-                                    msg += `📍 Cox's Bazar, Bangladesh\n`;
-                                    msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
-                                    msg += `Dear *${createdBooking.guest}*,\n\n`;
-                                    msg += `✅ Your booking has been *confirmed*! Here are your details:\n\n`;
-                                    msg += `📋 *BOOKING DETAILS*\n`;
-                                    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-                                    msg += `🔖 Booking ID: *#${createdBooking.ids.join(', #')}*\n`;
-                                    msg += `🚪 Room${createdBooking.rooms.length > 1 ? 's' : ''}: *${createdBooking.rooms.join(', ')}*\n`;
-                                    msg += `📅 Check-in: *${formatDateNice(createdBooking.checkIn)}*\n`;
-                                    msg += `📅 Check-out: *${formatDateNice(createdBooking.checkOut)}*\n`;
-                                    msg += `🌙 Duration: *${createdBooking.nights} Night${createdBooking.nights > 1 ? 's' : ''}*\n\n`;
-                                    
-                                    if (createdBooking.totalPrice > 0) {
-                                        msg += `💰 *PAYMENT SUMMARY*\n`;
-                                        msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-                                        msg += `Total Amount: ৳${createdBooking.totalPrice.toLocaleString()}\n`;
-                                        if (createdBooking.advancePaid > 0) {
-                                            msg += `Advance Paid: ৳${createdBooking.advancePaid.toLocaleString()}\n`;
-                                        }
-                                        msg += `*Balance Due: ৳${createdBooking.due.toLocaleString()}*\n\n`;
-                                        
-                                        if (createdBooking.due > 0) {
-                                            msg += `⚠️ Please clear the balance upon arrival.\n\n`;
-                                        } else {
-                                            msg += `✅ Your booking is fully paid!\n\n`;
-                                        }
-                                    }
-                                    
-                                    msg += `We look forward to welcoming you! 🌴\n`;
-                                    msg += `_Miami Beach Resort Team_`;
-                                    
-                                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-                                }} 
-                                style={{width: '100%', padding: '14px', background: 'linear-gradient(135deg, #25D366, #128C7E)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
-                            >
-                                💬 Send Confirmation to WhatsApp
-                            </button>
-                        )}
-                        {!createdBooking.phone && (
-                            <div style={{padding: '10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', marginBottom: '10px', textAlign: 'center', fontSize: '12px', color: '#f59e0b'}}>
-                                ⚠️ No phone number - cannot send WhatsApp
-                            </div>
-                        )}
-                        <button onClick={() => { if(onSuccess) onSuccess(); onClose(); }} style={{width: '100%', padding: '14px', background: '#2D6A6A', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '15px'}}>
-                            Done
-                        </button>
+                        <button onClick={() => { onSuccess?.(); onClose(); }} style={{width: '100%', marginTop: '20px', padding: '14px', background: '#2D6A6A', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: '600', fontSize: '15px', cursor: 'pointer'}}>Done</button>
                     </div>
                 </div>
             </div>
         );
     }
-    
-    const inputStyle = {width: '100%', padding: '14px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '10px', color: '#fff', fontSize: '15px', fontWeight: '500'};
-    const nights = getTotalNights();
-    
-    // Room numbers for sticky button display
-    const roomNumbers = roomSelections.map(s => s.unit.n).join(', ');
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal modal-landscape" style={{background: '#1a2332'}}>
-                <div className="modal-header" style={{borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px'}}>
-                    <h3 style={{fontSize: '20px', fontWeight: '700'}}>➕ New Booking</h3>
-                    <button className="modal-close" onClick={onClose}>×</button>
+    // Tab IDs
+    const roomTabIds = roomSelections.map((_, i) => `room-${i}`);
+    const allTabs = [...roomTabIds, 'contact', 'payment', 'summary'];
+
+    // Render room tab content
+    const renderRoomTab = (room, idx) => (
+        <div key={idx} style={{padding: '16px'}}>
+            {/* Room Header */}
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '12px', background: 'rgba(45,106,106,0.15)', borderRadius: '10px', border: '1px solid rgba(45,106,106,0.3)'}}>
+                <div>
+                    <span style={{fontSize: '20px', fontWeight: '700', color: '#4ade80'}}>{room.unit.n}</span>
+                    <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginLeft: '10px'}}>{room.room?.name || room.room?.short}</span>
                 </div>
+                <span style={{background: 'rgba(212,168,83,0.2)', padding: '6px 12px', borderRadius: '6px', color: '#D4A853', fontWeight: '600', fontSize: '13px'}}>{getNights(room)}N</span>
+            </div>
 
-                {/* Desktop Sticky Book Button - Top */}
-                <div className="sticky-book-btn-desktop">
-                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '14px 20px', background: status === "loading" ? 'rgba(220,38,38,0.5)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 4px 15px rgba(239,68,68,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
-                        {status === "loading" ? "⏳ Creating..." : (<>✓ Create Booking <span style={{background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '14px'}}>Room {roomNumbers}</span> <span style={{background: 'rgba(212,168,83,0.3)', padding: '4px 8px', borderRadius: '6px', fontSize: '13px', color: '#D4A853'}}>{nights}N</span></>)}
-                    </button>
+            {/* Dates */}
+            <div style={{marginBottom: '16px'}}>
+                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>DATES</label>
+                <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                    <input type="date" value={room.checkIn} onChange={e => updateRoom(idx, 'checkIn', e.target.value)} style={{...inputStyle, flex: 1}}/>
+                    <span style={{color: 'rgba(255,255,255,0.3)'}}>→</span>
+                    <input type="date" value={room.checkOut} min={room.checkIn} onChange={e => updateRoom(idx, 'checkOut', e.target.value)} style={{...inputStyle, flex: 1}}/>
                 </div>
+            </div>
 
-                <form id="booking-form" onSubmit={submit}>
-                    <div className="modal-two-col">
-                        {/* LEFT COLUMN - Room & Guest Info */}
-                        <div className="modal-col">
-                            <div className="modal-col-scroll">
-                                {/* Selected Rooms with Editable Dates */}
-                                <div style={{marginBottom: '20px'}}>
-                                    <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '10px', fontWeight: '600'}}>🛏️ Selected Rooms</label>
-                                    {roomSelections.map((s, index) => {
-                                        const n = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
-                                        return (
-                                            <div key={s.segmentId || s.unitKey || index} style={{padding: '12px 14px', background: 'linear-gradient(135deg, rgba(45,106,106,0.25) 0%, rgba(45,106,106,0.1) 100%)', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '10px', marginBottom: '8px'}}>
-                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
-                                                    <span style={{fontSize: '16px', fontWeight: '700', color: '#4ade80'}}>{s.unit.n}</span>
-                                                    <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{s.room?.short || ''}</span>
-                                                </div>
-                                                <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
-                                                    <input type="date" value={s.checkIn} onChange={e => updateRoomDate(index, 'checkIn', e.target.value)} style={{padding: '6px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px', flex: '1', minWidth: '100px'}}/>
-                                                    <span style={{color: 'rgba(255,255,255,0.4)', fontSize: '12px'}}>→</span>
-                                                    <input type="date" value={s.checkOut} min={s.checkIn} onChange={e => updateRoomDate(index, 'checkOut', e.target.value)} style={{padding: '6px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '12px', flex: '1', minWidth: '100px'}}/>
-                                                    <span style={{color: '#D4A853', fontWeight: '700', fontSize: '12px', background: 'rgba(212,168,83,0.2)', padding: '4px 8px', borderRadius: '6px'}}>({n}N)</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                    
-                    {/* Guest Info */}
-                    <div style={{marginBottom: '18px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center'}}>
-                            <label style={{fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>👤 Guests *</label>
-                            {form.guests.length < 3 && <button type="button" onClick={() => add('guests')} style={{background: 'rgba(45,106,106,0.2)', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '6px', padding: '4px 10px', color: '#4ade80', fontSize: '12px', cursor: 'pointer', fontWeight: '600'}}>+ Add</button>}
-                        </div>
-                        {form.guests.map((g, i) => (
-                            <div key={i} style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
-                                <input type="text" required value={g.name} onChange={e => upd('guests', i, e.target.value)} placeholder={`Guest ${i+1} name`} style={{...inputStyle, flex: 1}}/>
-                                {form.guests.length > 1 && <button type="button" onClick={() => rem('guests', i)} style={{background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', width: '44px', color: '#ef4444', fontSize: '20px', cursor: 'pointer'}}>×</button>}
-                            </div>
-                        ))}
+            {/* Occupancy */}
+            <div style={{marginBottom: '16px'}}>
+                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>OCCUPANCY</label>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px'}}>
+                    <div>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Adults</label>
+                        <select value={room.numAdult} onChange={e => updateRoom(idx, 'numAdult', parseInt(e.target.value))} style={{...inputStyle, cursor: 'pointer'}}>
+                            {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
                     </div>
-                    
-                    {/* Phone */}
-                    <div style={{marginBottom: '18px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center'}}>
-                            <label style={{fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>📞 Phone *</label>
-                            {form.phones.length < 3 && <button type="button" onClick={() => add('phones')} style={{background: 'rgba(45,106,106,0.2)', border: '1px solid rgba(45,106,106,0.4)', borderRadius: '6px', padding: '4px 10px', color: '#4ade80', fontSize: '12px', cursor: 'pointer', fontWeight: '600'}}>+ Add</button>}
-                        </div>
-                        {form.phones.map((p, i) => (
-                            <div key={i} style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
-                                <input type="tel" required value={p} onChange={e => upd('phones', i, e.target.value)} placeholder={`Phone ${i+1}`} style={{...inputStyle, flex: 1}}/>
-                                {form.phones.length > 1 && <button type="button" onClick={() => rem('phones', i)} style={{background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', width: '44px', color: '#ef4444', fontSize: '20px', cursor: 'pointer'}}>×</button>}
-                            </div>
-                        ))}
+                    <div>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Children</label>
+                        <select value={room.numChild} onChange={e => updateRoom(idx, 'numChild', parseInt(e.target.value))} style={{...inputStyle, cursor: 'pointer'}}>
+                            {[0,1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
                     </div>
-                    
-                    {/* Email & ID */}
-                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="✉️ Email (optional)" style={{...inputStyle, marginBottom: '14px'}}/>
-                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '18px'}}>
-                        <input type="text" value={form.nid} onChange={e => setForm({...form, nid: e.target.value})} placeholder="🪪 NID" style={inputStyle}/>
-                        <input type="text" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} placeholder="🎂 DOB" style={inputStyle}/>
+                    <div>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Infants</label>
+                        <select value={room.numInfant} onChange={e => updateRoom(idx, 'numInfant', parseInt(e.target.value))} style={{...inputStyle, cursor: 'pointer'}}>
+                            {[0,1,2].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
                     </div>
-                    
-                    {/* Booking Status */}
-                    <div style={{marginBottom: '16px', padding: '14px', background: 'rgba(30,41,59,0.8)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)'}}>
-                        <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '10px', fontWeight: '600'}}>📋 Booking Status</label>
-                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                            <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} style={{...inputStyle, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '13px', fontWeight: '500', padding: '10px'}}>
-                                <option value="confirmed">✅ Confirmed</option>
-                                <option value="request">⏳ Request</option>
-                                <option value="new">🆕 New</option>
-                                <option value="black">⬛ Black (Block)</option>
-                            </select>
-                            <select value={form.subStatus} onChange={e => setForm({...form, subStatus: e.target.value})} style={{...inputStyle, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '13px', padding: '10px'}}>
-                                <option value="none">Sub-status...</option>
-                                <option value="walkin">🚶 Walk-in</option>
-                                <option value="actionRequired">⚠️ Action Required</option>
-                                <option value="allotment">📦 Allotment</option>
+                </div>
+            </div>
+
+            {/* Guests for this room */}
+            <div style={{marginBottom: '16px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+                    <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>GUESTS & NID</label>
+                    <div style={{display: 'flex', gap: '6px'}}>
+                        {idx === 0 && roomSelections.length > 1 && <button type="button" onClick={() => copyGuestToAll(idx)} style={{fontSize: '10px', padding: '4px 8px', background: 'rgba(59,130,246,0.2)', border: '1px solid rgba(59,130,246,0.4)', borderRadius: '4px', color: '#3b82f6', cursor: 'pointer'}}>Copy to all</button>}
+                        <button type="button" onClick={() => addRoomGuest(idx)} style={{fontSize: '10px', padding: '4px 8px', background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '4px', color: '#22c55e', cursor: 'pointer'}}>+ Guest</button>
+                    </div>
+                </div>
+                {room.guests.map((g, gi) => (
+                    <div key={gi} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                        <input type="text" value={g.name} onChange={e => updateRoomGuest(idx, gi, 'name', e.target.value)} placeholder={`Guest ${gi+1} name`} style={{...inputStyle, flex: 2}}/>
+                        <input type="text" value={g.nid} onChange={e => updateRoomGuest(idx, gi, 'nid', e.target.value)} placeholder="NID/Passport" style={{...inputStyle, flex: 1}}/>
+                        {room.guests.length > 1 && <button type="button" onClick={() => removeRoomGuest(idx, gi)} style={{width: '36px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '6px', color: '#ef4444', cursor: 'pointer'}}>×</button>}
+                    </div>
+                ))}
+            </div>
+
+            {/* Pricing */}
+            <div style={{marginBottom: '16px', padding: '14px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px'}}>
+                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '10px'}}>PRICING</label>
+                <div style={{display: 'flex', gap: '10px', marginBottom: '12px'}}>
+                    <button type="button" onClick={() => updateRoom(idx, 'priceType', 'perNight')} style={{flex: 1, padding: '8px', background: room.priceType === 'perNight' ? '#2D6A6A' : 'rgba(255,255,255,0.05)', border: '1px solid ' + (room.priceType === 'perNight' ? '#2D6A6A' : 'rgba(255,255,255,0.1)'), borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '12px'}}>Per Night</button>
+                    <button type="button" onClick={() => updateRoom(idx, 'priceType', 'totalStay')} style={{flex: 1, padding: '8px', background: room.priceType === 'totalStay' ? '#2D6A6A' : 'rgba(255,255,255,0.05)', border: '1px solid ' + (room.priceType === 'totalStay' ? '#2D6A6A' : 'rgba(255,255,255,0.1)'), borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '12px'}}>Total Stay</button>
+                </div>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px'}}>
+                    <div>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Rack Rate</label>
+                        <input type="number" value={room.rackRate} onChange={e => updateRoom(idx, 'rackRate', e.target.value)} placeholder="৳" style={inputStyle}/>
+                    </div>
+                    <div>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Sale Price</label>
+                        <input type="number" value={room.salePrice} onChange={e => updateRoom(idx, 'salePrice', e.target.value)} placeholder="৳" style={inputStyle}/>
+                    </div>
+                </div>
+                <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px'}}>
+                    <div>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Discount</label>
+                        <div style={{display: 'flex', gap: '6px'}}>
+                            <input type="number" value={room.discountValue} onChange={e => updateRoom(idx, 'discountValue', e.target.value)} placeholder="0" style={{...inputStyle, flex: 1}}/>
+                            <select value={room.discountType} onChange={e => updateRoom(idx, 'discountType', e.target.value)} style={{...inputStyle, width: '60px', cursor: 'pointer'}}>
+                                <option value="percent">%</option>
+                                <option value="amount">৳</option>
                             </select>
                         </div>
-                        {form.status === 'black' && (
-                            <div style={{marginTop: '8px', padding: '8px', background: 'rgba(55,65,81,0.5)', borderRadius: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                                <span>ℹ️</span> Black booking blocks dates without a guest
-                            </div>
-                        )}
                     </div>
-                            </div>{/* End modal-col-scroll */}
-                        </div>{/* End LEFT COLUMN */}
-
-                        {/* RIGHT COLUMN - Payment & Summary */}
-                        <div className="modal-col">
-                            <div className="modal-col-scroll">
-
-                    {/* Payment Section - Redesigned */}
-                    <div style={{marginBottom: '16px', padding: '16px', background: 'linear-gradient(135deg, rgba(45,106,106,0.15) 0%, rgba(45,106,106,0.05) 100%)', borderRadius: '12px', border: '1px solid rgba(45,106,106,0.25)'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px'}}>
-                            <label style={{fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>💰 Payment Details</label>
-                            <div style={{display: 'flex', gap: '6px'}}>
-                                <button type="button" onClick={() => setForm({...form, pricingMode: 'simple'})} style={{
-                                    padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer',
-                                    background: form.pricingMode === 'simple' ? '#2D6A6A' : 'rgba(255,255,255,0.08)',
-                                    color: form.pricingMode === 'simple' ? '#fff' : 'rgba(255,255,255,0.6)',
-                                    border: form.pricingMode === 'simple' ? 'none' : '1px solid rgba(255,255,255,0.15)'
-                                }}>Simple</button>
-                                <button type="button" onClick={() => setForm({...form, pricingMode: 'advanced'})} style={{
-                                    padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer',
-                                    background: form.pricingMode === 'advanced' ? '#2D6A6A' : 'rgba(255,255,255,0.08)',
-                                    color: form.pricingMode === 'advanced' ? '#fff' : 'rgba(255,255,255,0.6)',
-                                    border: form.pricingMode === 'advanced' ? 'none' : '1px solid rgba(255,255,255,0.15)'
-                                }}>Advanced</button>
-                            </div>
+                    <div>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Advance</label>
+                        <input type="number" value={room.advance} onChange={e => updateRoom(idx, 'advance', e.target.value)} placeholder="৳" style={inputStyle}/>
+                    </div>
+                </div>
+                {/* Payment method for this room */}
+                {parseFloat(room.advance) > 0 && (
+                    <div style={{marginTop: '10px'}}>
+                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Payment Method</label>
+                        <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px'}}>
+                            {PAYMENT_METHODS.map(m => (
+                                <button key={m.id} type="button" onClick={() => updateRoom(idx, 'paymentMethod', m.id)} style={{padding: '6px 10px', background: room.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.05)', border: '1px solid ' + (room.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.1)'), borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '11px'}}>{m.label}</button>
+                            ))}
                         </div>
-                        
-                        {/* Simple Mode - Total pricing */}
-                        {form.pricingMode === 'simple' && (
-                            <>
-                                {/* Row 0: Adults, Children & Price Type */}
-                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px'}}>
-                                    <div>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>👤 Adults</label>
-                                        <select value={form.numAdult} onChange={e => setForm({...form, numAdult: e.target.value})} style={{...inputStyle, fontSize: '14px', padding: '12px', cursor: 'pointer'}}>
-                                            {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>👶 Children</label>
-                                        <select value={form.numChild} onChange={e => setForm({...form, numChild: e.target.value})} style={{...inputStyle, fontSize: '14px', padding: '12px', cursor: 'pointer'}}>
-                                            {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>📅 Price Type</label>
-                                        <select value={form.priceType} onChange={e => setForm({...form, priceType: e.target.value})} style={{...inputStyle, fontSize: '14px', padding: '12px', cursor: 'pointer', background: form.priceType === 'perNight' ? 'rgba(45,106,106,0.3)' : 'rgba(255,255,255,0.08)'}}>
-                                            <option value="total">Total Stay</option>
-                                            <option value="perNight">Per Night</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Show nights/rooms info when per-night selected */}
-                                {form.priceType === 'perNight' && (
-                                    <div style={{marginBottom: '12px', padding: '8px 12px', background: 'rgba(45,106,106,0.2)', borderRadius: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.8)'}}>
-                                        📊 {pricing.totalNights} night{pricing.totalNights > 1 ? 's' : ''} × {pricing.numRooms} room{pricing.numRooms > 1 ? 's' : ''} = Prices will be multiplied by {pricing.totalNights * pricing.numRooms}
-                                    </div>
-                                )}
-
-                                {/* Row 1: Rack Rate & Sale Price */}
-                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
-                                    <div>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>📊 Rack Rate (৳){form.priceType === 'perNight' ? '/night' : ''}</label>
-                                        <input type="number" value={form.rackRate} onChange={e => setForm({...form, rackRate: e.target.value, discountValue: ''})} placeholder={form.priceType === 'perNight' ? 'Per night price' : 'Total price'} style={{...inputStyle, fontSize: '14px', padding: '12px'}}/>
-                                    </div>
-                                    <div>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>💵 Sale Price (৳){form.priceType === 'perNight' ? '/night' : ''}</label>
-                                        <input type="number" value={form.salePrice} onChange={e => setForm({...form, salePrice: e.target.value, discountValue: ''})} placeholder={form.priceType === 'perNight' ? 'Per night price' : 'Total price'} style={{...inputStyle, fontSize: '14px', padding: '12px', background: parseFloat(form.rackRate) > 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)', borderColor: parseFloat(form.rackRate) > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.18)'}}/>
-                                    </div>
-                                </div>
-                                
-                                {/* Row 2: Discount */}
-                                {parseFloat(form.rackRate) > 0 && (
-                                    <div style={{marginBottom: '12px'}}>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>🏷️ Discount</label>
-                                        <div style={{display: 'flex', gap: '8px'}}>
-                                            <div style={{display: 'flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)'}}>
-                                                <button type="button" onClick={() => setForm({...form, discountType: 'percent', discountValue: ''})} style={{
-                                                    padding: '10px 14px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
-                                                    background: form.discountType === 'percent' ? '#D4A853' : 'rgba(255,255,255,0.08)',
-                                                    color: form.discountType === 'percent' ? '#000' : 'rgba(255,255,255,0.6)'
-                                                }}>%</button>
-                                                <button type="button" onClick={() => setForm({...form, discountType: 'amount', discountValue: ''})} style={{
-                                                    padding: '10px 14px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
-                                                    background: form.discountType === 'amount' ? '#D4A853' : 'rgba(255,255,255,0.08)',
-                                                    color: form.discountType === 'amount' ? '#000' : 'rgba(255,255,255,0.6)'
-                                                }}>৳</button>
-                                            </div>
-                                            <input type="number" value={form.discountValue} onChange={e => setForm({...form, discountValue: e.target.value, salePrice: ''})} placeholder={form.discountType === 'percent' ? 'Discount %' : 'Discount amount'} style={{...inputStyle, flex: 1, fontSize: '14px', padding: '10px 12px'}}/>
-                                        </div>
-                                        {/* Auto-calculated info */}
-                                        {pricing.discountAmount > 0 && (
-                                            <div style={{marginTop: '6px', fontSize: '11px', color: '#D4A853'}}>
-                                                💡 {form.discountType === 'percent' ? `৳${pricing.discountAmount.toLocaleString()} off` : `${pricing.discountPercent}% off`}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                
-                                {/* Row 3: Advance Payment */}
-                                <div style={{marginBottom: '12px'}}>
-                                    <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>💳 Advance Payment (৳)</label>
-                                    <input type="number" value={form.advancePayment} onChange={e => setForm({...form, advancePayment: e.target.value})} placeholder="0" style={{...inputStyle, fontSize: '14px', padding: '12px'}}/>
-                                </div>
-                                
-                                {/* Payment Method */}
-                                {parseFloat(form.advancePayment) > 0 && (
-                                    <div style={{marginBottom: '12px'}}>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '8px', fontWeight: '500'}}>Payment Method</label>
-                                        <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-                                            {PAYMENT_METHODS.map(m => (
-                                                <button key={m.id} type="button" onClick={() => setForm({...form, paymentMethod: m.id, transactionId: ''})} style={{
-                                                    padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: form.paymentMethod === m.id ? '700' : '500',
-                                                    border: form.paymentMethod === m.id ? `2px solid ${m.color}` : '1px solid rgba(255,255,255,0.15)',
-                                                    background: form.paymentMethod === m.id ? `${m.color}25` : 'rgba(255,255,255,0.05)',
-                                                    color: form.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.7)'
-                                                }}>{m.label}</button>
-                                            ))}
-                                        </div>
-                                        {/* Transaction ID input for bKash/Bank/Card */}
-                                        {PAYMENT_METHODS.find(m => m.id === form.paymentMethod)?.requiresTxId && (
-                                            <div style={{marginTop: '10px'}}>
-                                                <input 
-                                                    type="text" 
-                                                    value={form.transactionId} 
-                                                    onChange={e => setForm({...form, transactionId: e.target.value})} 
-                                                    placeholder={`${PAYMENT_METHODS.find(m => m.id === form.paymentMethod)?.label.replace(/📱|🏦|💳/g, '').trim()} Transaction ID`}
-                                                    style={{...inputStyle, fontSize: '13px', padding: '10px', textTransform: 'uppercase'}}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                        
-                        {/* Advanced Mode - Per room pricing */}
-                        {form.pricingMode === 'advanced' && (
-                            <>
-                                <div style={{marginBottom: '12px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)'}}>
-                                    ℹ️ Set individual room prices for each room in the group.
-                                </div>
-                                {roomSelections.map((s, idx) => {
-                                    const roomNights = Math.max(1, Math.ceil((new Date(s.checkOut) - new Date(s.checkIn)) / (1000 * 60 * 60 * 24)));
-                                    return (
-                                        <div key={s.unitKey || idx} style={{padding: '12px', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', marginBottom: '10px'}}>
-                                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
-                                                <span style={{fontWeight: '700', color: '#4ade80'}}>Room {s.unit.n}</span>
-                                                <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{roomNights}N</span>
-                                            </div>
-                                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px'}}>
-                                                <input type="number" value={s.rackRate || ''} onChange={e => setRoomSelections(prev => prev.map((r, i) => i === idx ? {...r, rackRate: e.target.value} : r))} placeholder="Rack Rate" style={{padding: '8px 10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', fontSize: '13px'}}/>
-                                                <input type="number" value={s.price || ''} onChange={e => setRoomSelections(prev => prev.map((r, i) => i === idx ? {...r, price: e.target.value} : r))} placeholder="Sale Price" style={{padding: '8px 10px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '6px', color: '#fff', fontSize: '13px'}}/>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                
-                                {/* Advance Payment for Advanced Mode */}
-                                <div style={{marginTop: '12px'}}>
-                                    <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '5px', fontWeight: '500'}}>💳 Advance Payment (৳)</label>
-                                    <input type="number" value={form.advancePayment} onChange={e => setForm({...form, advancePayment: e.target.value})} placeholder="0" style={{...inputStyle, fontSize: '14px', padding: '12px'}}/>
-                                </div>
-                                
-                                {/* Payment Method */}
-                                {parseFloat(form.advancePayment) > 0 && (
-                                    <div style={{marginTop: '12px'}}>
-                                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '8px', fontWeight: '500'}}>Payment Method</label>
-                                        <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-                                            {PAYMENT_METHODS.map(m => (
-                                                <button key={m.id} type="button" onClick={() => setForm({...form, paymentMethod: m.id, transactionId: ''})} style={{
-                                                    padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: form.paymentMethod === m.id ? '700' : '500',
-                                                    border: form.paymentMethod === m.id ? `2px solid ${m.color}` : '1px solid rgba(255,255,255,0.15)',
-                                                    background: form.paymentMethod === m.id ? `${m.color}25` : 'rgba(255,255,255,0.05)',
-                                                    color: form.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.7)'
-                                                }}>{m.label}</button>
-                                            ))}
-                                        </div>
-                                        {/* Transaction ID input for bKash/Bank/Card */}
-                                        {PAYMENT_METHODS.find(m => m.id === form.paymentMethod)?.requiresTxId && (
-                                            <div style={{marginTop: '10px'}}>
-                                                <input 
-                                                    type="text" 
-                                                    value={form.transactionId} 
-                                                    onChange={e => setForm({...form, transactionId: e.target.value})} 
-                                                    placeholder={`${PAYMENT_METHODS.find(m => m.id === form.paymentMethod)?.label.replace(/📱|🏦|💳/g, '').trim()} Transaction ID`}
-                                                    style={{...inputStyle, fontSize: '13px', padding: '10px', textTransform: 'uppercase'}}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                        
-                        {/* Payment Summary */}
-                        {(pricing.finalPrice > 0 || form.pricingMode === 'advanced') && (
-                            <div style={{marginTop: '14px', padding: '14px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)'}}>
-                                <div style={{fontSize: '12px', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '10px'}}>📋 Summary</div>
-                                {form.pricingMode === 'simple' ? (
-                                    <>
-                                        {/* Guest count display */}
-                                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px'}}>
-                                            <span style={{color: 'rgba(255,255,255,0.5)'}}>Guests:</span>
-                                            <span style={{color: 'rgba(255,255,255,0.7)'}}>{form.numAdult} Adult{form.numAdult > 1 ? 's' : ''}{parseInt(form.numChild) > 0 ? `, ${form.numChild} Child${form.numChild > 1 ? 'ren' : ''}` : ''}</span>
-                                        </div>
-                                        {/* Per-night breakdown when applicable */}
-                                        {form.priceType === 'perNight' && parseFloat(form.salePrice) > 0 && (
-                                            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px'}}>
-                                                <span style={{color: 'rgba(255,255,255,0.5)'}}>Rate:</span>
-                                                <span style={{color: 'rgba(255,255,255,0.7)'}}>৳{parseFloat(form.salePrice).toLocaleString()}/night × {pricing.totalNights} night{pricing.totalNights > 1 ? 's' : ''} × {pricing.numRooms} room{pricing.numRooms > 1 ? 's' : ''}</span>
-                                            </div>
-                                        )}
-                                        {parseFloat(form.rackRate) > 0 && (
-                                            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px'}}>
-                                                <span style={{color: 'rgba(255,255,255,0.5)'}}>Rack Rate{form.priceType === 'perNight' ? ' (Total)' : ''}:</span>
-                                                <span style={{color: 'rgba(255,255,255,0.7)', textDecoration: pricing.discountAmount > 0 ? 'line-through' : 'none'}}>৳{pricing.rackRate.toLocaleString()}</span>
-                                            </div>
-                                        )}
-                                        {pricing.discountAmount > 0 && (
-                                            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px'}}>
-                                                <span style={{color: '#D4A853'}}>Discount ({pricing.discountPercent}%):</span>
-                                                <span style={{color: '#D4A853'}}>-৳{pricing.discountAmount.toLocaleString()}</span>
-                                            </div>
-                                        )}
-                                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
-                                            <span style={{color: 'rgba(255,255,255,0.8)', fontWeight: '600'}}>Sale Price{form.priceType === 'perNight' ? ' (Total)' : ''}:</span>
-                                            <span style={{fontWeight: '700', color: '#22c55e'}}>৳{pricing.finalPrice.toLocaleString()}</span>
-                                        </div>
-                                        {parseFloat(form.advancePayment) > 0 && (
-                                            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px'}}>
-                                                <span style={{color: 'rgba(255,255,255,0.5)'}}>Advance Paid:</span>
-                                                <span style={{color: '#4ade80'}}>-৳{parseFloat(form.advancePayment).toLocaleString()}</span>
-                                            </div>
-                                        )}
-                                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '15px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.2)'}}>
-                                            <span style={{fontWeight: '700'}}>Due Amount:</span>
-                                            <span style={{fontWeight: '800', fontSize: '18px', color: pricing.due > 0 ? '#ef4444' : '#22c55e'}}>৳{pricing.due.toLocaleString()}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        {roomSelections.map((s, idx) => (
-                                            <div key={idx} style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px'}}>
-                                                <span style={{color: 'rgba(255,255,255,0.6)'}}>Room {s.unit.n}:</span>
-                                                <span style={{color: '#4ade80'}}>৳{(parseFloat(s.price) || 0).toLocaleString()}</span>
-                                            </div>
-                                        ))}
-                                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
-                                            <span style={{fontWeight: '600'}}>Total:</span>
-                                            <span style={{fontWeight: '700', color: '#22c55e'}}>৳{roomSelections.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0).toLocaleString()}</span>
-                                        </div>
-                                        {parseFloat(form.advancePayment) > 0 && (
-                                            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginTop: '4px'}}>
-                                                <span style={{color: 'rgba(255,255,255,0.5)'}}>Advance:</span>
-                                                <span style={{color: '#4ade80'}}>-৳{parseFloat(form.advancePayment).toLocaleString()}</span>
-                                            </div>
-                                        )}
-                                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '15px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.2)'}}>
-                                            <span style={{fontWeight: '700'}}>Due:</span>
-                                            <span style={{fontWeight: '800', fontSize: '18px', color: (roomSelections.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) - parseFloat(form.advancePayment || 0)) > 0 ? '#ef4444' : '#22c55e'}}>
-                                                ৳{Math.max(0, roomSelections.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) - parseFloat(form.advancePayment || 0)).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        )}
+                        <input type="text" value={room.transactionId || ''} onChange={e => updateRoom(idx, 'transactionId', e.target.value)} placeholder="Transaction ID / Details" style={{...inputStyle, marginTop: '8px', fontSize: '12px'}}/>
                     </div>
-                    
-                    {/* Notes */}
-                    <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} placeholder="📝 Notes (optional)" rows={2} style={{...inputStyle, marginBottom: '16px', resize: 'none', minHeight: '50px'}}/>
+                )}
+                {/* Room total */}
+                <div style={{marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between'}}>
+                    <span style={{color: 'rgba(255,255,255,0.6)', fontSize: '13px'}}>Room Total:</span>
+                    <span style={{fontWeight: '700', fontSize: '16px', color: '#22c55e'}}>৳{getRoomTotal(room).toLocaleString()}</span>
+                </div>
+            </div>
 
-                    {/* Error Display */}
-                    {status.startsWith("error") && (
-                        <div style={{padding: '10px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', borderRadius: '8px', color: '#fca5a5', fontSize: '12px', marginBottom: '12px', fontWeight: '500'}}>{status}</div>
+            {/* Save button */}
+            <button type="button" onClick={() => markSaved(`room-${idx}`)} style={{...saveBtn, width: '100%', opacity: savedTabs[`room-${idx}`] ? 0.7 : 1}}>
+                {savedTabs[`room-${idx}`] ? '✓ Saved' : 'Save Room Details'}
+            </button>
+        </div>
+    );
+
+    // Render Contact tab
+    const renderContactTab = () => (
+        <div style={{padding: '16px'}}>
+            <div style={{marginBottom: '20px', padding: '12px', background: 'rgba(59,130,246,0.1)', borderRadius: '10px', border: '1px solid rgba(59,130,246,0.3)'}}>
+                <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)'}}>Contact info is shared across all {roomSelections.length} room(s)</span>
+            </div>
+
+            {/* Phone Numbers */}
+            <div style={{marginBottom: '20px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                    <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500'}}>PHONE NUMBERS</label>
+                    {sharedData.phones.length < 3 && (
+                        <button type="button" onClick={addPhone} style={{fontSize: '11px', padding: '4px 10px', background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '6px', color: '#22c55e', cursor: 'pointer'}}>+ Add</button>
                     )}
+                </div>
+                {sharedData.phones.map((phone, idx) => (
+                    <div key={idx} style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                        <input type="tel" value={phone} onChange={e => updatePhone(idx, e.target.value)} placeholder={`Phone ${idx + 1}`} style={{...inputStyle, flex: 1}}/>
+                        {sharedData.phones.length > 1 && (
+                            <button type="button" onClick={() => removePhone(idx)} style={{width: '40px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', fontSize: '16px'}}>×</button>
+                        )}
+                    </div>
+                ))}
+            </div>
 
-                            </div>{/* End modal-col-scroll */}
-                        </div>{/* End RIGHT COLUMN */}
-                    </div>{/* End modal-two-col */}
-                </form>
+            {/* Email */}
+            <div style={{marginBottom: '20px'}}>
+                <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', display: 'block', marginBottom: '8px'}}>EMAIL</label>
+                <input type="email" value={sharedData.email} onChange={e => setSharedData(prev => ({...prev, email: e.target.value}))} placeholder="guest@email.com" style={inputStyle}/>
+            </div>
 
-                {/* Mobile Sticky Book Button - Bottom */}
-                <div className="sticky-book-btn-mobile">
-                    <button type="button" onClick={e => { e.preventDefault(); document.getElementById('booking-form')?.requestSubmit(); }} disabled={status === "loading"} style={{width: '100%', padding: '16px 20px', background: status === "loading" ? 'rgba(220,38,38,0.5)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '700', cursor: status === "loading" ? 'not-allowed' : 'pointer', fontSize: '16px', boxShadow: '0 -4px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
-                        {status === "loading" ? "⏳ Creating..." : (<>✓ Create Booking <span style={{background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '6px', fontSize: '14px'}}>Room {roomNumbers}</span> <span style={{background: 'rgba(212,168,83,0.3)', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', color: '#D4A853'}}>{nights}N</span></>)}
+            {/* Booking Status */}
+            <div style={{marginBottom: '20px'}}>
+                <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', display: 'block', marginBottom: '8px'}}>BOOKING STATUS</label>
+                <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                    {[{id: 1, label: 'Confirmed', color: '#22c55e'}, {id: 2, label: 'Tentative', color: '#f59e0b'}, {id: 0, label: 'Cancelled', color: '#ef4444'}].map(s => (
+                        <button key={s.id} type="button" onClick={() => setSharedData(prev => ({...prev, status: s.id}))} style={{
+                            padding: '10px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: sharedData.status === s.id ? '700' : '500',
+                            background: sharedData.status === s.id ? s.color : 'rgba(255,255,255,0.05)',
+                            border: `1px solid ${sharedData.status === s.id ? s.color : 'rgba(255,255,255,0.1)'}`,
+                            color: '#fff', cursor: 'pointer'
+                        }}>{s.label}</button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Notes */}
+            <div style={{marginBottom: '20px'}}>
+                <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', display: 'block', marginBottom: '8px'}}>NOTES</label>
+                <textarea value={sharedData.notes} onChange={e => setSharedData(prev => ({...prev, notes: e.target.value}))} placeholder="Special requests, notes..." rows={3} style={{...inputStyle, resize: 'none'}}/>
+            </div>
+
+            <button type="button" onClick={() => markSaved('contact')} style={{...saveBtn, width: '100%', opacity: savedTabs.contact ? 0.7 : 1}}>
+                {savedTabs.contact ? '✓ Saved' : 'Save Contact Info'}
+            </button>
+        </div>
+    );
+
+    // Render Payment Summary tab
+    const renderPaymentTab = () => (
+        <div style={{padding: '16px'}}>
+            <div style={{fontSize: '14px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '16px'}}>Payment Overview</div>
+
+            {/* Per-room payment breakdown */}
+            {roomSelections.map((room, idx) => {
+                const roomTotal = getRoomTotal(room);
+                const roomAdvance = parseFloat(room.advance) || 0;
+                const roomDue = roomTotal - roomAdvance;
+                const method = PAYMENT_METHODS.find(m => m.id === room.paymentMethod);
+                return (
+                    <div key={idx} style={{marginBottom: '12px', padding: '14px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                            <span style={{fontWeight: '700', color: '#4ade80', fontSize: '16px'}}>{room.unit.n}</span>
+                            <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{getNights(room)}N</span>
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px'}}>
+                            <span style={{color: 'rgba(255,255,255,0.5)'}}>Room Total:</span>
+                            <span style={{color: '#fff'}}>৳{roomTotal.toLocaleString()}</span>
+                        </div>
+                        {roomAdvance > 0 && (
+                            <>
+                                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px'}}>
+                                    <span style={{color: 'rgba(255,255,255,0.5)'}}>Advance ({method?.label}):</span>
+                                    <span style={{color: '#22c55e'}}>-৳{roomAdvance.toLocaleString()}</span>
+                                </div>
+                                {room.transactionId && (
+                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px'}}>
+                                        TX: {room.transactionId.toUpperCase()}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
+                            <span style={{fontWeight: '600'}}>Due:</span>
+                            <span style={{fontWeight: '700', color: roomDue > 0 ? '#ef4444' : '#22c55e'}}>৳{roomDue.toLocaleString()}</span>
+                        </div>
+                    </div>
+                );
+            })}
+
+            {/* Grand totals */}
+            <div style={{marginTop: '16px', padding: '16px', background: 'linear-gradient(135deg, rgba(45,106,106,0.2), rgba(45,106,106,0.1))', borderRadius: '12px', border: '1px solid rgba(45,106,106,0.4)'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px'}}>
+                    <span>Grand Total:</span>
+                    <span style={{fontWeight: '700'}}>৳{totals.grandTotal.toLocaleString()}</span>
+                </div>
+                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px'}}>
+                    <span style={{color: '#22c55e'}}>Total Advance:</span>
+                    <span style={{color: '#22c55e', fontWeight: '600'}}>-৳{totals.totalAdvance.toLocaleString()}</span>
+                </div>
+                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '18px', paddingTop: '10px', borderTop: '1px dashed rgba(255,255,255,0.2)'}}>
+                    <span style={{fontWeight: '700'}}>Total Due:</span>
+                    <span style={{fontWeight: '800', color: totals.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{totals.totalDue.toLocaleString()}</span>
+                </div>
+            </div>
+
+            <button type="button" onClick={() => markSaved('payment')} style={{...saveBtn, width: '100%', marginTop: '16px', opacity: savedTabs.payment ? 0.7 : 1}}>
+                {savedTabs.payment ? '✓ Saved' : 'Save Payment Info'}
+            </button>
+        </div>
+    );
+
+    // Render Summary tab
+    const renderSummaryTab = () => (
+        <div style={{padding: '16px'}}>
+            <div style={{fontSize: '16px', fontWeight: '700', color: '#fff', marginBottom: '20px', textAlign: 'center'}}>Booking Summary</div>
+
+            {/* Rooms summary */}
+            <div style={{marginBottom: '20px'}}>
+                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px'}}>ROOMS ({roomSelections.length})</div>
+                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+                    {roomSelections.map((room, idx) => (
+                        <div key={idx} style={{padding: '10px 14px', background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '8px'}}>
+                            <div style={{fontWeight: '700', color: '#4ade80'}}>{room.unit.n}</div>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.checkIn} → {room.checkOut}</div>
+                            <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>{room.numAdult}A {room.numChild}C {room.numInfant}I</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Contact summary */}
+            <div style={{marginBottom: '20px', padding: '14px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px'}}>
+                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px'}}>CONTACT</div>
+                <div style={{fontSize: '14px', marginBottom: '4px'}}>{sharedData.phones.filter(Boolean).join(", ") || "No phone"}</div>
+                <div style={{fontSize: '13px', color: 'rgba(255,255,255,0.6)'}}>{sharedData.email || "No email"}</div>
+            </div>
+
+            {/* Payment summary */}
+            <div style={{marginBottom: '20px', padding: '14px', background: 'linear-gradient(135deg, rgba(45,106,106,0.15), rgba(45,106,106,0.05))', borderRadius: '10px', border: '1px solid rgba(45,106,106,0.3)'}}>
+                <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px'}}>PAYMENT</div>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+                    <div>
+                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Total</div>
+                        <div style={{fontSize: '18px', fontWeight: '700'}}>৳{totals.grandTotal.toLocaleString()}</div>
+                    </div>
+                    <div>
+                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Advance</div>
+                        <div style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>৳{totals.totalAdvance.toLocaleString()}</div>
+                    </div>
+                </div>
+                <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed rgba(255,255,255,0.2)', textAlign: 'center'}}>
+                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>DUE AMOUNT</div>
+                    <div style={{fontSize: '24px', fontWeight: '800', color: totals.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{totals.totalDue.toLocaleString()}</div>
+                </div>
+            </div>
+
+            {/* Status display */}
+            {status.startsWith("error") && (
+                <div style={{padding: '12px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', borderRadius: '8px', color: '#fca5a5', fontSize: '13px', marginBottom: '16px'}}>{status}</div>
+            )}
+
+            {/* Create Booking Button */}
+            <button type="button" onClick={submit} disabled={status === "loading"} style={{
+                width: '100%', padding: '16px', background: status === "loading" ? 'rgba(220,38,38,0.5)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                border: 'none', borderRadius: '12px', color: '#fff', fontWeight: '700', fontSize: '16px',
+                cursor: status === "loading" ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+            }}>
+                {status === "loading" ? "Creating..." : "Create Booking"}
+            </button>
+
+            <div style={{marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', textAlign: 'center'}}>
+                {roomSelections.length > 1 ? "Creates linked group booking in Beds24" : "Creates booking in Beds24"}
+            </div>
+        </div>
+    );
+
+    // Main return with tabbed interface
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal booking-modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px', padding: 0, overflow: 'visible'}}>
+                {/* Header */}
+                <div style={{background: 'linear-gradient(135deg, #2D6A6A, #1E4D4D)', padding: '16px 20px', borderTopLeftRadius: '12px', borderTopRightRadius: '12px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <div>
+                            <h2 style={{fontSize: '18px', fontWeight: '700', margin: 0}}>New Booking</h2>
+                            <p style={{fontSize: '12px', opacity: 0.7, margin: '4px 0 0'}}>{roomSelections.length} room(s) · {totals.totalNights} nights</p>
+                        </div>
+                        <button onClick={onClose} style={{background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', width: '36px', height: '36px', color: '#fff', fontSize: '18px', cursor: 'pointer'}}>×</button>
+                    </div>
+                </div>
+
+                {/* Tab Navigation */}
+                <div style={{display: 'flex', gap: '6px', padding: '12px 16px', background: 'rgba(0,0,0,0.3)', overflowX: 'auto', flexWrap: 'nowrap'}}>
+                    {/* Room tabs */}
+                    {roomSelections.map((room, idx) => (
+                        <button key={`room-${idx}`} type="button" onClick={() => setActiveTab(`room-${idx}`)} style={{
+                            ...tabStyle(activeTab === `room-${idx}`),
+                            position: 'relative'
+                        }}>
+                            {room.unit.n}
+                            {savedTabs[`room-${idx}`] && <span style={{position: 'absolute', top: '-4px', right: '-4px', width: '10px', height: '10px', background: '#22c55e', borderRadius: '50%'}}></span>}
+                        </button>
+                    ))}
+                    {/* Contact tab */}
+                    <button type="button" onClick={() => setActiveTab('contact')} style={{...tabStyle(activeTab === 'contact'), position: 'relative'}}>
+                        Contact
+                        {savedTabs.contact && <span style={{position: 'absolute', top: '-4px', right: '-4px', width: '10px', height: '10px', background: '#22c55e', borderRadius: '50%'}}></span>}
                     </button>
+                    {/* Payment tab */}
+                    <button type="button" onClick={() => setActiveTab('payment')} style={{...tabStyle(activeTab === 'payment'), position: 'relative'}}>
+                        Payment
+                        {savedTabs.payment && <span style={{position: 'absolute', top: '-4px', right: '-4px', width: '10px', height: '10px', background: '#22c55e', borderRadius: '50%'}}></span>}
+                    </button>
+                    {/* Summary tab */}
+                    <button type="button" onClick={() => setActiveTab('summary')} style={tabStyle(activeTab === 'summary')}>
+                        Summary
+                    </button>
+                </div>
+
+                {/* Tab Content */}
+                <div style={{maxHeight: '60vh', overflowY: 'auto'}}>
+                    {activeTab.startsWith('room-') && renderRoomTab(roomSelections[parseInt(activeTab.split('-')[1])], parseInt(activeTab.split('-')[1]))}
+                    {activeTab === 'contact' && renderContactTab()}
+                    {activeTab === 'payment' && renderPaymentTab()}
+                    {activeTab === 'summary' && renderSummaryTab()}
                 </div>
             </div>
         </div>
