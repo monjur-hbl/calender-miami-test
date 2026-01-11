@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v34.4</title>
+    <title>Miami Beach Resort v34.5</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -313,6 +313,7 @@
         .card-ready-checkin { background: linear-gradient(145deg, #10b981 0%, #059669 100%); box-shadow: 0 0 0 2px rgba(16,185,129,0.4); animation: pulse-ready 2s ease-in-out infinite; }
         .card-checkout-pending { background: linear-gradient(145deg, #D4A853 0%, #B8942F 100%); box-shadow: 0 0 0 2px rgba(212,168,83,0.4); }
         .card-overbooking { background: linear-gradient(145deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 0 0 3px rgba(220,38,38,0.6); animation: pulse-overbooking 0.8s ease-in-out infinite; }
+        .card-hold { background: linear-gradient(145deg, #eab308 0%, #ca8a04 100%); box-shadow: 0 0 0 2px rgba(234,179,8,0.4); } /* Yellow for HOLD bookings */
         .card-selected { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #2D6A6A !important; }
 
         /* Status Text */
@@ -758,7 +759,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v34.4-mobile-modal</div>
+<div class="version-tag">v34.5-hold-yellow</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -1959,6 +1960,20 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         });
     }, [allRooms, bookings, searchCheckIn, searchCheckOut]);
 
+    // HOLD rooms for search period - bookings with firstName "HOLD" that overlap with search dates
+    const holdRoomsSearch = useMemo(() => {
+        if (!searchCheckIn || !searchCheckOut) return [];
+        return bookings.filter(b =>
+            b.firstName === "HOLD" &&
+            b.arrival < searchCheckOut && b.departure > searchCheckIn &&
+            b.status !== 'cancelled'
+        ).map(b => {
+            const room = ROOMS.find(r => r.id === b.roomId);
+            const unit = room?.units.find(u => u.id === b.unitId);
+            return { booking: b, room, unit, floor: room?.floor };
+        }).filter(h => h.room && h.unit);
+    }, [bookings, searchCheckIn, searchCheckOut]);
+
     const getMultiUnitInfo = (booking) => {
         // Use String comparison for type safety
         const masterIdStr = String(booking.masterId || booking.id);
@@ -2020,10 +2035,14 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
         // Simple logic: is room ACTUALLY booked tonight?
         const isBooked = booking && !isCancelled && !isInquiry;
 
-        // Get CSS class - BOOKED, OVERBOOKING, or Available
+        // Check if this is a HOLD booking (firstName === "HOLD")
+        const isHoldBooking = isBooked && booking.firstName === "HOLD";
+
+        // Get CSS class - BOOKED, OVERBOOKING, HOLD, or Available
         const getFinalCardClass = () => {
             if (isSelected) return "card-selected-preview";
             if (isOverbooked) return "card-overbooking"; // Overbooking takes priority - needs immediate attention!
+            if (isHoldBooking) return "card-hold"; // Yellow for HOLD bookings
             if (isBooked) return "card-booked";
             return "card-available"; // Everything else (no booking, cancelled, inquiry) = available
         };
@@ -2035,6 +2054,7 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                 if (isInRange) return "HOLD";
             }
             if (isOverbooked) return `OVERBOOK (${allBookingsForCell.length})`;
+            if (isHoldBooking) return "HOLD";
             if (isBooked) return "BOOKED";
             return "Available"; // Everything else = available
         };
@@ -2313,13 +2333,24 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                         
                         // Get available units for selected date
                         const availableUnits = allRooms.filter(({room, unit}) => {
-                            const hasBooking = bookings.some(b => 
-                                b.roomId === room.id && b.unitId === unit.id && 
-                                b.arrival <= selectedDate && b.departure > selectedDate && 
+                            const hasBooking = bookings.some(b =>
+                                b.roomId === room.id && b.unitId === unit.id &&
+                                b.arrival <= selectedDate && b.departure > selectedDate &&
                                 b.status !== 'cancelled' && b.status !== 'inquiry'
                             );
                             return !hasBooking;
                         });
+
+                        // Get HOLD rooms for selected date (bookings with firstName === "HOLD")
+                        const holdRooms = bookings.filter(b =>
+                            b.firstName === "HOLD" &&
+                            b.arrival <= selectedDate && b.departure > selectedDate &&
+                            b.status !== 'cancelled'
+                        ).map(b => {
+                            const room = ROOMS.find(r => r.id === b.roomId);
+                            const unit = room?.units.find(u => u.id === b.unitId);
+                            return { booking: b, room, unit };
+                        }).filter(h => h.room && h.unit);
                         
                         return (
                             <>
@@ -2372,7 +2403,27 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                         </div>
                                     </div>
                                 )}
-                                
+
+                                {/* HOLD Rooms Section - Yellow */}
+                                {holdRooms.length > 0 && (
+                                    <div style={{background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px'}}>
+                                        <h4 style={{marginBottom: '12px', fontSize: '14px', color: '#eab308', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                            <span>⏸️</span> Hold Rooms ({holdRooms.length})
+                                            <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '400'}}>• Click to view details</span>
+                                        </h4>
+                                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px', maxHeight: '200px', overflowY: 'auto'}}>
+                                            {holdRooms.map(({booking, room, unit}) => (
+                                                <div key={booking.id} onClick={() => setShowInfoModal(booking)} style={{background: 'linear-gradient(145deg, #eab308, #ca8a04)', borderRadius: '10px', padding: '12px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s'}}>
+                                                    <div style={{fontWeight: '700', color: '#000', fontSize: '22px'}}>{unit.n}</div>
+                                                    <div style={{fontSize: '11px', color: 'rgba(0,0,0,0.6)', marginTop: '4px'}}>{room.short}</div>
+                                                    <div style={{fontSize: '10px', color: 'rgba(0,0,0,0.5)', marginTop: '2px'}}>{booking.arrival} → {booking.departure}</div>
+                                                    <div style={{marginTop: '6px', fontSize: '10px', fontWeight: '600', color: '#000', background: 'rgba(255,255,255,0.3)', borderRadius: '4px', padding: '2px 6px'}}>⏸️ HOLD</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Available Units List - Click to Book */}
                                 <div style={{background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '12px', padding: '16px'}}>
                                     <h4 style={{marginBottom: '12px', fontSize: '14px', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px'}}><span>🛏️</span> Available Rooms ({availableUnits.length}) <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '400'}}>• Click to select</span></h4>
@@ -3256,6 +3307,27 @@ const getBooking = useCallback((roomId, unitId, d) => { const result = bookings.
                                 <div className="date-field"><label>Group By</label><select value={searchGroupBy} onChange={e => setSearchGroupBy(e.target.value)} className="group-selector"><option value="floor">Floor Calendar</option><option value="category">By Category</option></select></div>
                             </div>
                             <h3 style={{fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: '#2D6A6A', textAlign: 'center'}}>✓ Available: {availableRooms.length} rooms</h3>
+
+                            {/* HOLD Rooms in Search Results - Yellow */}
+                            {holdRoomsSearch.length > 0 && (
+                                <div style={{background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px'}}>
+                                    <h4 style={{marginBottom: '12px', fontSize: '14px', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
+                                        <span>⏸️</span> Hold Rooms ({holdRoomsSearch.length})
+                                        <span style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '400'}}>• Click to view details</span>
+                                    </h4>
+                                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center'}}>
+                                        {holdRoomsSearch.map(({booking, room, unit}) => (
+                                            <div key={booking.id} onClick={() => setShowInfoModal(booking)} style={{background: 'linear-gradient(145deg, #eab308, #ca8a04)', borderRadius: '12px', padding: '14px', cursor: 'pointer', minWidth: '100px', textAlign: 'center'}}>
+                                                <div style={{fontSize: '22px', fontWeight: '700', color: '#000'}}>{unit.n}</div>
+                                                <div style={{fontSize: '10px', color: 'rgba(0,0,0,0.6)', marginTop: '4px'}}>{room.short}</div>
+                                                <div style={{fontSize: '9px', color: 'rgba(0,0,0,0.5)', marginTop: '2px'}}>{booking.arrival} → {booking.departure}</div>
+                                                <div style={{marginTop: '6px', fontSize: '10px', fontWeight: '600', color: '#000', background: 'rgba(255,255,255,0.3)', borderRadius: '4px', padding: '2px 6px', display: 'inline-block'}}>⏸️ HOLD</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {(() => {
                                 const groups = searchGroupBy === "floor"
                                     ? FLOORS.map(f => ({key: f, title: `🏢 ${floorName(f)} Floor`, rooms: availableRooms.filter(r => r.floor === f)}))
