@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v34.0</title>
+    <title>Miami Beach Resort v34.1</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -727,7 +727,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v34.0-tabbed-booking</div>
+<div class="version-tag">v34.1-payment-tab</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -8094,15 +8094,19 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
         }))
     );
 
-    // Shared data
+    // Shared data (contact + payment + settings)
     const [sharedData, setSharedData] = useState({
         // Contact info (shared across all units)
         phones: [""],
         email: "",
-        // Booking settings
-        status: "confirmed",
+        // Booking settings - Beds24 status values
+        status: "confirmed",  // confirmed, new, request, black, cancelled
         subStatus: "none",
-        notes: ""
+        notes: "",
+        // Payment info (centralized)
+        advanceAmount: "",
+        paymentMethod: "cash",
+        transactionId: ""
     });
 
     const [status, setStatus] = useState("");
@@ -8145,10 +8149,10 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
         return discountValue;
     };
 
-    // Calculate totals
+    // Calculate totals (advance is now centralized in sharedData)
     const totals = useMemo(() => {
         const grandTotal = roomSelections.reduce((sum, r) => sum + getRoomTotal(r), 0);
-        const totalAdvance = roomSelections.reduce((sum, r) => sum + (parseFloat(r.advance) || 0), 0);
+        const totalAdvance = parseFloat(sharedData.advanceAmount) || 0;
         const totalDiscount = roomSelections.reduce((sum, r) => sum + getRoomDiscount(r), 0);
         const totalNights = roomSelections.reduce((sum, r) => sum + getNights(r), 0);
         return {
@@ -8159,7 +8163,7 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
             totalNights,
             numUnits: roomSelections.length
         };
-    }, [roomSelections]);
+    }, [roomSelections, sharedData.advanceAmount]);
 
     // Update room field
     const updateRoom = (index, field, value) => {
@@ -8245,11 +8249,17 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
         try {
             const groupId = "GRP" + Date.now();
             const phones = sharedData.phones.filter(Boolean).join(", ");
+            const totalAdvance = parseFloat(sharedData.advanceAmount) || 0;
+            const numRooms = roomSelections.length;
+            // Distribute advance equally across rooms for Beds24
+            const advancePerRoom = numRooms > 0 ? Math.floor(totalAdvance / numRooms) : 0;
+            const advanceRemainder = totalAdvance - (advancePerRoom * numRooms);
 
             const data = roomSelections.map((room, idx) => {
                 const roomPrice = getRoomTotal(room);
                 const nights = getNights(room);
-                const roomAdvance = parseFloat(room.advance) || 0;
+                // First room gets any remainder from division
+                const roomAdvance = advancePerRoom + (idx === 0 ? advanceRemainder : 0);
                 const guestNames = room.guests.map(g => g.name).filter(Boolean).join(", ");
                 const guestNids = room.guests.map(g => g.nid).filter(Boolean).join(", ");
 
@@ -8264,12 +8274,12 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     amount: roomPrice
                 });
 
-                // Payment if advance paid
+                // Payment if advance paid (use centralized payment method)
                 if (roomAdvance > 0) {
-                    const method = PAYMENT_METHODS.find(m => m.id === room.paymentMethod);
+                    const method = PAYMENT_METHODS.find(m => m.id === sharedData.paymentMethod);
                     let paymentDesc = `${method?.beds24Label || 'Payment'} Received`;
-                    if (room.transactionId) {
-                        paymentDesc += ` ${room.transactionId.toUpperCase()}`;
+                    if (sharedData.transactionId) {
+                        paymentDesc += ` ${sharedData.transactionId.toUpperCase()}`;
                     }
                     invoiceItems.push({
                         type: "payment",
@@ -8483,34 +8493,16 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                         <input type="number" value={room.salePrice} onChange={e => updateRoom(idx, 'salePrice', e.target.value)} placeholder="৳" style={inputStyle}/>
                     </div>
                 </div>
-                <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px'}}>
-                    <div>
-                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Discount</label>
-                        <div style={{display: 'flex', gap: '6px'}}>
-                            <input type="number" value={room.discountValue} onChange={e => updateRoom(idx, 'discountValue', e.target.value)} placeholder="0" style={{...inputStyle, flex: 1}}/>
-                            <select value={room.discountType} onChange={e => updateRoom(idx, 'discountType', e.target.value)} style={{...inputStyle, width: '60px', cursor: 'pointer'}}>
-                                <option value="percent">%</option>
-                                <option value="amount">৳</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Advance</label>
-                        <input type="number" value={room.advance} onChange={e => updateRoom(idx, 'advance', e.target.value)} placeholder="৳" style={inputStyle}/>
+                <div>
+                    <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Discount</label>
+                    <div style={{display: 'flex', gap: '6px'}}>
+                        <input type="number" value={room.discountValue} onChange={e => updateRoom(idx, 'discountValue', e.target.value)} placeholder="0" style={{...inputStyle, flex: 1}}/>
+                        <select value={room.discountType} onChange={e => updateRoom(idx, 'discountType', e.target.value)} style={{...inputStyle, width: '70px', cursor: 'pointer'}}>
+                            <option value="percent">%</option>
+                            <option value="amount">৳</option>
+                        </select>
                     </div>
                 </div>
-                {/* Payment method for this room */}
-                {parseFloat(room.advance) > 0 && (
-                    <div style={{marginTop: '10px'}}>
-                        <label style={{fontSize: '10px', color: 'rgba(255,255,255,0.4)'}}>Payment Method</label>
-                        <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px'}}>
-                            {PAYMENT_METHODS.map(m => (
-                                <button key={m.id} type="button" onClick={() => updateRoom(idx, 'paymentMethod', m.id)} style={{padding: '6px 10px', background: room.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.05)', border: '1px solid ' + (room.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.1)'), borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '11px'}}>{m.label}</button>
-                            ))}
-                        </div>
-                        <input type="text" value={room.transactionId || ''} onChange={e => updateRoom(idx, 'transactionId', e.target.value)} placeholder="Transaction ID / Details" style={{...inputStyle, marginTop: '8px', fontSize: '12px'}}/>
-                    </div>
-                )}
                 {/* Room total */}
                 <div style={{marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between'}}>
                     <span style={{color: 'rgba(255,255,255,0.6)', fontSize: '13px'}}>Room Total:</span>
@@ -8556,11 +8548,17 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                 <input type="email" value={sharedData.email} onChange={e => setSharedData(prev => ({...prev, email: e.target.value}))} placeholder="guest@email.com" style={inputStyle}/>
             </div>
 
-            {/* Booking Status */}
+            {/* Booking Status - Beds24 values */}
             <div style={{marginBottom: '20px'}}>
-                <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', display: 'block', marginBottom: '8px'}}>BOOKING STATUS</label>
+                <label style={{fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', display: 'block', marginBottom: '8px'}}>BOOKING STATUS (Beds24)</label>
                 <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-                    {[{id: 1, label: 'Confirmed', color: '#22c55e'}, {id: 2, label: 'Tentative', color: '#f59e0b'}, {id: 0, label: 'Cancelled', color: '#ef4444'}].map(s => (
+                    {[
+                        {id: 'confirmed', label: 'Confirmed', color: '#22c55e'},
+                        {id: 'new', label: 'New', color: '#3b82f6'},
+                        {id: 'request', label: 'Request', color: '#f59e0b'},
+                        {id: 'black', label: 'Black', color: '#6b7280'},
+                        {id: 'cancelled', label: 'Cancelled', color: '#ef4444'}
+                    ].map(s => (
                         <button key={s.id} type="button" onClick={() => setSharedData(prev => ({...prev, status: s.id}))} style={{
                             padding: '10px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: sharedData.status === s.id ? '700' : '500',
                             background: sharedData.status === s.id ? s.color : 'rgba(255,255,255,0.05)',
@@ -8583,69 +8581,88 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
         </div>
     );
 
-    // Render Payment Summary tab
-    const renderPaymentTab = () => (
-        <div style={{padding: '16px'}}>
-            <div style={{fontSize: '14px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '16px'}}>Payment Overview</div>
+    // Render Payment tab with advance input
+    const renderPaymentTab = () => {
+        const method = PAYMENT_METHODS.find(m => m.id === sharedData.paymentMethod);
+        return (
+            <div style={{padding: '16px'}}>
+                {/* Advance Payment Section */}
+                <div style={{marginBottom: '20px', padding: '16px', background: 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05))', borderRadius: '12px', border: '1px solid rgba(34,197,94,0.3)'}}>
+                    <label style={{fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontWeight: '600', display: 'block', marginBottom: '12px'}}>Advance Payment</label>
 
-            {/* Per-room payment breakdown */}
-            {roomSelections.map((room, idx) => {
-                const roomTotal = getRoomTotal(room);
-                const roomAdvance = parseFloat(room.advance) || 0;
-                const roomDue = roomTotal - roomAdvance;
-                const method = PAYMENT_METHODS.find(m => m.id === room.paymentMethod);
-                return (
-                    <div key={idx} style={{marginBottom: '12px', padding: '14px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
-                            <span style={{fontWeight: '700', color: '#4ade80', fontSize: '16px'}}>{room.unit.n}</span>
-                            <span style={{fontSize: '12px', color: 'rgba(255,255,255,0.5)'}}>{getNights(room)}N</span>
-                        </div>
-                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px'}}>
-                            <span style={{color: 'rgba(255,255,255,0.5)'}}>Room Total:</span>
-                            <span style={{color: '#fff'}}>৳{roomTotal.toLocaleString()}</span>
-                        </div>
-                        {roomAdvance > 0 && (
-                            <>
-                                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px'}}>
-                                    <span style={{color: 'rgba(255,255,255,0.5)'}}>Advance ({method?.label}):</span>
-                                    <span style={{color: '#22c55e'}}>-৳{roomAdvance.toLocaleString()}</span>
-                                </div>
-                                {room.transactionId && (
-                                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px'}}>
-                                        TX: {room.transactionId.toUpperCase()}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
-                            <span style={{fontWeight: '600'}}>Due:</span>
-                            <span style={{fontWeight: '700', color: roomDue > 0 ? '#ef4444' : '#22c55e'}}>৳{roomDue.toLocaleString()}</span>
-                        </div>
+                    {/* Amount */}
+                    <div style={{marginBottom: '14px'}}>
+                        <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>AMOUNT (৳)</label>
+                        <input type="number" value={sharedData.advanceAmount} onChange={e => setSharedData(prev => ({...prev, advanceAmount: e.target.value}))} placeholder="0" style={{...inputStyle, fontSize: '18px', padding: '14px', fontWeight: '600'}}/>
                     </div>
-                );
-            })}
 
-            {/* Grand totals */}
-            <div style={{marginTop: '16px', padding: '16px', background: 'linear-gradient(135deg, rgba(45,106,106,0.2), rgba(45,106,106,0.1))', borderRadius: '12px', border: '1px solid rgba(45,106,106,0.4)'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px'}}>
-                    <span>Grand Total:</span>
-                    <span style={{fontWeight: '700'}}>৳{totals.grandTotal.toLocaleString()}</span>
+                    {/* Payment Method */}
+                    {parseFloat(sharedData.advanceAmount) > 0 && (
+                        <>
+                            <div style={{marginBottom: '14px'}}>
+                                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '8px'}}>PAYMENT METHOD</label>
+                                <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                                    {PAYMENT_METHODS.map(m => (
+                                        <button key={m.id} type="button" onClick={() => setSharedData(prev => ({...prev, paymentMethod: m.id}))} style={{
+                                            padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: sharedData.paymentMethod === m.id ? '700' : '500',
+                                            background: sharedData.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.05)',
+                                            border: `1px solid ${sharedData.paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.15)'}`,
+                                            color: '#fff', cursor: 'pointer'
+                                        }}>{m.label}</button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Transaction Details */}
+                            <div>
+                                <label style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px'}}>TRANSACTION DETAILS</label>
+                                <input type="text" value={sharedData.transactionId} onChange={e => setSharedData(prev => ({...prev, transactionId: e.target.value}))} placeholder="Transaction ID, reference, or details..." style={{...inputStyle, fontSize: '13px'}}/>
+                            </div>
+                        </>
+                    )}
                 </div>
-                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px'}}>
-                    <span style={{color: '#22c55e'}}>Total Advance:</span>
-                    <span style={{color: '#22c55e', fontWeight: '600'}}>-৳{totals.totalAdvance.toLocaleString()}</span>
+
+                {/* Room Totals Breakdown */}
+                <div style={{fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '12px'}}>Room Totals</div>
+                {roomSelections.map((room, idx) => {
+                    const roomTotal = getRoomTotal(room);
+                    return (
+                        <div key={idx} style={{display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', marginBottom: '8px'}}>
+                            <span style={{color: '#4ade80', fontWeight: '600'}}>{room.unit.n}</span>
+                            <span>৳{roomTotal.toLocaleString()}</span>
+                        </div>
+                    );
+                })}
+
+                {/* Grand totals */}
+                <div style={{marginTop: '16px', padding: '16px', background: 'linear-gradient(135deg, rgba(45,106,106,0.2), rgba(45,106,106,0.1))', borderRadius: '12px', border: '1px solid rgba(45,106,106,0.4)'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px'}}>
+                        <span>Grand Total:</span>
+                        <span style={{fontWeight: '700'}}>৳{totals.grandTotal.toLocaleString()}</span>
+                    </div>
+                    {totals.totalAdvance > 0 && (
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px'}}>
+                            <span style={{color: '#22c55e'}}>Advance ({method?.label}):</span>
+                            <span style={{color: '#22c55e', fontWeight: '600'}}>-৳{totals.totalAdvance.toLocaleString()}</span>
+                        </div>
+                    )}
+                    {sharedData.transactionId && totals.totalAdvance > 0 && (
+                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px'}}>
+                            TX: {sharedData.transactionId.toUpperCase()}
+                        </div>
+                    )}
+                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '18px', paddingTop: '10px', borderTop: '1px dashed rgba(255,255,255,0.2)'}}>
+                        <span style={{fontWeight: '700'}}>Total Due:</span>
+                        <span style={{fontWeight: '800', color: totals.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{totals.totalDue.toLocaleString()}</span>
+                    </div>
                 </div>
-                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '18px', paddingTop: '10px', borderTop: '1px dashed rgba(255,255,255,0.2)'}}>
-                    <span style={{fontWeight: '700'}}>Total Due:</span>
-                    <span style={{fontWeight: '800', color: totals.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{totals.totalDue.toLocaleString()}</span>
-                </div>
+
+                <button type="button" onClick={() => markSaved('payment')} style={{...saveBtn, width: '100%', marginTop: '16px', opacity: savedTabs.payment ? 0.7 : 1}}>
+                    {savedTabs.payment ? '✓ Saved' : 'Save Payment Info'}
+                </button>
             </div>
-
-            <button type="button" onClick={() => markSaved('payment')} style={{...saveBtn, width: '100%', marginTop: '16px', opacity: savedTabs.payment ? 0.7 : 1}}>
-                {savedTabs.payment ? '✓ Saved' : 'Save Payment Info'}
-            </button>
-        </div>
-    );
+        );
+    };
 
     // Render Summary tab
     const renderSummaryTab = () => (
@@ -8682,10 +8699,13 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                         <div style={{fontSize: '18px', fontWeight: '700'}}>৳{totals.grandTotal.toLocaleString()}</div>
                     </div>
                     <div>
-                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Advance</div>
+                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>Advance ({PAYMENT_METHODS.find(m => m.id === sharedData.paymentMethod)?.label || 'Cash'})</div>
                         <div style={{fontSize: '18px', fontWeight: '700', color: '#22c55e'}}>৳{totals.totalAdvance.toLocaleString()}</div>
                     </div>
                 </div>
+                {sharedData.transactionId && totals.totalAdvance > 0 && (
+                    <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '6px'}}>TX: {sharedData.transactionId.toUpperCase()}</div>
+                )}
                 <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed rgba(255,255,255,0.2)', textAlign: 'center'}}>
                     <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)'}}>DUE AMOUNT</div>
                     <div style={{fontSize: '24px', fontWeight: '800', color: totals.totalDue > 0 ? '#ef4444' : '#22c55e'}}>৳{totals.totalDue.toLocaleString()}</div>
