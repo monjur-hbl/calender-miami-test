@@ -1,6 +1,6 @@
 # Miami Beach Resort Dashboard
 
-> **VERSION**: v30.5-sticky-header (2026-01-11)
+> **VERSION**: v34.2-dropdown-fix (2026-01-11)
 > **FIRST**: Check SYNC_STATUS.md in parent project for full sync status
 
 ---
@@ -20,6 +20,28 @@
 3. **NEVER** display 'Beds24' in UI - use 'Miami Beach Resort'
 4. **ALWAYS** use Bangladesh timezone (Asia/Dhaka, GMT+6)
 5. **ALWAYS** count unique room/unit combinations for occupancy
+6. **NEVER** use `overflow: hidden` or `overflow: auto` on containers with `<select>` elements - BREAKS DROPDOWNS
+
+---
+
+## DROPDOWN POSITIONING - CRITICAL BUG FIX
+
+**PROBLEM**: Native browser `<select>` dropdown menus render OUTSIDE the DOM.
+When parent has `overflow: hidden` or `overflow: auto`, dropdowns get CLIPPED.
+
+**This bug occurred in v33.1 and v34.0 - MUST NOT RECUR!**
+
+### Rules:
+1. `.modal-overlay`: Use `overflow-y: auto` (handles scrolling)
+2. `.modal`: MUST use `overflow: visible` (lets dropdowns escape)
+3. Any container with `<select>`: NEVER use `overflow: auto/hidden`
+4. If scrolling needed: Use `.modal-scroll-content` ONLY for content WITHOUT `<select>`
+
+### Testing:
+After ANY CSS overflow changes, TEST all dropdowns in:
+- Booking modal (room tabs - occupancy dropdowns)
+- Contact tab (status dropdown)
+- Any other modal with form elements
 
 ---
 
@@ -60,7 +82,7 @@ const occupancyRate = Math.round((occupiedUnits / totalRooms) * 100);
 ## File Structure
 ```
 dashboard/
-├── index.html              # Main app (v30.5-sticky-header)
+├── index.html              # Main app (v34.2-dropdown-fix)
 ├── js/                     # Modular JS (reference only)
 │   ├── config.js
 │   ├── app.js

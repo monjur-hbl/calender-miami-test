@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v34.1</title>
+    <title>Miami Beach Resort v34.2</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -446,6 +446,33 @@
         /* ================================================================
            7. MODALS
            ================================================================ */
+        /*
+         * ============================================================================
+         * DROPDOWN POSITIONING FIX - CRITICAL DOCUMENTATION
+         * ============================================================================
+         *
+         * PROBLEM: Native browser <select> dropdown menus render OUTSIDE the DOM tree.
+         * When a parent container has overflow:hidden or overflow:auto, the dropdown
+         * gets CLIPPED because it cannot escape the container boundaries.
+         *
+         * SOLUTION:
+         * 1. modal-overlay: Use overflow-y:auto (handles page scrolling for tall modals)
+         * 2. .modal: MUST use overflow:visible (lets dropdowns escape)
+         * 3. Inner containers with <select>: NEVER use overflow:auto/hidden
+         * 4. If scrolling is needed, use .modal-scroll-content ONLY for content
+         *    that does NOT contain <select> elements
+         *
+         * RULES FOR FUTURE DEVELOPMENT:
+         * - NEVER add overflow:hidden or overflow:auto to any container with <select>
+         * - NEVER add overflow:hidden to modal or its direct children
+         * - If a modal needs internal scrolling, put scrollable content in a child
+         *   div that does NOT contain form dropdowns
+         * - Test dropdowns after ANY CSS overflow changes
+         *
+         * This issue was fixed in v33.1 and recurred in v34.0 when new tab content
+         * container was added with overflowY:auto. Fixed again in v34.2.
+         * ============================================================================
+         */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -455,7 +482,7 @@
             justify-content: center;
             z-index: 1000;
             padding: 16px;
-            overflow-y: auto; /* Changed from hidden to auto - allows modal scrolling and fixes dropdown clipping */
+            overflow-y: auto; /* Handles scrolling for tall modals - dropdowns work because modal has overflow:visible */
             overflow-x: hidden;
         }
         .modal {
@@ -466,10 +493,14 @@
             width: 100%;
             max-width: 520px;
             max-height: 90vh;
-            overflow: visible; /* Changed from overflow-y: auto - dropdowns need to escape container */
+            overflow: visible; /* CRITICAL: Must be visible for native <select> dropdowns to work */
             box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
-        /* Inner scrollable area for modal content */
+        /*
+         * Inner scrollable area - USE ONLY for content WITHOUT <select> elements
+         * Example: lists, text content, readonly displays
+         * DO NOT wrap forms with dropdowns in this class
+         */
         .modal-scroll-content {
             max-height: calc(90vh - 100px);
             overflow-y: auto;
@@ -727,7 +758,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v34.1-payment-tab</div>
+<div class="version-tag">v34.2-dropdown-fix</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
@@ -8735,7 +8766,9 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
     // Main return with tabbed interface
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal booking-modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px', padding: 0, overflow: 'visible'}}>
+            {/* DROPDOWN FIX: Modal uses overflow:visible, modal-overlay handles scrolling */}
+            {/* Never use overflow:auto/hidden on containers with <select> - clips native dropdown menus */}
+            <div className="modal booking-modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px', padding: 0, overflow: 'visible', maxHeight: 'none'}}>
                 {/* Header */}
                 <div style={{background: 'linear-gradient(135deg, #2D6A6A, #1E4D4D)', padding: '16px 20px', borderTopLeftRadius: '12px', borderTopRightRadius: '12px'}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
@@ -8775,8 +8808,8 @@ function BookingModal({selected, checkIn, checkOut, onClose, onSuccess, setIsEdi
                     </button>
                 </div>
 
-                {/* Tab Content */}
-                <div style={{maxHeight: '60vh', overflowY: 'auto'}}>
+                {/* Tab Content - NO overflow here, modal-overlay handles scrolling */}
+                <div style={{overflow: 'visible'}}>
                     {activeTab.startsWith('room-') && renderRoomTab(roomSelections[parseInt(activeTab.split('-')[1])], parseInt(activeTab.split('-')[1]))}
                     {activeTab === 'contact' && renderContactTab()}
                     {activeTab === 'payment' && renderPaymentTab()}
