@@ -6,7 +6,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Beach Resort v34.3</title>
+    <title>Miami Beach Resort v34.4</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -728,10 +728,10 @@
             /* Search */
             .search-btn { padding: 10px 16px; font-size: 13px; }
 
-            /* Modal */
-            .modal-overlay { padding: 0; }
-            .modal { max-width: 100vw; border-radius: 0; padding: 16px; max-height: 100vh; overflow: visible; }
-            .modal-landscape { max-width: 100vw; max-height: 100vh; border-radius: 0; padding: 16px; padding-bottom: 90px; overflow: visible; }
+            /* Modal - Add top padding for mobile browser address bar (typically 50-70px) */
+            .modal-overlay { padding: 0; padding-top: max(env(safe-area-inset-top, 0px), 50px); align-items: flex-start; }
+            .modal { max-width: 100vw; border-radius: 0; padding: 16px; max-height: calc(100vh - 60px); overflow: visible; margin-top: 0; }
+            .modal-landscape { max-width: 100vw; max-height: calc(100vh - 60px); border-radius: 0; padding: 16px; padding-bottom: 90px; overflow: visible; }
             .modal-landscape .modal-two-col { grid-template-columns: 1fr; gap: 16px; }
             .modal-landscape .modal-col-scroll { max-height: none; overflow-y: visible; padding-right: 0; }
             .sticky-book-btn-desktop { display: none; }
@@ -758,7 +758,7 @@
 </head>
 <body>
 <div id="root"></div>
-<div class="version-tag">v34.3-quick-hold</div>
+<div class="version-tag">v34.4-mobile-modal</div>
 <script type="text/babel">
 const {useState, useEffect, useMemo, useCallback} = React;
 
